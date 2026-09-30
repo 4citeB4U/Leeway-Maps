@@ -152,40 +152,7 @@ export function windProxy({
     })();
     return operation;
   }
-  const handler = async (req, res) => {
-    const url = new URL(req.url, 'http://localhost');
-    const model = url.searchParams.get('model') || 'gfs';
-    const overlay = url.searchParams.get('overlay') || 'none';
-    const key = `${model}:${overlay}`;
-    if (req.method !== 'GET')
-      return sendJson(res, { error: 'method_not_allowed' }, 405);
-    if (!['gfs', 'ifs'].includes(model) || !Object.hasOwn(models, model))
-      return sendJson(res, { error: 'unknown_model' }, 400);
-    if (!['none', 'temperature', 'pressure'].includes(overlay))
-      return sendJson(res, { error: 'unknown_overlay' }, 400);
-    if (url.pathname.startsWith('/grid/')) {
-      const id = url.pathname.slice(6).replace(/\.bin$/, '');
-      const state =
-        url.pathname === `/grid/${id}.bin` && grids.get(key)?.get(id);
-      if (!state) return sendJson(res, { error: 'unknown_grid' }, 404);
-      const components = [
-        state.grid.u,
-        state.grid.v,
-        ...(state.grid.scalar ? [state.grid.scalar] : []),
-      ];
-      const bytes = Buffer.concat(
-        components.map((values) =>
-          Buffer.from(values.buffer, values.byteOffset, values.byteLength),
-        ),
-      );
-      res.writeHead(200, {
-        'Content-Type': 'application/octet-stream',
-        'Cache-Control': 'public, max-age=3600, immutable',
-      });
-      return res.end(bytes);
-    }
-    if (!['/', '/manifest', '/status'].includes(url.pathname))
-      return sendJson(res, { error: 'not_found' }, 404);
+  async function readState(model, overlay, key, res) {
     let state = caches.get(key);
     if (!state || now() - state.fetchedAt >= ttlMs) {
       let operation = loadings.get(key);
@@ -205,9 +172,75 @@ export function windProxy({
           res.removeListener?.('close', close);
           if (!disconnected) operation.waiters -= 1;
         }
-        if (disconnected) return;
+        if (disconnected) return { disconnected: true };
       }
     }
+    return { state };
+  }
+  const handler = async (req, res) => {
+    const url = new URL(req.url, 'http://localhost');
+    const model = url.searchParams.get('model') || 'gfs';
+    const overlay = url.searchParams.get('overlay') || 'none';
+    const key = `${model}:${overlay}`;
+    if (req.method !== 'GET')
+      return sendJson(res, { error: 'method_not_allowed' }, 405);
+    if (!['gfs', 'ifs'].includes(model) || !Object.hasOwn(models, model))
+      return sendJson(res, { error: 'unknown_model' }, 400);
+    if (!['none', 'temperature', 'pressure'].includes(overlay))
+      return sendJson(res, { error: 'unknown_overlay' }, 400);
+    if (url.pathname.startsWith('/grid/')) {
+      const id = url.pathname.slice(6).replace(/\.bin$/, '');
+      let state = url.pathname === `/grid/${id}.bin` && grids.get(key)?.get(id);
+      // A grid request may reach a different serverless instance than its
+      // manifest. Rebuild the latest fixed-provider grid once, bounded by the
+      // same deadline/coalescing/backoff as a manifest. Never serve a newer
+      // cycle under an old immutable URL, or let IDs select arbitrary upstreams.
+      if (
+        !state &&
+        url.pathname === `/grid/${id}.bin` &&
+        /^(gfs|ifs)-\d{8}-\d{1,2}-f\d{1,3}-\d+(?:\.\d+)?(?:-(?:temperature|pressure)(?:-wind-only)?)?$/.test(
+          id,
+        ) &&
+        id.startsWith(`${model}-`) &&
+        (id.match(/-(temperature|pressure)(?:-wind-only)?$/)?.[1] || 'none') ===
+          overlay
+      ) {
+        const result = await readState(model, overlay, key, res);
+        if (result.disconnected) return;
+        state = grids.get(key)?.get(id);
+        if (!state)
+          return sendJson(
+            res,
+            {
+              error: 'grid_unavailable',
+              message:
+                'This forecast grid is unavailable; refresh the weather manifest.',
+              refreshManifest: true,
+            },
+            404,
+          );
+      }
+      if (!state) return sendJson(res, { error: 'unknown_grid' }, 404);
+      const components = [
+        state.grid.u,
+        state.grid.v,
+        ...(state.grid.scalar ? [state.grid.scalar] : []),
+      ];
+      const bytes = Buffer.concat(
+        components.map((values) =>
+          Buffer.from(values.buffer, values.byteOffset, values.byteLength),
+        ),
+      );
+      res.writeHead(200, {
+        'Content-Type': 'application/octet-stream',
+        'Cache-Control': 'public, max-age=3600, immutable',
+      });
+      return res.end(bytes);
+    }
+    if (!['/', '/manifest', '/status'].includes(url.pathname))
+      return sendJson(res, { error: 'not_found' }, 404);
+    const { state, disconnected } = await readState(model, overlay, key, res);
+    if (disconnected) return;
     const manifest = state?.manifest || unavailable(model, overlay).manifest;
     if (url.pathname === '/status') {
       const { gridUrl, ...status } = manifest;

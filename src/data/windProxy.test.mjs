@@ -107,6 +107,25 @@ test('wind manifest describes the GFS cycle and resampled grid', async () => {
   assert.equal(body.stale, false);
 });
 
+test('a cold grid instance rebuilds an issued latest-cycle ID without a prior manifest', async () => {
+  const first = install(proxy());
+  const manifest = JSON.parse((await first('/')).body);
+  const cold = install(proxy());
+  const url = manifest.gridUrl.replace('/api/wind', '');
+  const response = await cold(url);
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.headers['content-type'], 'application/octet-stream');
+  assert.equal(response.body.length, 4 * 3 * 2 * 4);
+});
+
+test('a cold grid never serves another cycle under an old immutable URL', async () => {
+  const request = install(proxy());
+  const res = await request('/grid/gfs-20260901-6-f6-90.bin?model=gfs');
+  assert.equal(res.statusCode, 404);
+  assert.equal(JSON.parse(res.body).refreshManifest, true);
+  assert.match(JSON.parse(res.body).message, /refresh the weather manifest/);
+});
+
 test('wind grid route returns Float32 U then V', async () => {
   let u = 0;
   const request = install(
