@@ -1,3 +1,4 @@
+import { aircraftPositionStatus } from '../../data/aircraftFreshness.js';
 import * as Cesium from 'cesium';
 import { airlineIdentity, scheduleLabel } from '../../data/airlineIdentity.js';
 import { nextCockpitNearContacts } from '../../data/cockpitAirLod.js';
@@ -755,7 +756,7 @@ export function createTracking({
     const fl = altFt >= 18000 ? `FL${Math.round(altFt / 100)}` : `${altFt} ft`;
     const spd = info.velocity ? `${Math.round(info.velocity * 1.944)} kts` : '';
     const stale =
-      flightState.records.missingPolls.get(icao24) || flightState.feed._backoff
+      aircraftPositionStatus(info, { stale: Boolean(flightState.records.missingPolls.get(icao24) || flightState.feed._backoff) }).stale
         ? 'STALE'
         : '';
     const lines = [cs, [fl, spd, stale].filter(Boolean).join(' · ')];

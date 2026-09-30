@@ -11,12 +11,12 @@ export function mountPeerComms({
   root.className = 'lw-peers';
   root.hidden = true;
   root.dataset.layout = 'full';
-  root.innerHTML = `<header><div><h2>Driver radio</h2><p>Private CB voice · video by invitation</p></div><button data-peer="layout" type="button">Split with map</button><button data-peer="close" type="button" aria-label="Close peer channel">×</button></header>
+  root.innerHTML = `<header><div><h2>Travel radio</h2><p>Private CB voice · video by invitation</p></div><button data-peer="layout" type="button">Split with map</button><button data-peer="close" type="button" aria-label="Close peer channel">×</button></header>
   <p class="lp-status" role="status" data-status>Sign in required. Use your provisioned account to connect with peers.</p>
   <div class="lp-radio"><span class="lp-radio-label">PRIVATE CB</span><strong data-peer-name>No channel selected</strong><div class="lp-radio-meter" aria-hidden="true">${'<i></i>'.repeat(12)}</div><div class="lp-call"><button data-peer="talk" type="button" disabled aria-pressed="false" aria-label="Hold to talk">${mapIcon('mic')}<span>Hold to talk</span></button><button data-peer="hangup" type="button" disabled>End channel</button></div><p>Hold the microphone to transmit. Release to listen.</p><button data-peer="block-active" type="button" disabled>Block this contact</button></div>
   <details data-auth><summary>Sign in to your channel</summary><label>Username<input autocomplete="username" data-username aria-label="Channel username"></label><label>Password<input type="password" autocomplete="current-password" data-password aria-label="Channel password"></label><button data-peer="login" type="button">Sign in</button><button data-peer="disconnect" type="button">Sign out</button><p>Use your operator-provisioned account. Identity and organization are verified by the server; your short-lived session stays in this tab.</p><details><summary>Operator access ticket</summary><label>Signed ticket<input type="password" autocomplete="off" data-ticket aria-label="Operator-issued access ticket"></label><button data-peer="connect" type="button">Connect ticket</button></details></details>
   <div class="lp-directory"><label><input type="checkbox" data-discoverable> Let authorized peers find me</label><p data-directory-policy></p><button data-peer="refresh" type="button">Refresh peers</button><select data-directory aria-label="Available peer"><option value="">Connect to see peers</option></select><input type="hidden" data-media value="audio"><div class="lp-invite-actions"><button data-peer="invite" type="button">Invite to CB voice</button><button data-peer="video" type="button">Video call</button></div><p>Both people must accept. Your selected microphone/camera starts only after acceptance. No recording is provided.</p></div>
-  <section class="lp-contacts"><h3>Contacts billboard</h3><p>Choose an available driver or dispatcher, then invite them to CB. Only people who choose to be discoverable appear here. This list does not indicate who is physically ahead of you.</p><div data-contact-cards></div><details><summary>Blocked contacts</summary><div data-blocked-cards></div></details></section>
+  <section class="lp-contacts"><h3>Contacts billboard</h3><p>Choose an available travel contact, then invite them to CB. Only people who choose to be discoverable appear here. This list does not indicate who is physically ahead of you.</p><div data-contact-cards></div><details><summary>Blocked contacts</summary><div data-blocked-cards></div></details></section>
   <div data-invitations></div><p class="lp-infrastructure" data-infrastructure></p>
   <div class="lp-video-grid" hidden><video data-remote playsinline autoplay aria-label="Peer video and audio"></video><video data-local muted playsinline autoplay aria-label="Your camera preview"></video></div><button data-peer="play" type="button" hidden>Play peer audio/video</button>`;
   document.body.append(root);
@@ -63,14 +63,13 @@ export function mountPeerComms({
   async function applyDirectoryPolicy() {
     const discoverable = q('[data-discoverable]');
     const policy = q('[data-directory-policy]');
-    const companyDirectory = identity?.directoryPolicy !== 'opt-in';
-    discoverable.disabled = companyDirectory;
-    discoverable.checked = companyDirectory;
-    policy.textContent = companyDirectory
-      ? 'Company directory is active while you are signed in. Fleet coworkers can see that you are available. Every CB or video call still requires acceptance, and you can block a contact.'
-      : 'Personal directory visibility is optional. Turn it on only when you want nearby app users to find you.';
-    if (companyDirectory)
-      await request('/presence', 'POST', { discoverable: true });
+    if (identity?.directoryPolicy !== 'opt-in') {
+      throw new Error('This account does not provide a personal opt-in travel directory.');
+    }
+    discoverable.disabled = false;
+    discoverable.checked = false;
+    policy.textContent = 'Travel contact visibility is optional. Enable it only when you want authorized contacts to find you.';
+
   }
   const media = new PeerMediaSession({
     sendSignal: (payload) => {
@@ -92,7 +91,7 @@ export function mountPeerComms({
         );
       }
     },
-    onMessage: () => {}, // Driver radio has no text channel UI.
+    onMessage: () => {}, // Travel radio has no text channel UI.
     onLocalStream: (stream) => {
       q('[data-local]').srcObject = stream;
       q('[data-local]').hidden = !stream.getVideoTracks().length;
@@ -201,7 +200,7 @@ export function mountPeerComms({
     }
     if (!q('[data-contact-cards]').childElementCount)
       q('[data-contact-cards]').textContent =
-        'No available contacts. Refresh after another driver signs in and enables discovery.';
+        'No available contacts. Refresh after another traveler signs in and enables discovery.';
     for (const peer of blocked.peers || []) {
       const row = document.createElement('div'),
         label = document.createElement('span'),
@@ -244,7 +243,7 @@ export function mountPeerComms({
         inviteId: event.inviteId,
         accept: false,
       }).catch(() => {});
-      status('This driver radio accepts voice or video invitations.');
+      status('This travel radio accepts voice or video invitations.');
       return;
     }
     if (

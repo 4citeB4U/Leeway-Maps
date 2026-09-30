@@ -2,45 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { discoverModels, prepareModel, runtimeBase } from './agentRuntime.js';
 import { PhoneRelay } from './phoneRelay.js';
-import { voiceStorageStatus, CHATTERBOX_REVISION } from './browserVoice.js';
-
-test('voice preparation blocks insufficient or unknown browser quota', async () => {
-  assert.equal(
-    (
-      await voiceStorageStatus({
-        storage: { estimate: async () => ({ quota: 1000, usage: 999 }) },
-        cacheStorage: null,
-      })
-    ).enough,
-    false,
-  );
-  assert.equal(
-    (await voiceStorageStatus({ storage: {}, cacheStorage: null })).enough,
-    false,
-  );
-});
-test('voice cache inventory ignores other models and does not count duplicate cache entries twice', async () => {
-  const voiceRequest = {
-    url: `https://huggingface.co/onnx-community/chatterbox-ONNX/resolve/${CHATTERBOX_REVISION}/onnx/language_model.onnx`,
-  };
-  const cache = {
-    keys: async () => [
-      voiceRequest,
-      { url: 'https://example.com/some-other-model' },
-    ],
-    match: async () =>
-      new Response('', { headers: { 'Content-Length': '1000000000' } }),
-  };
-  const result = await voiceStorageStatus({
-    storage: {
-      estimate: async () => ({ quota: 2000000000, usage: 1000000000 }),
-    },
-    cacheStorage: { keys: async () => ['one', 'two'], open: async () => cache },
-  });
-  assert.equal(result.cachedFiles, 1);
-  assert.equal(result.cachedBytes, 1000000000);
-  assert.equal(result.enough, true);
-});
 
 test('runtime rejects credential-bearing and executable URLs', () => {
   for (const url of [

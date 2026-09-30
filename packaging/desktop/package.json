@@ -1,0 +1,16 @@
+{
+  "name": "leeway-desktop",
+  "version": "0.1.1",
+  "private": true,
+  "description": "LeeWay desktop client",
+  "author": "LeeWay Industries",
+  "license": "MIT",
+  "main": "main.cjs",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "electron": "44.5.1",
+    "electron-builder": "26.15.3"
+  }
+}

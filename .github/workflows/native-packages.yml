@@ -1,0 +1,98 @@
+name: Build downloadable apps (manual)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  desktop:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Select repository app
+        shell: bash
+        run: |
+          if [ -f apps/transit-world/package.json ]; then
+            echo "APP_DIR=apps/transit-world" >> "$GITHUB_ENV"
+            echo "VARIANT=logistics" >> "$GITHUB_ENV"
+          else
+            echo "APP_DIR=." >> "$GITHUB_ENV"
+            echo "VARIANT=maps" >> "$GITHUB_ENV"
+          fi
+      - run: npm ci
+        working-directory: ${{ env.APP_DIR }}/packaging/desktop
+      - run: npm run build -- ${{ env.VARIANT }}
+        working-directory: ${{ env.APP_DIR }}/packaging/desktop
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ env.VARIANT }}-${{ matrix.os }}-unsigned
+          path: ${{ env.APP_DIR }}/packaging/desktop/release/${{ env.VARIANT }}/*.*
+          if-no-files-found: error
+  mobile:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: android
+          - os: macos-latest
+            platform: ios
+    runs-on: ${{ matrix.os }}
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
+      VITE_BASE_PATH: /
+      VITE_LEEWAY_STATIC_PAGES: '1'
+      VITE_LEEWAY_WORLD_API_URL: ${{ vars.LEEWAY_WORLD_API_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/setup-java@v4
+        if: matrix.platform == 'android'
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+        if: matrix.platform == 'android'
+      - name: Select repository app
+        shell: bash
+        run: |
+          if [ -f apps/transit-world/package.json ]; then
+            echo "APP_DIR=apps/transit-world" >> "$GITHUB_ENV"
+            echo "VARIANT=logistics" >> "$GITHUB_ENV"
+          else
+            echo "APP_DIR=." >> "$GITHUB_ENV"
+            echo "VARIANT=maps" >> "$GITHUB_ENV"
+          fi
+      - run: npm ci
+        working-directory: ${{ env.APP_DIR }}
+      - name: Require this repository's public API
+        run: node -e "const u=new URL(process.env.VITE_LEEWAY_WORLD_API_URL);if(u.protocol!=='https:'||u.username||u.password||u.hostname==='localhost'||u.hostname==='127.0.0.1')process.exit(1)"
+      - run: npm run build
+        working-directory: ${{ env.APP_DIR }}
+      - run: npm ci
+        working-directory: ${{ env.APP_DIR }}/packaging/mobile
+      - run: npm run configure -- ${{ env.VARIANT }}
+        working-directory: ${{ env.APP_DIR }}/packaging/mobile
+      - run: npx cap add ${{ matrix.platform }}
+        working-directory: ${{ env.APP_DIR }}/packaging/mobile
+      - run: node native-permissions.mjs ${{ matrix.platform }}
+        working-directory: ${{ env.APP_DIR }}/packaging/mobile
+      - run: ./gradlew assembleDebug
+        if: matrix.platform == 'android'
+        working-directory: ${{ env.APP_DIR }}/packaging/mobile/android
+      - run: xcodebuild -project App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+        if: matrix.platform == 'ios'
+        working-directory: ${{ env.APP_DIR }}/packaging/mobile/ios/App
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mobile-${{ env.VARIANT }}-${{ matrix.platform }}-development
+          path: |
+            ${{ env.APP_DIR }}/packaging/mobile/android/app/build/outputs/apk/debug/*.apk
+            ${{ env.APP_DIR }}/packaging/mobile/ios/App/build/Build/Products/Debug-iphonesimulator/*.app
+          if-no-files-found: error

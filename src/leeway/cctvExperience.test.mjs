@@ -6,7 +6,11 @@ test('opens CCTV, waits for its catalog and focuses the nearest camera', async (
   let enabled = false;
   let polls = 0;
   const calls = [];
+  let params;
   const module = {
+    setParams(value) {
+      params = value;
+    },
     getUIState() {
       polls += 1;
       if (polls < 2)
@@ -51,6 +55,7 @@ test('opens CCTV, waits for its catalog and focuses the nearest camera', async (
   });
 
   assert.equal(enabled, true);
+  assert.deepEqual(params, { autoHop: false });
   assert.equal(result.ok, true);
   assert.equal(result.cameraId, 'cam-2');
   assert.equal(result.camera.provider, 'Official DOT');

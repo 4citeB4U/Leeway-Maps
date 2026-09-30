@@ -155,6 +155,7 @@ export class MilitaryFlightRecords {
         prevMeta?.verticalRateMps,
         null,
       ),
+      positionTimeMs: aircraft.positionTimeMs ?? null,
       lastContactEpochMs: stickyNumber(
         aircraft.contactTimeMs,
         prevMeta?.lastContactEpochMs,

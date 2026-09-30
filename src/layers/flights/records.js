@@ -230,6 +230,7 @@ export class FlightRecords {
       // transponder message. The fleet coast horizon uses this actual
       // contact time so a temporarily old position does not hard-freeze
       // while fresh velocity/track messages are still arriving.
+      positionTimeMs: observation.positionTimeMs ?? null,
       lastContactEpochMs: stickyNumber(
         observation.contactTimeMs,
         prevMeta?.lastContactEpochMs,

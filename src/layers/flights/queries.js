@@ -1,3 +1,4 @@
+import { aircraftPositionStatus } from '../../data/aircraftFreshness.js';
 import { aircraftModelGate } from '../../data/aircraftModelAvailability.js';
 import { approxDistanceKm as _approxDistanceKm } from './recordPolicy.js';
 import { displayedKinematics } from '../../data/motionModel.js';
@@ -165,10 +166,7 @@ export function createQueries({
       onGround: info?.onGround === true,
       velocityMps: displayed.speedMps,
       track: displayed.trackDeg,
-      stale: Boolean(
-        flightState.records.missingPolls.get(icao24) ||
-        flightState.feed._backoff,
-      ),
+      ...aircraftPositionStatus(info, { stale: Boolean(flightState.records.missingPolls.get(icao24) || flightState.feed._backoff) }),
       airline: info?.airline || airlineIdentity(info?.callsign)?.name || null,
       airlineIdentityBasis: info?.airline
         ? 'provider'

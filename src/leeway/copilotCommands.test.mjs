@@ -12,8 +12,8 @@ test('classifies only unambiguous system copilot actions', () => {
     'weather',
   );
   assert.equal(
-    classifyCopilotCommand('Open my dispatch load triangle').action,
-    'load-planning',
+    classifyCopilotCommand('Open my dispatch load triangle'),
+    null,
   );
   assert.equal(
     classifyCopilotCommand('Tell me whether this bridge is safe'),
@@ -21,16 +21,15 @@ test('classifies only unambiguous system copilot actions', () => {
   );
 });
 
-test('opens load planning without a model or external write', async () => {
+test('personal edition excludes load planning', async () => {
   let calls = 0;
   const result = await executeCopilotCommand('Open load planning', {
     openLoadPlanning() {
       calls++;
     },
   });
-  assert.equal(result.handled, true);
-  assert.equal(calls, 1);
-  assert.match(result.message, /does not book freight/);
+  assert.equal(result.handled, false);
+  assert.equal(calls, 0);
 });
 
 test('does not manufacture a model action for ordinary questions', async () => {

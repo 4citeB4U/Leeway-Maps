@@ -7,6 +7,7 @@ test('second surface uses shared decoder, caps draws, clears switch and cancels 
   let clears = 0;
   let cancelled = 0;
   const canvas = {
+    dataset: {},
     width: 1,
     height: 1,
     getContext: () => ({ drawImage: () => draws++, clearRect: () => clears++ }),
@@ -28,13 +29,21 @@ test('second surface uses shared decoder, caps draws, clears switch and cancels 
   callback(20);
   callback(80);
   assert.equal(draws, 1);
+  assert.equal(canvas.dataset.frameSequence, '1');
+  assert.equal(canvas.dataset.currentTime, '1');
+  v.currentTime = 2;
+  callback(150);
+  assert.equal(canvas.dataset.frameSequence, '2');
+  assert.equal(canvas.dataset.currentTime, '2');
   assert.equal(canvas.width, 640);
   v = { ...v };
-  callback(160);
-  assert.equal(draws, 2);
+  callback(240);
+  assert.equal(draws, 3);
+  assert.equal(canvas.dataset.frameSequence, '1');
   assert.equal(clears, 2);
   surface.stop();
   callback(200);
   assert.equal(cancelled, 1);
-  assert.equal(draws, 2);
+  assert.equal(draws, 3);
+  assert.equal(canvas.dataset.playbackState, 'stopped');
 });

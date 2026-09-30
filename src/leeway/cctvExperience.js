@@ -83,6 +83,9 @@ export async function openNearestCctv(
     });
   }
 
+  // An explicit opening should hold the chosen scene until the user opts into
+  // hopping again. Preserve all other camera/projection settings.
+  module.setParams?.({ autoHop: false });
   const cameraId = module.focusNearest({
     focus: true,
     durationSec,

@@ -10,11 +10,11 @@ export function createControls({ state: layerState, services, parts, source }) {
   const methods = {
     id: 'traffic',
 
-    name: 'Street Traffic',
+    name: 'Traffic visualization · simulated vehicles',
 
     icon: '🚗',
 
-    source: 'OpenStreetMap',
+    source: 'OSM roads · simulated particles; TomTom road speeds when configured',
 
     /** @type {number} Zero — layer is self-managed via camera listener + preRender */
     updateInterval: 0,

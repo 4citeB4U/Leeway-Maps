@@ -1,3 +1,4 @@
+import { leewayEcosystemProxy } from './leeway-ecosystem.js';
 import { openSkyProxy } from './aircraft/opensky.js';
 import { celestrakProxy, rocketLaunchesProxy } from './space.js';
 import { tomtomProxy } from './traffic.js';
@@ -58,6 +59,7 @@ function localProviderPlugins() {
     openAiRealtimeProxy(),
     googlePlacesContextProxy(),
     windProxy(),
+    leewayEcosystemProxy(),
     weatherProxy(),
     cycloneProxy(),
     firePerimetersProxy(),

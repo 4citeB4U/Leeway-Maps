@@ -1,3 +1,4 @@
+import { mountDeviceLocation } from './deviceLocation.js';
 import { layerStatusText, escapeLayerText } from './layerStatusText.js';
 import { mountGodsEyeControls } from './godsEyeControls.js';
 import { mountMapReports } from './mapReports.js';
@@ -12,7 +13,6 @@ import { mountHazardReports } from './hazardReports.js';
 import { mountPeerComms } from './peerComms.js';
 import { mountNationalCameraCatalog } from './nationalCameraCatalog.js';
 import { mountOfflineTrip } from './offlineTrip.js';
-import { mountFuelLedger } from './fuelLedger.js';
 import { mapIcon } from './mapIcons.js';
 import { mountExperiencePreferences } from './experiencePreferences.js';
 import { openNearestCctv } from './cctvExperience.js';
@@ -137,9 +137,6 @@ function ensureStyles(documentRef) {
     .lws-truck-status[data-state="checked"] { border-color:rgba(100,230,190,.32); color:#9df1cf; background:rgba(80,220,170,.06); }
     .lws-toast { position:absolute; top:76px; left:50%; transform:translateX(-50%); opacity:0; pointer-events:none; padding:9px 14px; border-radius:10px; background:#071722; border:1px solid rgba(64,221,238,.24); transition:opacity .2s; }
     .lws-toast.show { opacity:1; }
-    #leeway-load-comparison { position:fixed; z-index:10020; left:98px; top:76px; width:min(560px,calc(100vw - 122px)); max-height:calc(100vh - 100px); overflow:auto; padding:16px; border:1px solid rgba(75,231,255,.30); border-radius:18px; background:rgba(3,15,24,.97); color:#edffff; box-shadow:0 22px 68px rgba(0,0,0,.55); backdrop-filter:blur(16px); }
-    #leeway-load-comparison header { display:flex; gap:14px; justify-content:space-between; } #leeway-load-comparison h2 { margin:3px 0; font-size:20px; } #leeway-load-comparison small { color:#8eeefa; letter-spacing:.1em; } #leeway-load-comparison p { margin:6px 0; color:#b9d5db; font-size:12px; line-height:1.4; } #leeway-load-comparison textarea { width:100%; min-height:100px; box-sizing:border-box; padding:10px; border-radius:10px; border:1px solid rgba(119,210,229,.30); background:#06141d; color:#efffff; font:12px/1.35 ui-monospace,monospace; resize:vertical; } #leeway-load-comparison label { display:grid; gap:4px; font-size:10px; color:#a9d7dd; } #leeway-load-comparison input { min-width:0; box-sizing:border-box; height:38px; padding:0 9px; border-radius:9px; border:1px solid rgba(119,210,229,.30); background:#06141d; color:#efffff; font:inherit; } #leeway-load-comparison button { border:1px solid rgba(75,231,255,.32); border-radius:9px; padding:7px 10px; color:#eaffff; background:#0b2733; font:inherit; cursor:pointer; } #leeway-load-comparison button:hover { background:#124151; } .llc-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0; } .llc-actions { display:flex; flex-wrap:wrap; gap:7px; margin-top:8px; } .llc-status { padding:8px; border-left:3px solid #4be7ff; background:rgba(75,231,255,.08); } .llc-offers { display:grid; gap:8px; margin-top:10px; } .llc-offer { --offer-color:#4be7ff; padding:10px; border-left:4px solid var(--offer-color); border-radius:10px; background:rgba(255,255,255,.04); } .llc-offer strong { display:block; color:var(--offer-color); } .llc-offer span { font-size:11px; color:#bddce2; } .llc-offer b { color:var(--offer-color); } .llc-offer small { display:block; margin-top:4px; color:#d2e7ea; letter-spacing:0; } .llc-note { opacity:.78; } .llc-file { display:inline-flex !important; place-items:center; gap:5px; min-height:34px; padding:7px 10px; border:1px solid rgba(75,231,255,.32); border-radius:9px; background:#0b2733; color:#eaffff !important; cursor:pointer; } .llc-file input { position:absolute; inline-size:1px; block-size:1px; opacity:0; pointer-events:none; } .llc-triangle { margin-top:14px; padding-top:12px; border-top:1px solid rgba(75,231,255,.18); } .llc-triangle-summary { margin-top:10px; padding:10px; border:1px solid rgba(255,182,89,.30); border-radius:10px; background:rgba(255,182,89,.07); color:#e7f5f7; } .llc-triangle-summary strong { color:#ffca78; } .llc-triangle-summary small { color:#bcd9de; } .llc-select { display:flex !important; grid-template-columns:none !important; align-items:center; gap:7px; margin-bottom:7px; color:#e5f8fa !important; } .llc-select input { width:15px !important; height:15px !important; accent-color:#4be7ff; }
-    @media(max-width:720px){ #leeway-load-comparison { left:12px; top:64px; width:calc(100vw - 24px); max-height:calc(100vh - 78px); } .llc-grid { grid-template-columns:1fr; } }
     @media(max-width:1000px){.lws-top{grid-template-columns:270px 1fr}.lws-top-actions .hide-sm{display:none}.lws-brand strong{font-size:13px}.lws-brand span{display:none}.lws-dock-btn{min-width:58px}.lws-live{display:none}}
   `;
   documentRef.head.appendChild(style);
@@ -149,19 +146,13 @@ function icon(name) {
   return (
     {
       map: '▦',
-      loads: '▣',
-      drivers: '♙',
-      fleet: '▰',
       transit: '▤',
       rail: '▥',
-      facilities: '⌂',
-      crm: '◇',
       intel: '▥',
       ai: '✦',
       layers: '▱',
       traffic: '▥',
       weather: '☁',
-      freight: '▰',
       three: '◆',
       locate: '⌾',
       features: '◎',
@@ -171,10 +162,9 @@ function icon(name) {
 
 export function mountMapsShell(application, { edition = 'personal' } = {}) {
   if (document.getElementById('leeway-world-shell')) return null;
-  const isBusiness = false;
   ensureStyles(document);
   document.body.classList.add('leeway-enterprise-shell');
-  document.body.dataset.leewayEdition = isBusiness ? 'business' : 'personal';
+  document.body.dataset.leewayEdition = 'personal';
 
   const components = application.getComponents();
   const viewer = components.scene?.viewer;
@@ -233,40 +223,26 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   shell.id = 'leeway-world-shell';
   shell.innerHTML = `
     <header class="lws-top">
-      <div class="lws-brand"><img class="lws-logo" src="${import.meta.env.BASE_URL}leeway-approved-logo.jpg" alt="LeeWay — approved blue circular logo" /><div><strong data-brand-name>${isBusiness ? 'LEEWAY LOGISTICS' : 'LEEWAY MAPS'}</strong><span data-brand-tagline>YOUR ROAD. YOUR ROUTE.</span></div></div>
-      <div class="lws-search"><input aria-label="Global search" placeholder="${isBusiness ? 'Search locations, loads, drivers, equipment, facilities...' : 'Search addresses, places, trips, and roadside stops...'}" /><kbd>⌘ K</kbd></div>
+      <div class="lws-brand"><img class="lws-logo" src="${import.meta.env.BASE_URL}leeway-approved-logo.jpg" alt="LeeWay — approved blue circular logo" /><div><strong data-brand-name>LEEWAY MAPS</strong><span data-brand-tagline>YOUR ROAD. YOUR ROUTE.</span></div></div>
+      <div class="lws-search"><input aria-label="Global search" placeholder="Search addresses, places, trips, and roadside stops..." /><kbd>⌘ K</kbd></div>
       <div class="lws-top-actions">
         <button class="lws-chip" data-action="map">Map</button>
         <button class="lws-chip" data-action="world">◉ World</button>
         <button class="lws-chip" data-action="route">Directions</button>
         <button class="lws-chip hide-sm" data-action="layers">▱ Layers⌄</button>
-        ${isBusiness ? '<button class="lws-chip hide-sm" data-action="workspace">Sales & CRM</button>' : ''}
-        <button class="lws-chip" data-action="roadside">Road stops</button>${isBusiness ? '<button class="lws-chip" data-action="workspace-menu">Business</button>' : ''}<button class="lws-chip" data-action="capabilities">Capabilities</button><button class="lws-chip hide-sm" data-action="map-only">Hide controls</button>
+        
+        <button class="lws-chip" data-action="roadside">Road stops</button><button class="lws-chip" data-action="capabilities">Capabilities</button><button class="lws-chip hide-sm" data-action="map-only">Hide controls</button>
         <div class="lws-avatar">AL</div><div class="lws-agent-status">Agent Lee · Copilot<br>Open to connect</div>
       </div>
     </header>
-    <nav class="lws-rail" aria-label="Business workspace">
-      ${(isBusiness
-        ? [
-            ['map', 'Map'],
-            ['loads', 'Loads'],
-            ['drivers', 'Drivers'],
-            ['fleet', 'Fleet'],
-            ['transit', 'Transit'],
-            ['rail', 'Rail'],
-            ['facilities', 'Facilities'],
-            ['crm', 'CRM'],
-            ['intel', 'Intelligence'],
-            ['ai', 'AI'],
-          ]
-        : [
+    <nav class="lws-rail" aria-label="Personal map navigation">
+      ${[
             ['map', 'Map'],
             ['transit', 'Transit'],
             ['features', 'Features'],
             ['intel', 'Intelligence'],
             ['ai', 'AI'],
           ]
-      )
         .map(
           ([id, label], i) =>
             `<button class="lws-nav ${i === 0 ? 'active' : ''}" data-nav="${id}"><span class="i">${icon(id)}</span><span>${label}</span></button>`,
@@ -282,7 +258,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     <div data-route-planner></div>
     <button class="lws-live" data-action="connect-world" type="button"><b data-world-led>● CHECK</b><span data-world-status>Connect live world data</span></button>
     <nav class="lws-dock">
-      <button class="lws-dock-btn" data-action="peer-comms">${mapIcon('mic')}<span>Driver radio</span></button>
+      <button class="lws-dock-btn" data-action="peer-comms">${mapIcon('mic')}<span>Travel radio</span></button>
       ${[
         ['layers', 'Layers'],
         ['traffic', 'Traffic'],
@@ -299,23 +275,15 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       <button class="lws-dock-btn" data-action="report-hazard">${mapIcon('report')}<span>Report</span></button>
       <button class="lws-ai" data-action="ai" aria-label="Talk to Agent Lee">${mapIcon('mic')}<strong>Agent Lee</strong></button>
       <button class="lws-dock-btn" data-action="preferences">${mapIcon('settings')}<span>Language and music</span></button>
-      ${(isBusiness
-        ? [
-            ['transit', 'Transit'],
-            ['freight', 'Freight'],
-            ['rail', 'Rail'],
-            ['three', '3D'],
-          ]
-        : [
-            ['cockpit', 'Travel'],
+      ${[
+            ['travel', 'Travel'],
             ['transit', 'Transit'],
             ['flights', 'Flights'],
             ['three', '3D'],
           ]
-      )
         .map(
           ([id, label]) =>
-            `<button class="lws-dock-btn ${id === 'freight' || id === 'rail' ? 'business-only' : ''}" data-dock="${id}"><span class="i">${icon(id)}</span>${label}</button>`,
+            `<button class="lws-dock-btn " data-dock="${id}"><span class="i">${icon(id)}</span>${label}</button>`,
         )
         .join('')}
     </nav>
@@ -597,8 +565,6 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     onRadio: () => peerComms.open(),
   });
   const fuelAdvisor = mountFuelAdvisor({ planner: routing });
-  const fuelLedger = mountFuelLedger({ planner: routing });
-  const loadComparison = { open() {}, destroy() {} };
   const peerComms = mountPeerComms({ viewer });
   let hazardEntities = [];
   const hazardReports = mountHazardReports({
@@ -727,14 +693,9 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
         return true;
       }
       if (actionName === 'cockpit') {
-        setRightPanel('ops', { toggle: false });
-        return true;
-      }
-      if (actionName === 'workspace') {
-        say(
-          'Business workspace is intentionally excluded from LeeWay Maps Personal',
-        );
-        return false;
+        const result = await godsEyeControls.actions.cockpit();
+        if (!result.ok) say(result.error);
+        return result.ok;
       }
       toggleLayerMenu(true);
       return true;
@@ -877,7 +838,6 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   }
 
   function showWorld() {
-    workspace.close();
     toggleAgent(false);
     toggleRoutePlanner(false);
     toggleLayerMenu(false);
@@ -964,14 +924,6 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
 
   const locationSearch = createRouteClient();
 
-  const workspace = {
-    open() {},
-    close() {},
-    openPeople() {},
-    openEquipment() {},
-    openCrm() {},
-    destroy() {},
-  };
   const nationalCatalog = mountNationalCameraCatalog({
     host: shell,
     notify: say,
@@ -1118,52 +1070,22 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       const id = nav.dataset.nav;
       setNav(id);
       if (id === 'map') {
-        workspace.close();
         toggleAgent(false);
         return;
       }
-      if (id === 'drivers') {
-        workspace.openPeople();
-        return;
-      }
-      if (id === 'fleet') {
-        workspace.openEquipment();
-        return;
-      }
-      if (id === 'facilities' || id === 'crm') {
-        workspace.openCrm();
-        return;
-      }
-      if (id === 'loads') {
-        workspace.close();
-        loadComparison.open();
-        say(
-          'Dispatch load comparison opened. Add up to three offers to map their separate pickup and delivery paths.',
-        );
-        return;
-      }
       if (id === 'transit') {
-        workspace.close();
         await toggleLayer('transit');
         return;
       }
-      if (id === 'rail') {
-        workspace.close();
-        say('Rail operating view ready for rail provider binding');
-        return;
-      }
       if (id === 'features') {
-        workspace.close();
         featureCenter.open();
         return;
       }
       if (id === 'intel') {
-        workspace.close();
         toggleLayerMenu(true);
         return;
       }
       if (id === 'ai') {
-        workspace.close();
         toggleAgent(true);
         return;
       }
@@ -1179,10 +1101,6 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     }
     if (action === 'connect-world') {
       await probeWorldProvider({ explain: true });
-      return;
-    }
-    if (action === 'workspace-menu') {
-      shell.classList.toggle('business-open');
       return;
     }
     if (action === 'roadside') {
@@ -1202,7 +1120,6 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       return;
     }
     if (action === 'map') {
-      workspace.close();
       shell.classList.remove('business-open');
       setNav('map');
       return;
@@ -1282,10 +1199,6 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       if (button) button.textContent = minimized ? '›' : '‹';
       return;
     }
-    if (action === 'workspace') {
-      workspace.open();
-      return;
-    }
     if (action === 'layers') {
       toggleLayerMenu();
       return;
@@ -1304,7 +1217,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       return;
     }
     if (dock === 'traffic') {
-      await toggleLayer('traffic');
+      await toggleLayer('traffic-incidents');
       return;
     }
     if (dock === 'cctv') {
@@ -1324,7 +1237,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       }
       return;
     }
-    if (dock === 'cockpit') {
+    if (dock === 'travel') {
       nationalCatalog.close();
       setRightPanel('ops', { toggle: false });
       say('Travel cockpit opened');
@@ -1345,16 +1258,6 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       await toggleLayer('transit');
       return;
     }
-    if (dock === 'freight') {
-      workspace.close();
-      loadComparison.open();
-      say('Freight load comparison opened');
-      return;
-    }
-    if (dock === 'rail') {
-      say('Rail provider binding is not yet verified');
-      return;
-    }
     if (dock === 'three') {
       try {
         await switchMapMode('3d');
@@ -1364,7 +1267,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       return;
     }
     if (dock === 'locate') {
-      await routing.useMyLocation();
+      await deviceLocation.recenter();
     }
   });
 
@@ -1388,8 +1291,9 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     }
   });
 
+  const deviceLocation = mountDeviceLocation({viewer,button:shell.querySelector('[data-dock="locate"]'),notify:say,onChange:()=>{queueMicrotask(()=>mapReports.refresh());}});
   const mapReports = mountMapReports({
-    shell, viewer, dataManager, getPoint: viewCenterPoint,
+    shell, viewer, dataManager, getPoint: () => deviceLocation.getPoint() || viewCenterPoint(),
     onWeather: () => setRightPanel('weather', { toggle: false }),
     onTraffic: async () => {
       try {
@@ -1458,15 +1362,8 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
 
   return {
     root: shell,
-    workspace,
     routePlanner: routing,
     locate,
-    openWorkspace: (tab = 'overview') => workspace.open(tab),
-    openLoadPlanning: () => {
-      workspace.close();
-      loadComparison.open();
-      say('Dispatch planning belongs to LeeWay Logistics.');
-    },
     openWeather,
     async openCctv() {
       nationalCatalog.close();
@@ -1522,16 +1419,14 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       preferences.destroy();
       offlineTrip.destroy();
       fuelAdvisor.destroy();
-      fuelLedger.destroy();
-      loadComparison.destroy();
       hazardReports.destroy();
       peerComms.destroy();
+      deviceLocation.destroy();
       mapReports.destroy();
       routing.destroy();
       roadside.destroy();
       featureCenter.destroy();
       nationalCatalog.destroy();
-      workspace.destroy();
       shell.remove();
     },
   };

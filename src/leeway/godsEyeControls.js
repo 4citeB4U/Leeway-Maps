@@ -167,7 +167,8 @@ export function mountGodsEyeControls({
         ? `${info.origin} → ${info.destination}`
         : 'Route unavailable',
       scheduleLabel(info.schedule),
-      info.stale ? 'Position feed stale' : '',
+      [info.stale ? 'STALE' : '', info.positionStatus].filter(Boolean).join(' · '),
+      info.positionTimeMs ? 'Position received: ' + new Date(info.positionTimeMs).toLocaleTimeString() : '',
     ]
       .filter(Boolean)
       .join('\n');

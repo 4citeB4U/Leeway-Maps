@@ -1,3 +1,4 @@
+import { aircraftPositionStatus } from '../../data/aircraftFreshness.js';
 import * as Cesium from 'cesium';
 import { nextCockpitNearContacts } from '../../data/cockpitAirLod.js';
 import { aircraftIcon, TRACKED_ICON_PX } from '../../data/aircraftIcons.js';
@@ -218,7 +219,7 @@ export function createTracking({
 
   function _buildTrackedLabel(info, icao24) {
     const stale =
-      flightState.records.missingPolls.get(icao24) || flightState.feed._backoff
+      aircraftPositionStatus(info, { stale: Boolean(flightState.records.missingPolls.get(icao24) || flightState.feed._backoff) }).stale
         ? ' · STALE'
         : '';
     const callsign =

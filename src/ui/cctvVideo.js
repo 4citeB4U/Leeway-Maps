@@ -13,6 +13,14 @@ export function createCctvVideoSurface(
   let previous = null;
   let previousTime = -1;
   let paintedAt = -Infinity;
+  let frameSequence = 0;
+  const recordPlayback = (state, time = '') => {
+    if (!canvas.dataset) return;
+    canvas.dataset.playbackState = state;
+    canvas.dataset.currentTime = String(time);
+    canvas.dataset.frameSequence = String(frameSequence);
+  };
+  recordPlayback('waiting');
   const paint = (now) => {
     if (stopped) return;
     const video = getVideo();
@@ -20,6 +28,8 @@ export function createCctvVideoSurface(
       ctx?.clearRect(0, 0, canvas.width, canvas.height);
       previous = video;
       previousTime = -1;
+      frameSequence = 0;
+      recordPlayback('waiting');
     }
     if (
       ctx &&
@@ -42,6 +52,11 @@ export function createCctvVideoSurface(
         ctx.drawImage(video, 0, 0, width, height);
         previousTime = video.currentTime;
         paintedAt = now;
+        frameSequence += 1;
+        recordPlayback(
+          video.paused ? 'paused' : video.ended ? 'ended' : 'playing',
+          video.currentTime,
+        );
       } catch {
         /* A resolution/decode transition retries on the next frame. */
       }
@@ -54,6 +69,7 @@ export function createCctvVideoSurface(
       stopped = true;
       cancelFrame(handle);
       ctx?.clearRect(0, 0, canvas.width, canvas.height);
+      recordPlayback('stopped');
     },
   };
 }

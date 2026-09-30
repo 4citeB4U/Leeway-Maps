@@ -42,11 +42,6 @@ export function classifyCopilotCommand(value) {
   if (/\b(review|summari[sz]e|explain)\b.*\b(route|trip)\b/.test(input))
     return { action: 'route-review' };
   if (
-    /\b(load|loads|triangle|triangulate|triangulation)\b/.test(input) &&
-    /\b(open|plan|show|build|map|compare|dispatch)\b/.test(input)
-  )
-    return { action: 'load-planning' };
-  if (
     /\b(weather|radar|rain|storm|lightning|clouds?)\b/.test(input) &&
     /\b(show|open|turn|check|see|look)\b/.test(input)
   )
@@ -135,7 +130,6 @@ export async function executeCopilotCommand(value, shell) {
   const command = classifyCopilotCommand(value);
   if (!command || !shell) return { handled: false };
   const target = {
-    'load-planning': [shell, 'openLoadPlanning'],
     weather: [shell, 'openWeather'],
     cctv: [shell, 'openCctv'],
     'camera-select': [shell, 'selectCctv'],
@@ -158,14 +152,6 @@ export async function executeCopilotCommand(value, shell) {
       handled: true,
       message: routeBriefing(shell.routePlanner.getState()),
     };
-  if (command.action === 'load-planning') {
-    shell.openLoadPlanning?.();
-    return {
-      handled: true,
-      message:
-        'Dispatch load comparison and the closed-loop trip triangle are open. This prepares a plan only; it does not book freight.',
-    };
-  }
   if (command.action === 'weather') {
     await shell.openWeather?.();
     return {

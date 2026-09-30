@@ -1,4 +1,5 @@
 import { openSkyProxy } from '../providers/aircraft/opensky.js';
+import { leewayEcosystemProxy } from '../providers/leeway-ecosystem.js';
 import { adsbLolProxy } from '../providers/aircraft/adsb-lol.js';
 import { adsbdbProxy } from '../providers/aircraft/enrichment.js';
 import { trackBackfillProxies } from '../providers/aircraft/tracks.js';
@@ -25,6 +26,8 @@ import { createVercelSharedHandler } from './vercelShared.js';
 
 const DEFAULT_ALLOWED_ORIGINS = Object.freeze([
   'https://4citeb4u.github.io',
+  'https://localhost', // Packaged Android WebView, public map API only.
+  'capacitor://localhost', // Packaged iOS WebView, public map API only.
   'http://localhost:4173',
   'http://127.0.0.1:4173',
 ]);
@@ -181,6 +184,7 @@ export function createWorldPlugins({ sourceRoot = defaultSourceRoot } = {}) {
     windProxy({ timeoutMs: 40_000 }),
     cycloneProxy(),
     firePerimetersProxy(),
+    leewayEcosystemProxy(),
   ];
 }
 

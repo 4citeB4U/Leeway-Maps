@@ -1,0 +1,17 @@
+{
+  "name": "leeway-mobile",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "configure": "node configure.mjs"
+  },
+  "dependencies": {
+    "@capacitor/core": "8.5.2",
+    "@capacitor/android": "8.5.2",
+    "@capacitor/ios": "8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2"
+  }
+}

@@ -45,22 +45,15 @@ export function mountRoutePlanner({
   <details><summary>Import or export route addresses</summary><p>JSON: an array of addresses, or {"addresses":[...]}. CSV: an address column with comma-containing addresses in quotes. Import replaces the current route: 2–12 addresses, including start and destination.</p><input data-import-file type="file" accept=".json,.csv,application/json,text/csv" aria-label="Import route addresses"><div class="lrp-actions"><button type="button" data-do="export-json">Export JSON</button><button type="button" data-do="export-csv">Export CSV</button></div></details>
   <details><summary>Routing server, vehicle and fuel settings</summary>
   <label>Valhalla server URL (optional)<input data-valhalla type="url" placeholder="https://your-routing-server.example"></label>
-  <p>Blank uses the public passenger-car service. Your Valhalla server enables truck costing and receives route coordinates. It must allow this app through CORS and contain your driving region. HTTP loopback is supported for local testing.</p>
+  <p>Blank uses the public passenger-car service. Your routing server receives route coordinates. It must allow this app through CORS and contain your driving region. HTTP loopback is supported for local testing.</p>
   <label><input data-hard-exclusions type="checkbox"> Server operator confirms allow_hard_exclusions is enabled</label>
   <div class="lrp-settings">
-  <label>Vehicle<select data-profile="type"><option value="car">Passenger car</option><option value="van">Commercial van</option><option value="truck">Rigid truck</option><option value="semi">Semi / tractor trailer</option></select></label>
-  <label>Height (m)<input data-profile="heightM" type="number" min="0.1" step="0.1" value="4.1"></label>
-  <label>Width (m)<input data-profile="widthM" type="number" min="0.1" step="0.1" value="2.6"></label>
-  <label>Length (m)<input data-profile="lengthM" type="number" min="0.1" step="0.1" value="22"></label>
-  <label>Gross weight (kg)<input data-profile="grossWeightKg" type="number" min="1" value="36287"></label>
-  <label>Axle weight (kg)<input data-profile="axleWeightKg" type="number" min="1" value="9000"></label>
-  <label>Axle count<input data-profile="axleCount" type="number" min="2" max="20" step="1" value="5"></label>
+  <label>Vehicle<select data-profile="type"><option value="car">Passenger car</option></select></label>
   <label>Assumed fuel economy (US MPG)<input data-profile="mpg" type="number" min="0.1" step="0.1" value="25"></label>
   <label>Your fuel price (USD/US gal)<input data-profile="fuelPrice" type="number" min="0" step="0.001" placeholder="Optional"><small data-fuel-provenance>Manual price; no station quote supplied.</small></label>
-  </div><label><input data-profile="hazmat" type="checkbox"> Hazardous materials</label><label><input data-profile="oversize" type="checkbox"> Oversize / permit load</label><label><input data-profile="avoidTolls" type="checkbox"> Prefer fewer tolls (Valhalla; may still use tolls)</label>
+  </div><label><input data-profile="avoidTolls" type="checkbox"> Prefer fewer tolls (Valhalla; may still use tolls)</label>
   <label><input data-profile="excludeTolls" type="checkbox"> Require no toll segments (hard-exclusion server required)</label>
-  <p>Valhalla truck costing uses mapped dimensions, weight and hazmat restrictions; incomplete map data and oversize permits remain unverified. Hard exclusion routes with any reported toll segment, including at endpoints, are rejected. Neither provider supplies toll prices.</p>
-  <label><input data-preview type="checkbox"> Without Valhalla, allow passenger-road preview for this commercial vehicle (not truck clearance)</label></details>
+  <p>Route preferences depend on the selected routing provider.</p></details>
   <label><input data-optimize type="checkbox"> Optimize driving stop order</label><small>Optional for three or more locations. Start and destination stay fixed. Uses road distance, not traffic.</small>
   <div class="lrp-actions" data-plan-actions><button type="button" data-do="plan" class="lrp-primary">Get directions</button><button type="button" data-do="optimize">Optimize stops</button><button type="button" data-do="cancel">Clear route</button><button type="button" data-do="clear">Clear addresses</button></div>
   <p role="status" aria-live="polite" data-status>Ready. Start with two locations.</p><div data-result></div><small>Addresses are sent to OpenStreetMap Nominatim. Route coordinates are sent to your configured Valhalla server, or public OSRM when no server is configured. Availability is not guaranteed. © OpenStreetMap contributors.</small>`;
@@ -615,7 +608,7 @@ export function mountRoutePlanner({
         options = {
           signal: active.signal,
           profile: vehicle,
-          preview: root.querySelector('[data-preview]').checked,
+          preview: false,
           valhallaUrl: normalizeValhallaUrl(endpointInput.value),
           hardExclusionsEnabled: root.querySelector('[data-hard-exclusions]')
             .checked,
