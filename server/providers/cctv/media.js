@@ -114,6 +114,7 @@ export async function proxyMediaResponse(
   {
     sourceHeader = 'upstream',
     idleTimeoutMs = CCTV_MEDIA_IDLE_TIMEOUT_MS,
+    waitForCompletion = false,
   } = {},
 ) {
   const contentType =
@@ -222,12 +223,29 @@ export async function proxyMediaResponse(
     clearIdleDeadline();
     released = true;
   });
+  // Serverless handlers must remain pending until the downstream response has
+  // finished. Returning just after pipe() lets the router emit its 404 fallback
+  // into a valid, partially transmitted video response.
+  const completed = waitForCompletion
+    ? new Promise((resolve) => {
+        const done = () => {
+          res.removeListener('finish', done);
+          res.removeListener('close', done);
+          res.removeListener('error', done);
+          resolve();
+        };
+        res.once('finish', done);
+        res.once('close', done);
+        res.once('error', done);
+      })
+    : null;
   armIdleDeadline();
   stream.pipe(res);
   // Attached after the pipe because a data listener resumes the stream, and
   // flowing before the destination is attached would spill chunks nobody
   // forwards. Only bytes from upstream renew the deadline.
   stream.on('data', armIdleDeadline);
+  if (completed) await completed;
 }
 
 /**

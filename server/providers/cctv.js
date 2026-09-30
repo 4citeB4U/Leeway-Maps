@@ -496,6 +496,7 @@ export function cctvProxy({
             }
 
             await proxyMediaResponse(res, upstream, {
+              waitForCompletion: statelessMedia,
               sourceHeader: isVideoFeedType(feedType)
                 ? 'live-media'
                 : 'upstream-image',

@@ -616,6 +616,32 @@ function pipeTarget({ drains = true } = {}) {
   return res;
 }
 
+test('serverless video handler remains pending until the complete downstream body is sent', async () => {
+  let upstreamController;
+  const body = new ReadableStream({ start(controller) { upstreamController = controller; } });
+  const response = pipeTarget();
+  const upstream = new Response(body, { headers: { 'Content-Type': 'video/mp4' } });
+  let returned = false;
+  const pending = proxyMediaResponse(response, upstream, { waitForCompletion: true }).then(() => { returned = true; });
+  upstreamController.enqueue(new Uint8Array([1, 2, 3]));
+  await new Promise(resolve => setTimeout(resolve, 10));
+  assert.equal(returned, false, 'must not trigger the router fallback between video chunks');
+  upstreamController.enqueue(new Uint8Array([4, 5, 6]));
+  upstreamController.close();
+  await pending;
+  assert.equal(response.writableFinished, true);
+  assert.equal(returned, true);
+});
+
+test('serverless video completion releases a cancelled downstream and its upstream body', async () => {
+  const feed = mediaUpstream({ everyMs: 10 });
+  const response = pipeTarget();
+  const pending = proxyMediaResponse(response, feed.upstream, { waitForCompletion: true });
+  response.destroy();
+  await pending;
+  assert.equal(feed.released, true);
+});
+
 /**
  * An upstream that answers with headers, sends one chunk, and then either
  * keeps producing every `everyMs` or goes silent. `released` reports the body's
