@@ -624,6 +624,112 @@ export function mountMapsShell(
       routing.open();
     },
   });
+
+  async function enableTransitSuite() {
+    const requested = [
+      'transit',
+      'transit-routes',
+      'transit-stops',
+      'transit-vehicles',
+    ];
+    const results = [];
+    for (const id of requested) {
+      if (!dataManager?.layers?.has(id)) continue;
+      try {
+        if (!dataManager.isEnabled?.(id))
+          await dataManager.setEnabled(id, true, { origin: 'user' });
+        results.push(id);
+      } catch {}
+    }
+    say(
+      results.length
+        ? `Public transit layers enabled · ${results.join(', ')}`
+        : 'Transit layers are unavailable in this build',
+    );
+    return results.length > 0;
+  }
+
+  function openFuelTools() {
+    routing.open();
+    for (const details of document.querySelectorAll(
+      '.lw-fuel-advisor details, .lw-fuel-ledger > details',
+    )) {
+      details.open = true;
+    }
+    say('Fuel, range and cost tools opened');
+  }
+
+  const featureCenter = mountFeatureCenter({
+    catalog: featureCatalogForEdition('personal'),
+    edition: 'personal',
+    onAction: async (actionName, featureDomain) => {
+      featureCenter.close();
+      if (actionName === 'routing') {
+        routing.open();
+        say(`${featureDomain.label} · route tools opened`);
+        return true;
+      }
+      if (actionName === 'layers') {
+        toggleLayerMenu(true);
+        return true;
+      }
+      if (actionName === 'offline') {
+        routing.open();
+        const offlineDetails = [...routing.root.querySelectorAll('details')].find(
+          (details) => /offline/i.test(details.textContent || ''),
+        );
+        if (offlineDetails) offlineDetails.open = true;
+        say('Offline trip controls opened');
+        return true;
+      }
+      if (actionName === 'roadside') {
+        roadside.toggle();
+        return true;
+      }
+      if (actionName === 'fuel') {
+        openFuelTools();
+        return true;
+      }
+      if (actionName === 'community') {
+        hazardReports.root.hidden = false;
+        say('Community hazard and safety reporting opened');
+        return true;
+      }
+      if (actionName === 'transit') {
+        return enableTransitSuite();
+      }
+      if (actionName === 'cctv') {
+        setRightPanel('cctv', { toggle: false });
+        const opened = await openNearestCctv(dataManager, {
+          origin: 'user',
+          durationSec: 1.4,
+        });
+        say(
+          opened.ok
+            ? `CCTV · ${opened.camera?.name || opened.cameraId}`
+            : `CCTV catalog opened · ${opened.reason}`,
+        );
+        return opened.ok;
+      }
+      if (actionName === 'preferences') {
+        preferences.open();
+        return true;
+      }
+      if (actionName === 'cockpit') {
+        setRightPanel('ops', { toggle: false });
+        return true;
+      }
+      if (actionName === 'workspace') {
+        say(
+          'Business workspace is intentionally excluded from LeeWay Maps Personal',
+        );
+        return false;
+      }
+      toggleLayerMenu(true);
+      return true;
+    },
+  });
+
   function toggleRoutePlanner(open = null) {
     if (open === false) routing.close();
     else if (open === true) routing.open();
