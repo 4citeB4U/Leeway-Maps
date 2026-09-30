@@ -23,7 +23,14 @@ import {
   loadCalgarySourcesFromOpenData,
   loadDelDOTSourcesFromOpenData,
 } from './sources.js';
-import { loadGeorgia511Sources, loadNewYork511Sources } from './iteris511.js';
+import {
+  loadAlaska511Sources,
+  loadArizona511Sources,
+  loadGeorgia511Sources,
+  loadIdaho511Sources,
+  loadLouisiana511Sources,
+  loadNewYork511Sources,
+} from './iteris511.js';
 
 /** Env kill switch: unset or anything but "0" means enabled. */
 const envEnabled = (name) => String(process.env[name] || '1').trim() !== '0';
@@ -34,6 +41,10 @@ const CAMERA_PACK_IDS = [
   [/^tfl-/, 'tfl'],
   [/^il-gateway-/, 'illinois-gateway'],
   [/^wi511-/, 'wisconsin-511'],
+  [/^ak511-/, 'alaska-511'],
+  [/^az511-/, 'arizona-511'],
+  [/^id511-/, 'idaho-511'],
+  [/^la511-/, 'louisiana-511'],
   [/^ny511-/, 'new-york-511'],
   [/^ga511-/, 'georgia-511'],
   [/^nyc-dot-/, 'nyc-dot'],
@@ -78,6 +89,26 @@ const LIVE_PACKS = [
     name: 'wisconsin-511',
     enabled: () => envEnabled('CCTV_WISCONSIN_511_ENABLED'),
     load: loadWisconsin511SourcesFromOpenData,
+  },
+  {
+    name: 'alaska-511',
+    enabled: () => envEnabled('CCTV_ALASKA_511_ENABLED'),
+    load: loadAlaska511Sources,
+  },
+  {
+    name: 'arizona-511',
+    enabled: () => envEnabled('CCTV_ARIZONA_511_ENABLED'),
+    load: loadArizona511Sources,
+  },
+  {
+    name: 'idaho-511',
+    enabled: () => envEnabled('CCTV_IDAHO_511_ENABLED'),
+    load: loadIdaho511Sources,
+  },
+  {
+    name: 'louisiana-511',
+    enabled: () => envEnabled('CCTV_LOUISIANA_511_ENABLED'),
+    load: loadLouisiana511Sources,
   },
   {
     name: 'new-york-511',
