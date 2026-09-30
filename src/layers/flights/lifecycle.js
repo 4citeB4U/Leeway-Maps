@@ -1,3 +1,4 @@
+import { aircraftModelGate } from '../../data/aircraftModelAvailability.js';
 import * as Cesium from 'cesium';
 import { PLANE_MODEL_URL } from './policy.js';
 
@@ -56,12 +57,18 @@ export function createLifecycle({
       // Warm the glTF cache so the tracked plane's model instantiates instantly when first needed
       // (keeps the retained instance referenced; never rendered). Captured against this epoch so a
       // destroy/re-init mid-load doesn't flip the flag for a torn-down lifecycle.
-      if (!flightState._preloadModel) {
+      if (
+        !flightState._preloadModel &&
+        aircraftModelGate.canAttempt(PLANE_MODEL_URL)
+      ) {
         const epoch = flightState._modelEpoch;
-        Cesium.Model.fromGltfAsync({
-          url: resolveAsset(PLANE_MODEL_URL),
-          asynchronous: false,
-        })
+        aircraftModelGate
+          .load(PLANE_MODEL_URL, () =>
+            Cesium.Model.fromGltfAsync({
+              url: resolveAsset(PLANE_MODEL_URL),
+              asynchronous: false,
+            }),
+          )
           .then((m) => {
             if (epoch === flightState._modelEpoch) {
               flightState._preloadModel = m;

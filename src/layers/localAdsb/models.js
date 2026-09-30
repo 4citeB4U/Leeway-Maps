@@ -1,4 +1,5 @@
 import * as Cesium from 'cesium';
+import { aircraftModelGate } from '../../data/aircraftModelAvailability.js';
 import { horizonOccluder } from '../../data/iconOrientation.js';
 import { selectModelEligible } from '../../data/modelEligibility.js';
 import { civilAircraftModelSpec } from '../flights/modelSpec.js';
@@ -75,6 +76,7 @@ export function createLocalAdsbModels({
 
   async function ensure(id, marker, cap) {
     const spec = civilAircraftModelSpec(marker.klass);
+    if (!aircraftModelGate.canAttempt(spec.url)) return;
     const key = specKey(spec);
     const current = models.get(id);
     if (current && current._gevSpecKey === key) return;
@@ -84,16 +86,18 @@ export function createLocalAdsbModels({
     pending.set(id, loadGeneration);
     let model;
     try {
-      model = await loadModel({
-        url: resolveAsset(spec.url),
-        asynchronous: false,
-        minimumPixelSize: MODEL_MIN_PX,
-        scale: spec.scale,
-        color,
-        colorBlendMode: Cesium.ColorBlendMode.MIX,
-        colorBlendAmount: spec.blendAmount,
-        id,
-      });
+      model = await aircraftModelGate.load(spec.url, () =>
+        loadModel({
+          url: resolveAsset(spec.url),
+          asynchronous: false,
+          minimumPixelSize: MODEL_MIN_PX,
+          scale: spec.scale,
+          color,
+          colorBlendMode: Cesium.ColorBlendMode.MIX,
+          colorBlendAmount: spec.blendAmount,
+          id,
+        }),
+      );
     } catch {
       if (pending.get(id) === loadGeneration) pending.delete(id);
       return;

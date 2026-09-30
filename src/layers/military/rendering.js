@@ -1,3 +1,4 @@
+import { aircraftModelGate } from '../../data/aircraftModelAvailability.js';
 import {
   CLASS_MODEL_REAL,
   CLASS_SCALE_3D,
@@ -430,6 +431,12 @@ export function createRendering({
   /** Lazily create the glTF model for an aircraft (fire-and-forget; billboard shows until ready). */
 
   async function _ensureModel(icao24) {
+    if (
+      !aircraftModelGate.canAttempt(
+        _modelSpec(flightState.records.data.get(icao24)?.klass).url,
+      )
+    )
+      return;
     // Never model the TRACKED aircraft — it owns a separate entity billboard, and the fleet
     // tick skips it, so a model here would be orphaned + double-rendered.
     if (icao24 === flightState._trackedIcao) return;
@@ -456,20 +463,26 @@ export function createRendering({
     const loadIrBoost = flightState._irBoost;
     try {
       const spec = _modelSpec(flightState.records.data.get(icao24)?.klass);
-      model = await Cesium.Model.fromGltfAsync({
-        url: resolveAsset(spec.url),
-        asynchronous: false,
-        minimumPixelSize: MODEL_MIN_PX,
-        scale: spec.scale,
-        color: flightState._irBoost ? Cesium.Color.WHITE : _modelColor(icao24),
-        colorBlendMode: Cesium.ColorBlendMode.MIX,
-        // near self-illuminated tint so planes read uniform near AND far; IR boost → flat UNLIT white (hot)
-        colorBlendAmount: flightState._irBoost ? 1.0 : MODEL_COLOR_BLEND_AMOUNT,
-        customShader: flightState._irBoost
-          ? flightState._IR_UNLIT_SHADER
-          : undefined,
-        id: icao24, // so scene.pick returns the icao for click-to-track
-      });
+      model = await aircraftModelGate.load(spec.url, () =>
+        Cesium.Model.fromGltfAsync({
+          url: resolveAsset(spec.url),
+          asynchronous: false,
+          minimumPixelSize: MODEL_MIN_PX,
+          scale: spec.scale,
+          color: flightState._irBoost
+            ? Cesium.Color.WHITE
+            : _modelColor(icao24),
+          colorBlendMode: Cesium.ColorBlendMode.MIX,
+          // near self-illuminated tint so planes read uniform near AND far; IR boost → flat UNLIT white (hot)
+          colorBlendAmount: flightState._irBoost
+            ? 1.0
+            : MODEL_COLOR_BLEND_AMOUNT,
+          customShader: flightState._irBoost
+            ? flightState._IR_UNLIT_SHADER
+            : undefined,
+          id: icao24, // so scene.pick returns the icao for click-to-track
+        }),
+      );
     } catch {
       // asset/decode fail — stay billboard. Only touch this lifecycle's state if still current
       // (a destroy/re-init may have swapped the globals while this load was in flight).
@@ -648,7 +661,12 @@ export function createRendering({
     if (
       !flightState._trackedModel &&
       !flightState._trackedModelLoading &&
-      parts.tracking._trackedModelLoadAllowed()
+      parts.tracking._trackedModelLoadAllowed() &&
+      aircraftModelGate.canAttempt(
+        _modelSpec(
+          flightState.records.data.get(flightState._trackedIcao)?.klass,
+        ).url,
+      )
     ) {
       flightState._trackedModelLoading = true;
       const gen = flightState._trackedModelGen;
@@ -659,23 +677,30 @@ export function createRendering({
         flightState.records.data.get(flightState._trackedIcao)?.klass,
       );
       const trackedIrBoost = flightState._irBoost;
-      Cesium.Model.fromGltfAsync({
-        url: resolveAsset(trackedSpec.url),
-        asynchronous: false,
-        minimumPixelSize: TRACKED_MODEL_MIN_PX,
-        scale: trackedSpec.scale,
-        color: flightState._irBoost ? Cesium.Color.WHITE : TRACKED_ICON_COLOR,
-        colorBlendMode: Cesium.ColorBlendMode.MIX,
-        // near self-illuminated tint so planes read uniform near AND far; IR boost → flat UNLIT white (hot)
-        colorBlendAmount: flightState._irBoost ? 1.0 : MODEL_COLOR_BLEND_AMOUNT,
-        customShader: flightState._irBoost
-          ? flightState._IR_UNLIT_SHADER
-          : undefined,
-        // Pick id (H1): without it, clicking the very plane being tracked read as
-        // EMPTY SPACE (scene.pick → primitive with no id) → an unintended
-        // deselect. With the icao, the click handler recognizes it as ours.
-        id: flightState._trackedIcao,
-      })
+      aircraftModelGate
+        .load(trackedSpec.url, () =>
+          Cesium.Model.fromGltfAsync({
+            url: resolveAsset(trackedSpec.url),
+            asynchronous: false,
+            minimumPixelSize: TRACKED_MODEL_MIN_PX,
+            scale: trackedSpec.scale,
+            color: flightState._irBoost
+              ? Cesium.Color.WHITE
+              : TRACKED_ICON_COLOR,
+            colorBlendMode: Cesium.ColorBlendMode.MIX,
+            // near self-illuminated tint so planes read uniform near AND far; IR boost → flat UNLIT white (hot)
+            colorBlendAmount: flightState._irBoost
+              ? 1.0
+              : MODEL_COLOR_BLEND_AMOUNT,
+            customShader: flightState._irBoost
+              ? flightState._IR_UNLIT_SHADER
+              : undefined,
+            // Pick id (H1): without it, clicking the very plane being tracked read as
+            // EMPTY SPACE (scene.pick → primitive with no id) → an unintended
+            // deselect. With the icao, the click handler recognizes it as ours.
+            id: flightState._trackedIcao,
+          }),
+        )
         .then((m) => {
           if (
             gen !== flightState._trackedModelGen ||

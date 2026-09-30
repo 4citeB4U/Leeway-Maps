@@ -96,6 +96,13 @@ export function parseCoordinate(text) {
   return validPoint(point) ? { ...point, label: text } : null;
 }
 export function routeCapability(profile, preview = false, settings = {}) {
+  const mode = settings.travelMode || 'car';
+  if (!['car', 'foot', 'bike'].includes(mode))
+    throw new Error('Choose driving, walking, or cycling.');
+  if (mode === 'foot')
+    return 'Walking route · check current access and conditions';
+  if (mode === 'bike')
+    return 'Cycling route · check current access and conditions';
   if (normalizeValhallaUrl(settings.valhallaUrl)) {
     valhallaCosting(profile, settings);
     return 'Configured Valhalla routing · restriction completeness and permits unverified';
@@ -149,6 +156,23 @@ export function moveStop(stops, from, to) {
     return next;
   next.splice(to, 0, next.splice(from, 1)[0]);
   return next;
+}
+/** Local autocomplete never sends keystrokes to the public address provider. */
+export function addressSuggestions(query, records = []) {
+  const needle = String(query || '')
+    .trim()
+    .toLocaleLowerCase();
+  if (needle.length < 2) return [];
+  const seen = new Set();
+  return records
+    .filter((record) => {
+      const label = String(record.address || record.label || '').trim();
+      const key = label.toLocaleLowerCase();
+      if (!key.includes(needle) || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 5);
 }
 // Held–Karp on directed road distances: fixed start/end; no straight-line heuristic.
 export function optimizeStopOrder(matrix) {
@@ -215,8 +239,7 @@ export function optimizeStopOrder(matrix) {
 
 export function createRouteClient({
   fetchImpl = (...args) => fetch(...args),
-  routingBase = import.meta.env?.VITE_LEEWAY_ROUTE_BASE ||
-    'https://router.project-osrm.org',
+  routingBase = import.meta.env?.VITE_LEEWAY_ROUTE_BASE || '',
   geocodingUrl = import.meta.env?.VITE_LEEWAY_GEOCODING_URL ||
     'https://nominatim.openstreetmap.org/search',
   reverseGeocodingUrl = import.meta.env?.VITE_LEEWAY_REVERSE_GEOCODING_URL ||
@@ -248,6 +271,7 @@ export function createRouteClient({
   }
   return {
     async search(query, { signal } = {}) {
+      signal?.throwIfAborted();
       const key = addressText(query);
       if (cache.has(key)) return cache.get(key);
       const now = Date.now(),
@@ -301,10 +325,15 @@ export function createRouteClient({
         preview = false,
         valhallaUrl: endpoint = valhallaUrl,
         hardExclusionsEnabled = false,
+        travelMode = 'car',
       } = {},
     ) {
-      const settings = { valhallaUrl: endpoint, hardExclusionsEnabled };
-      if (normalizeValhallaUrl(endpoint)) {
+      const settings = {
+        valhallaUrl: endpoint,
+        hardExclusionsEnabled,
+        travelMode,
+      };
+      if (travelMode === 'car' && normalizeValhallaUrl(endpoint)) {
         routeCapability(profile, preview, settings);
         const body = await requestValhalla(
           endpoint,
@@ -314,11 +343,35 @@ export function createRouteClient({
         );
         return normalizeValhallaRoute(body, profile);
       }
-      const authority = routeCapability(profile, preview);
+      const authority = routeCapability(profile, preview, { travelMode });
+      const coords = coordinates(stops);
+      const useProxy = !routingBase || travelMode !== 'car';
       const body = await json(
-        `${routingBase}/route/v1/driving/${coordinates(stops)}?overview=full&geometries=geojson&steps=true`,
+        useProxy
+          ? `/api/route?${new URLSearchParams({ profile: travelMode, coords, steps: '1' })}`
+          : `${routingBase}/route/v1/driving/${coords}?overview=full&geometries=geojson&steps=true`,
         signal,
       );
+      if (useProxy) {
+        if (
+          body?.ok !== true ||
+          !Array.isArray(body.geometry) ||
+          body.geometry.length < 2 ||
+          !body.geometry.every((p) => validPoint({ lon: p[0], lat: p[1] })) ||
+          !Number.isFinite(body.distanceM) ||
+          body.distanceM < 0 ||
+          !Number.isFinite(body.durationS) ||
+          body.durationS < 0
+        )
+          throw new Error(body?.error || 'No usable road route returned.');
+        return {
+          ...body,
+          authority,
+          source: 'OSRM / OpenStreetMap',
+          travelMode,
+          retrievedAt: new Date().toISOString(),
+        };
+      }
       const route = body?.routes?.[0];
       if (
         body.code !== 'Ok' ||
@@ -349,8 +402,13 @@ export function createRouteClient({
         preview = false,
         valhallaUrl: endpoint = valhallaUrl,
         hardExclusionsEnabled = false,
+        travelMode = 'car',
       } = {},
     ) {
+      if (travelMode !== 'car')
+        throw new Error(
+          'Stop optimization is available for driving. Walking and cycling keep your stop order.',
+        );
       const settings = { valhallaUrl: endpoint, hardExclusionsEnabled };
       if (normalizeValhallaUrl(endpoint)) {
         routeCapability(profile, preview, settings);
@@ -364,7 +422,7 @@ export function createRouteClient({
       }
       routeCapability(profile, preview);
       const body = await json(
-        `${routingBase}/table/v1/driving/${coordinates(stops)}?annotations=distance`,
+        `${routingBase || 'https://router.project-osrm.org'}/table/v1/driving/${coordinates(stops)}?annotations=distance`,
         signal,
       );
       if (body.code !== 'Ok' || !Array.isArray(body.distances))

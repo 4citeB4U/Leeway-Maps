@@ -11,6 +11,7 @@ test('explicit build inputs preserve browser-only defines, plugin order and loop
     plugins: [plugin],
     googleApiKey: 'browser-fixture',
     cesiumToken: 'ion-fixture',
+    publicDir: false,
   });
   assert.equal(config.plugins[2], plugin);
   assert.equal(config.server.host, 'localhost');
@@ -28,6 +29,7 @@ test('explicit build inputs preserve browser-only defines, plugin order and loop
     "frame-ancestors 'self'",
   );
   assert.deepEqual(config.define, {
+    'import.meta.env.LEEWAY_AIRCRAFT_MODEL_ASSETS': '[]',
     'import.meta.env.GOOGLE_MAPS_API_KEY': '"browser-fixture"',
     'import.meta.env.CESIUM_ION_TOKEN': '"ion-fixture"',
   });

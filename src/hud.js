@@ -696,6 +696,15 @@ export class IntelHUD {
    */
   async _updateSummary(animate = false, force = false) {
     const fallbackText = this._composeSummary();
+    // Reserve the entire context+request operation, not only the network call.
+    // Camera/terrain callbacks can otherwise enqueue many contexts simultaneously.
+    if (this._summaryBusy) return;
+    if (this._summaryUnavailable || Date.now() < (this._summaryRetryAt || 0)) {
+      this._setSummaryText(fallbackText, false);
+      return;
+    }
+    this._summaryBusy = true;
+    try {
     if (!this._latestMetrics) {
       this._setSummaryText(fallbackText, animate);
       return;
@@ -714,6 +723,7 @@ export class IntelHUD {
     try {
       context = await this._summaryContext();
     } catch (error) {
+      this._summaryRetryAt = Date.now() + 30000;
       console.warn('[HUD] summary context unavailable:', error);
       // Left dirty on purpose: the next periodic tick retries instead of
       // sticking on the fallback line for the rest of the session.
@@ -741,7 +751,8 @@ export class IntelHUD {
       });
       const data = response.data;
       if (revision !== this._summaryRevision) return;
-      if (isHudSummaryUnconfigured(response.status, data)) {
+      if (isHudSummaryUnconfigured(response.status, data) || [401, 403, 404, 405, 501].includes(response.status)) {
+        this._summaryUnavailable = true;
         this._setSummaryText(fallbackText, animate);
         return;
       }
@@ -756,17 +767,20 @@ export class IntelHUD {
       );
     } catch (error) {
       if (error?.name !== 'AbortError') {
-        console.warn('[HUD] AI summary unavailable:', error);
+        this._summaryRetryAt = Date.now() + 60000;
+        console.warn('[HUD] AI summary unavailable; retry delayed:', error);
         // Invalidate the committed signature so the next periodic tick
         // retries instead of sticking on the fallback line forever.
         this._lastSummarySignature = null;
         this._summaryDirty = true;
       }
+      this._summaryRetryAt = Date.now() + 60000;
       this._setSummaryText(fallbackText, animate);
     } finally {
       window.clearTimeout(timeout);
       if (this._summaryRequest === controller) this._summaryRequest = null;
     }
+    } finally { this._summaryBusy = false; }
   }
 
   _setSummaryText(text, animate) {

@@ -160,6 +160,29 @@
   justify-content: space-between;
   gap: 8px;
 }
+.lrp-travel-modes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 8px 0 14px;
+}
+.lw-route-planner .lrp-travel-modes button[aria-pressed='true'] {
+  background: #0a6388;
+  border: 2px solid #73ddff;
+  font-weight: 700;
+}
+.lw-route-planner [data-plan-actions] {
+  padding: 8px 0;
+}
+.lw-route-planner [data-plan-actions] .lrp-primary {
+  flex: 1 1 100%;
+}
+.lw-route-planner [data-result]:not(:empty) {
+  border-top: 1px solid #476675;
+  border-bottom: 1px solid #476675;
+  padding: 8px 0;
+  margin-bottom: 12px;
+}
 .leeway-map-only .lw-route-planner {
   display: none;
 }

@@ -41,7 +41,8 @@ export function createAlertOverlay({
     panel.append(button);
     if (snapshot?.stale || error) {
       const warning = documentRef.createElement('p');
-      warning.textContent = 'Source is stale or unavailable. These details may have changed.';
+      warning.textContent =
+        'Source is stale or unavailable. These details may have changed.';
       panel.append(warning);
     }
     for (const [label, target, visible] of [
@@ -196,7 +197,11 @@ export function createAlertOverlay({
         error = null;
         viewer.scene.requestRender?.();
       } catch (cause) {
-        if (!controller.signal.aborted && epoch === generation)
+        if (
+          !controller.signal.aborted &&
+          !signal?.aborted &&
+          epoch === generation
+        )
           error = cause.message || 'Feed unavailable';
       } finally {
         if (request === controller) {

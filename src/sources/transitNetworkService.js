@@ -91,7 +91,7 @@ export function createTransitNetworkService({
       return reply(503, {
         status: 'credentials-required',
         error:
-          'Transit routes and schedules need a server TRANSITLAND_API_KEY.',
+          'Live transit vehicles and schedules need a server TRANSITLAND_API_KEY. Mapped routes and stops remain available without it.',
         source: 'Transitland',
         coverage:
           'Agency coverage and real-time availability vary; no simulated vehicles are substituted.',
@@ -101,6 +101,10 @@ export function createTransitNetworkService({
     if (previous && previous.until > Date.now())
       return reply(200, previous.body);
     if (!pending.has(key)) {
+      if (pending.size >= 4)
+        return reply(429, {
+          error: 'Transit provider is busy; retry shortly.',
+        });
       if (!admit(key))
         return reply(429, {
           error: 'Transit request limit reached; retry in one minute.',
@@ -293,11 +297,12 @@ export function createTransitNetworkService({
         })(),
       );
     }
+    const operation = pending.get(key);
     try {
-      const result = await pending.get(key);
+      const result = await operation;
       return reply(result.status, result.body);
     } finally {
-      pending.delete(key);
+      if (pending.get(key) === operation) pending.delete(key);
     }
   }
   return {

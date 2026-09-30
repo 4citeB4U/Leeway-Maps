@@ -1,3 +1,6 @@
+import { layerStatusText, escapeLayerText } from './layerStatusText.js';
+import { mountGodsEyeControls } from './godsEyeControls.js';
+import { mountMapReports } from './mapReports.js';
 import * as Cesium from 'cesium';
 import { mountRoutePlanner } from './routePlanner.js';
 import { createRouteClient } from './routePlannerCore.js';
@@ -162,10 +165,7 @@ function icon(name) {
   );
 }
 
-export function mountMapsShell(
-  application,
-  { edition = 'personal' } = {},
-) {
+export function mountMapsShell(application, { edition = 'personal' } = {}) {
   if (document.getElementById('leeway-world-shell')) return null;
   const isBusiness = false;
   ensureStyles(document);
@@ -442,6 +442,12 @@ export function mountMapsShell(
   let cctvRecoveryCount = 0;
   const recoverFailedCctv = (event) => {
     if (activeRightPanel !== 'cctv' || cctvRecoveryTimer) return;
+    if (
+      !document
+        .getElementById('cctv-auto-hop-btn')
+        ?.classList.contains('active')
+    )
+      return;
     if (cctvRecoveryCount >= 6) {
       say(
         'Several public camera feeds failed. Choose another jurisdiction or camera; no live image is being claimed.',
@@ -457,7 +463,12 @@ export function mountMapsShell(
         frame?.dataset.error !== 'true'
       )
         return;
-      document.getElementById('cctv-next-btn')?.click();
+      if (
+        document
+          .getElementById('cctv-auto-hop-btn')
+          ?.classList.contains('active')
+      )
+        document.getElementById('cctv-next-btn')?.click();
     }, 1200);
   };
   const confirmWorkingCctv = () => {
@@ -491,7 +502,7 @@ export function mountMapsShell(
           .map((row) => {
             const enabled = Boolean(row.enabled);
             return `<button class="lws-layer-row ${enabled ? 'on' : ''}" data-shell-layer="${row.id}">
-              <span>${row.name || row.id}<small class="lws-layer-id">${row.id}</small></span>
+              <span>${escapeLayerText(row.name || row.id)}<small class="lws-layer-id">${escapeLayerText(layerStatusText(row))}</small></span>
               <span class="lws-layer-state">${enabled ? 'ON' : 'OFF'}</span>
             </button>${enabled && ['weather-alerts', 'traffic-incidents'].includes(row.id) ? `<button class="lws-layer-row" data-alert-list="${row.id}">Read ${row.id === 'weather-alerts' ? 'weather alerts' : 'traffic incidents'}</button>` : ''}`;
           })
@@ -774,6 +785,7 @@ export function mountMapsShell(
   }
 
   function recenterDistantGlobe() {
+    if (document.body.classList.contains('leeway-gods-eye') || document.body.classList.contains('cockpit-mode')) return;
     if (!viewer?.camera || recenteringDistantGlobe) return;
     const activeStack = mapStackController?.getActiveId?.();
     if (activeStack === 'photoreal') return;
@@ -831,7 +843,14 @@ export function mountMapsShell(
 
   const locationSearch = createRouteClient();
 
-  const workspace = { open() {}, close() {}, openPeople() {}, openEquipment() {}, openCrm() {}, destroy() {} };
+  const workspace = {
+    open() {},
+    close() {},
+    openPeople() {},
+    openEquipment() {},
+    openCrm() {},
+    destroy() {},
+  };
   const nationalCatalog = mountNationalCameraCatalog({
     host: shell,
     notify: say,
@@ -918,7 +937,9 @@ export function mountMapsShell(
 
     const alertButton = event.target.closest('[data-alert-list]');
     if (alertButton) {
-      dataManager.layers.get(alertButton.dataset.alertList)?.module?.setParams?.({ list: true });
+      dataManager.layers
+        .get(alertButton.dataset.alertList)
+        ?.module?.setParams?.({ list: true });
       toggleLayerMenu(false);
       return;
     }
@@ -1146,7 +1167,6 @@ export function mountMapsShell(
       return;
     }
     if (dock === 'locate') {
-      routing.open();
       await routing.useMyLocation();
     }
   });
@@ -1171,15 +1191,24 @@ export function mountMapsShell(
     }
   });
 
+  const mapReports = mountMapReports({
+    shell, viewer, dataManager, getPoint: viewCenterPoint,
+    onWeather: () => setRightPanel('weather', { toggle: false }),
+    onTraffic: async () => {
+      try {
+        await dataManager.setEnabled('traffic-incidents', true, { origin: 'reports' });
+        dataManager.layers.get('traffic-incidents')?.module?.setParams({ list: true });
+      } catch { say('Traffic reports unavailable for this area'); }
+    },
+  });
+
   async function selectCctv(query) {
-    const requested = String(query || '').trim().toLowerCase();
-    if (!requested)
-      return { ok: false, reason: 'camera-query-required' };
+    const requested = String(query || '')
+      .trim()
+      .toLowerCase();
+    if (!requested) return { ok: false, reason: 'camera-query-required' };
     nationalCatalog.close();
-    if (
-      dataManager?.layers?.has('cctv') &&
-      !dataManager.isEnabled?.('cctv')
-    ) {
+    if (dataManager?.layers?.has('cctv') && !dataManager.isEnabled?.('cctv')) {
       await dataManager.setEnabled('cctv', true, { origin: 'copilot' });
     }
     setRightPanel('cctv', { toggle: false });
@@ -1221,6 +1250,15 @@ export function mountMapsShell(
     };
   }
 
+  const godsEyeControls = mountGodsEyeControls({
+    application, shell,
+    onPresentation(original) {
+      if (!cctvPanel) return;
+      const host = original ? cctvOriginalParent : contextInspector;
+      if (host && cctvPanel.parentNode !== host) host.appendChild(cctvPanel);
+    },
+  });
+
   return {
     root: shell,
     workspace,
@@ -1248,6 +1286,7 @@ export function mountMapsShell(
     closeAgent: () => toggleAgent(false),
     notify: say,
     destroy() {
+      godsEyeControls.destroy();
       cctvObserver?.disconnect();
       weatherObserver?.disconnect();
       document.removeEventListener('leeway:right-panel-close', closeRightPanel);
@@ -1290,6 +1329,7 @@ export function mountMapsShell(
       loadComparison.destroy();
       hazardReports.destroy();
       peerComms.destroy();
+      mapReports.destroy();
       routing.destroy();
       roadside.destroy();
       nationalCatalog.destroy();
@@ -1298,4 +1338,3 @@ export function mountMapsShell(
     },
   };
 }
-

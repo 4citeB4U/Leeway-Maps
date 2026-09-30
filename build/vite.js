@@ -1,3 +1,4 @@
+import { aircraftModelInventory } from './aircraft-model-inventory.js';
 import { applicationHtmlPlugin } from './application-html.js';
 import cesium from 'vite-plugin-cesium';
 
@@ -64,6 +65,9 @@ export function createBrowserViteConfig({
       },
     },
     define: {
+      'import.meta.env.LEEWAY_AIRCRAFT_MODEL_ASSETS': JSON.stringify(
+        aircraftModelInventory(publicDir),
+      ),
       'import.meta.env.GOOGLE_MAPS_API_KEY': JSON.stringify(googleApiKey),
       'import.meta.env.CESIUM_ION_TOKEN': JSON.stringify(cesiumToken),
     },

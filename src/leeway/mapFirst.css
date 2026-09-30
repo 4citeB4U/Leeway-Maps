@@ -1,4 +1,23 @@
 /* Map controls stay usable without opening the enterprise workspace. */
+
+body.leeway-enterprise-shell #leeway-world-shell .lws-report-banner {
+  position:absolute;top:72px;left:0;right:0;display:flex;gap:12px;
+  min-height:36px;padding:5px 14px;background:#092332;color:#eaffff;
+  pointer-events:auto;border-bottom:1px solid #3d6579;overflow:auto;
+}
+body.leeway-enterprise-shell #leeway-world-shell .lws-report-banner button {
+  color:inherit;background:transparent;border:0;text-align:left;font:13px/1.4 system-ui;
+  white-space:nowrap;cursor:pointer;
+}
+body.leeway-enterprise-shell #leeway-world-shell .lws-my-location {
+  top:108px;bottom:auto;left:16px;min-height:32px;padding:5px 10px;
+  border-radius:0 0 9px 9px;font-size:13px;
+}
+body.leeway-enterprise-shell #leeway-world-shell .lws-location-badge {
+  top:110px;left:145px;max-width:calc(100vw - 270px);padding:4px 8px;
+}
+body.leeway-enterprise-shell #leeway-world-shell .lws-location-badge strong {font-size:13px;}
+body.leeway-enterprise-shell #leeway-world-shell .lws-location-badge span {font-size:11px;}
 body.leeway-enterprise-shell #leeway-world-shell {
   font-family:
     system-ui,
@@ -713,4 +732,10 @@ body.leeway-enterprise-shell
     border-radius: 18px;
     font-size: 12px;
   }
+}
+
+@media (max-width:700px) {
+ body.leeway-enterprise-shell #leeway-world-shell .lws-report-banner {top:124px;}
+ body.leeway-enterprise-shell #leeway-world-shell .lws-my-location {top:160px;}
+ body.leeway-enterprise-shell #leeway-world-shell .lws-location-badge {top:162px;}
 }

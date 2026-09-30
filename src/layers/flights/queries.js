@@ -1,3 +1,4 @@
+import { aircraftModelGate } from '../../data/aircraftModelAvailability.js';
 import { approxDistanceKm as _approxDistanceKm } from './recordPolicy.js';
 import { displayedKinematics } from '../../data/motionModel.js';
 import * as Cesium from 'cesium';
@@ -943,7 +944,12 @@ export function createQueries({
         error: flightState.feed._lastError,
         status: flightState.feed._lastStatus,
         retryInSec,
-        source: flightState.feed._lastSource,
+        source:
+          flightState.feed._lastSource +
+          (aircraftModelGate.warning(flightState._models3dEnabled)
+            ? ' (2D icons; 3D unavailable)'
+            : ''),
+        modelWarning: aircraftModelGate.warning(flightState._models3dEnabled),
         coverage: flightState.feed._lastCoverage,
       };
     },

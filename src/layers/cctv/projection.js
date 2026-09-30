@@ -241,6 +241,7 @@ export function createProjection({
           onFailure: () => {
             if (runtime.disposed) return;
             runtime.video = null;
+            runtime.videoFailed = true;
             runtime.mode = 'image';
             runtime.image = new Image();
             runtime.image.decoding = 'async';

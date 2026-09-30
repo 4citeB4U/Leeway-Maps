@@ -1,3 +1,7 @@
+import {
+  cameraMatchesMediaFilter,
+  cameraMediaLabel,
+} from './cctvMediaFilter.js';
 import { createCctvVideoSurface } from './cctvVideo.js';
 export function _calBadgeLabel(badge) {
   switch (badge) {
@@ -56,7 +60,9 @@ export function _renderCctvState(state) {
 
   if (this._cctvSelect) {
     const cityGroups = new Map();
-    for (const camera of cameras) {
+    for (const camera of cameras.filter((camera) =>
+      cameraMatchesMediaFilter(camera, this._cctvMediaFilter?.value),
+    )) {
       const city =
         String(camera.city || 'Other cameras').trim() || 'Other cameras';
       if (!cityGroups.has(city)) cityGroups.set(city, []);
@@ -85,19 +91,19 @@ export function _renderCctvState(state) {
         )) {
           const option = document.createElement('option');
           option.value = camera.id;
-          option.textContent = camera.name || camera.id;
+          option.textContent = `[${cameraMediaLabel(camera)}] ${camera.name || camera.id}`;
           group.appendChild(option);
         }
         this._cctvSelect.appendChild(group);
       }
     }
-    this._cctvSelect.disabled = !enabled || cameras.length === 0;
+    this._cctvSelect.disabled = !enabled || orderedCameras.length === 0;
     if (
       activeId &&
       Array.from(this._cctvSelect.options).some((opt) => opt.value === activeId)
     ) {
       this._cctvSelect.value = activeId;
-    } else if (!activeId) {
+    } else {
       this._cctvSelect.selectedIndex = -1;
     }
   }
@@ -218,7 +224,10 @@ export function _renderCctvState(state) {
   }
 
   if (this._cctvFrame && !liveIntent) {
-    const nextSrc = enabled ? activeCamera?.frameUrl : null;
+    const nextSrc =
+      enabled && activeCamera?.mediaCapabilities?.snapshot !== false
+        ? activeCamera?.frameUrl
+        : null;
     const nextCameraId = enabled ? activeCamera?.id || '' : '';
     const cameraChanged = this._cctvFrame.dataset.cameraId !== nextCameraId;
     const frameLoading = this._cctvFrame.dataset.loading === 'true';
@@ -240,6 +249,26 @@ export function _renderCctvState(state) {
     this._clearCctvFrame();
   }
 
+  if (
+    enabled &&
+    activeCamera?.mediaCapabilities?.locationOnly &&
+    this._cctvFrameMessage
+  ) {
+    this._cctvFrameMessage.hidden = false;
+    this._cctvFrameMessage.textContent =
+      activeCamera.mediaLimitation ||
+      'Camera location only. No public image or video is supplied by this provider.';
+  }
+  if (
+    enabled &&
+    activeCamera?.videoFailed &&
+    activeCamera?.mediaCapabilities?.snapshot === false &&
+    this._cctvFrameMessage
+  ) {
+    this._cctvFrameMessage.hidden = false;
+    this._cctvFrameMessage.textContent =
+      'Video playback failed. This provider supplies no snapshot fallback. Select another camera or retry later.';
+  }
   this._syncCctvSourceBadge(activeCamera, enabled);
   this._typeCctvSummary(
     state?.summary ||

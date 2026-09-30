@@ -20,6 +20,10 @@ import {
 import { sanitizeCctvRangeHeader } from './cctv/range.js';
 import { createHlsPuller } from './cctv/stream.js';
 import {
+  createStatelessHls,
+  cameraMediaCapabilities,
+} from './cctv/statelessHls.js';
+import {
   nationalTrafficCameraJurisdictions,
   nationalTrafficCameraSummary,
   nationalTrafficCameraJurisdiction,
@@ -52,6 +56,7 @@ export function cctvProxy({
   const HEALTH_MAX_ENTRIES = CCTV_MAX_SOURCES_CEILING;
   /** Live HLS strategies (see ./cctv/stream.js). Shared across dev and preview. */
   const puller = createHlsPuller();
+  const statelessHls = createStatelessHls();
 
   /** Update health and a bounded asymmetric circuit breaker per camera. */
   const setHealth = (cameraId, patch) => {
@@ -71,8 +76,18 @@ export function cctvProxy({
     const feedType = normalizeFeedType(source?.feedType || 'image');
     return {
       id: cameraId,
-      feedType: statelessMedia && source?.snapshotUrl ? 'image' : feedType,
-      mediaMode: statelessMedia ? 'snapshots' : 'streams-and-snapshots',
+      feedType,
+      mediaMode: statelessMedia
+        ? 'stateless-streams-and-snapshots'
+        : 'streams-and-snapshots',
+      mediaCapabilities: cameraMediaCapabilities(source),
+      mediaLimitation: cameraMediaCapabilities(source).locationOnly
+        ? 'Camera location only; provider publishes no public image or video URL.'
+        : !cameraMediaCapabilities(source).video
+          ? 'Provider supplies refreshed still images, not continuous video.'
+          : source?.sourceKind === 'tfl-open-data'
+            ? 'Provider supplies periodically refreshed video clips, not a continuous live stream.'
+            : '',
       mediaUrl: isVideoFeedType(feedType)
         ? `/api/cctv/media/${encodeURIComponent(cameraId)}`
         : null,
@@ -153,16 +168,15 @@ export function cctvProxy({
               rangeM: source.rangeM,
               mountHeightM: source.mountHeightM,
               groundElevationM: source.groundElevationM,
-              feedType:
-                statelessMedia && source.snapshotUrl
-                  ? 'image'
-                  : normalizeFeedType(source.feedType),
-              mediaLimitation:
-                statelessMedia && normalizeFeedType(source.feedType) === 'hls'
-                  ? source.snapshotUrl
-                    ? 'Live video unavailable here; showing refreshed snapshots.'
-                    : 'Live video unavailable here; this camera has no public snapshot.'
-                  : '',
+              feedType: normalizeFeedType(source.feedType),
+              mediaCapabilities: cameraMediaCapabilities(source),
+              mediaLimitation: cameraMediaCapabilities(source).locationOnly
+                ? 'Camera location only; provider publishes no public image or video URL.'
+                : !cameraMediaCapabilities(source).video
+                  ? 'Provider supplies refreshed still images, not continuous video.'
+                  : source?.sourceKind === 'tfl-open-data'
+                    ? 'Provider supplies periodically refreshed video clips, not a continuous live stream.'
+                    : '',
               sourceKind:
                 source.sourceKind || (source.url ? 'configured' : 'fallback'),
               poseSource: source.poseSource,
@@ -214,16 +228,59 @@ export function cctvProxy({
           const feedType = normalizeFeedType(source?.feedType || 'image');
           const leaseId = url.searchParams.get('lease');
           if (statelessMedia && feedType === 'hls') {
-            res.writeHead(503, {
-              'Content-Type': 'application/json',
-              'Cache-Control': 'no-store',
-            });
-            res.end(
-              JSON.stringify({
-                error:
-                  'HLS requires a persistent media runtime; use a camera snapshot when available.',
-              }),
-            );
+            if (req.method === 'DELETE') {
+              res.writeHead(204);
+              res.end();
+              return;
+            }
+            if (req.method !== 'GET') {
+              res.writeHead(405);
+              res.end();
+              return;
+            }
+            const downstream = watchDownstreamClose(res);
+            try {
+              const resource = url.searchParams.get('resource');
+              const body =
+                resource !== null
+                  ? await statelessHls.segment(
+                      mediaUrl,
+                      resource,
+                      downstream.signal,
+                    )
+                  : await statelessHls.playlist(
+                      cameraId,
+                      mediaUrl,
+                      downstream.signal,
+                    );
+              if (!downstream.closed) {
+                res.writeHead(200, {
+                  'Content-Type':
+                    resource !== null
+                      ? 'video/mp2t'
+                      : 'application/vnd.apple.mpegurl',
+                  'Cache-Control': 'no-store',
+                  'X-CCTV-Source': 'official-stateless-hls',
+                });
+                res.end(body);
+              }
+            } catch (error) {
+              if (!downstream.closed) {
+                res.writeHead(error.statusCode || 503, {
+                  'Content-Type': 'application/json',
+                  'Cache-Control': 'no-store',
+                  'Retry-After': '2',
+                });
+                res.end(
+                  JSON.stringify({
+                    error:
+                      error.statusCode === 410
+                        ? error.message
+                        : 'Official HLS stream unavailable or unsupported; retry or use its snapshot if available.',
+                  }),
+                );
+              }
+            }
             return;
           }
           if (feedType === 'hls' && !/^[a-f0-9-]{36}$/i.test(leaseId || '')) {
@@ -414,13 +471,26 @@ export function cctvProxy({
                 label: source?.provider || 'Configured source',
                 message: `Unexpected media type ${contentType || 'unknown'}`,
               });
+              await upstream.body?.cancel().catch(() => {});
+              res.writeHead(502, {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-store',
+              });
+              res.end(
+                JSON.stringify({
+                  error: 'Provider returned no playable video.',
+                }),
+              );
+              return;
             } else {
               setHealth(cameraId, {
                 status: 'ok',
                 sourceKind: isVideoFeedType(feedType) ? 'live' : 'snapshot',
                 label: source?.provider || 'Configured source',
                 message: isVideoFeedType(feedType)
-                  ? 'Live stream connected'
+                  ? source?.sourceKind === 'tfl-open-data'
+                    ? 'Provider video clip received'
+                    : 'Video stream connected'
                   : 'Snapshot feed connected',
               });
             }

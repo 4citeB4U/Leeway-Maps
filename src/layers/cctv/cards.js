@@ -277,6 +277,7 @@ export function createCards({ state: layerState, services, parts, source }) {
     refreshMs,
     { userGesture = false } = {},
   ) {
+    if (record.camera.mediaCapabilities?.snapshot === false) return;
     if (typeof document !== 'undefined' && document.hidden && !userGesture)
       return;
     const now = Date.now();

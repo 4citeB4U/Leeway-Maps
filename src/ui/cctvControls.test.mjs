@@ -72,6 +72,41 @@ test('failed and working frames expose truthful recovery state', (t) => {
   assert.deepEqual(events, ['unavailable', 'ready']);
 });
 
+test('location-only camera is labelled and never queues an image request', (t) => {
+  const { controls, requests } = fixture(t);
+  controls.actions.setPanelCollapsed = () => {};
+  controls._cctvSourceBadge = element();
+  controls._renderCctvState({
+    enabled: true,
+    activeCameraId: 'ddot',
+    cameras: [],
+    activeCamera: {
+      id: 'ddot',
+      frameUrl: '/api/cctv/frame/ddot',
+      mediaCapabilities: { snapshot: false, video: false, locationOnly: true },
+    },
+  });
+  assert.equal(requests.length, 0);
+  assert.equal(controls._cctvSourceBadge.textContent, 'LOCATION ONLY');
+  assert.match(controls._cctvFrameMessage.textContent, /location only/i);
+});
+
+test('video label requires a decoded playing element, not just successful transport', (t) => {
+  const { controls } = fixture(t);
+  controls._cctvSourceBadge = element();
+  const camera = { isVideo: true, feedType: 'mp4' };
+  controls._syncCctvSourceBadge(camera, true);
+  assert.match(controls._cctvSourceBadge.textContent, /VIDEO CLIP.*WAITING/);
+  controls.cctv.getActiveVideoElement = () => ({
+    readyState: 3,
+    paused: false,
+    ended: false,
+    currentTime: 2,
+  });
+  controls._syncCctvSourceBadge(camera, true);
+  assert.match(controls._cctvSourceBadge.textContent, /VIDEO CLIP.*PLAYING/);
+});
+
 test('working frames expose native resolution and quality without inventing HD', (t) => {
   const { controls, requests } = fixture(t);
   controls._cctvSourceBadge = element();

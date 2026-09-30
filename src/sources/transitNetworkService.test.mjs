@@ -239,3 +239,26 @@ test('stale GPS and stop-relative trains are not drawn as current GPS', () => {
     [],
   );
 });
+
+test('distinct upstream operations are bounded while duplicate requests share work', async () => {
+  const done = [];
+  const service = createTransitNetworkService({
+    apiKey: 'test',
+    fetchImpl: () => new Promise((resolve) => done.push(resolve)),
+  });
+  const pending = [0, 1, 2, 3].map((n) =>
+    service.handle(request(`routes?lat=${n}&lon=0`)),
+  );
+  const duplicate = service.handle(request('routes?lat=0&lon=0'));
+  assert.equal(done.length, 4);
+  assert.equal(
+    (await service.handle(request('routes?lat=4&lon=0'))).status,
+    429,
+  );
+  done.forEach((resolve) => resolve(Response.json({ routes: [] })));
+  assert.deepEqual(
+    (await Promise.all([...pending, duplicate])).map((r) => r.status),
+    [200, 200, 200, 200, 200],
+  );
+  service.close();
+});

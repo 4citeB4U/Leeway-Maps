@@ -12,7 +12,19 @@ import {
   moveStop,
   parseCoordinate,
   createRouteClient,
+  addressSuggestions,
 } from './routePlannerCore.js';
+
+test('address autocomplete filters and deduplicates saved/recent choices without provider calls', () => {
+  const rows = [
+    { address: 'Milwaukee Intermodal Station' },
+    { address: 'Chicago Union Station' },
+    { address: 'Milwaukee Intermodal Station' },
+  ];
+  assert.deepEqual(addressSuggestions('mil', rows), [rows[0]]);
+  assert.deepEqual(addressSuggestions('m', rows), []);
+  assert.equal(addressSuggestions('station', rows).length, 2);
+});
 
 test('My Location refuses stale, invalid and unmeasured device fixes', () => {
   const now = 200000,
@@ -236,6 +248,7 @@ test('route transport preserves street geometry and refuses invalid response', a
   ];
   let url;
   const client = createRouteClient({
+    routingBase: 'https://custom-router.example',
     fetchImpl: async (u) => {
       url = u;
       return {
@@ -262,6 +275,7 @@ test('route transport preserves street geometry and refuses invalid response', a
   assert.match(url, /steps=true/);
   assert.equal(result.distanceM, 3000);
   const broken = createRouteClient({
+    routingBase: 'https://custom-router.example',
     fetchImpl: async () => ({
       ok: true,
       json: async () => ({ code: 'NoRoute' }),
@@ -274,6 +288,74 @@ test('route transport preserves street geometry and refuses invalid response', a
         { lat: 3, lon: 4 },
       ]),
     /No usable/,
+  );
+});
+
+test('drive walk and cycle use the application route proxy and preserve maneuvers', async () => {
+  const seen = [];
+  const client = createRouteClient({
+    fetchImpl: async (url) => {
+      seen.push(url);
+      return Response.json({
+        ok: true,
+        geometry: [
+          [-87, 43],
+          [-87.1, 43.1],
+        ],
+        distanceM: 1000,
+        durationS: 600,
+        steps: [{ instruction: 'Turn left', distanceM: 100 }],
+      });
+    },
+  });
+  for (const travelMode of ['car', 'foot', 'bike']) {
+    const route = await client.route(
+      [
+        { lat: 43, lon: -87 },
+        { lat: 43.1, lon: -87.1 },
+      ],
+      { travelMode },
+    );
+    const url = new URL(seen.at(-1), 'https://example.com');
+    assert.equal(url.pathname, '/api/route');
+    assert.equal(url.searchParams.get('profile'), travelMode);
+    assert.equal(url.searchParams.get('steps'), '1');
+    assert.equal(route.travelMode, travelMode);
+    assert.equal(route.steps[0].instruction, 'Turn left');
+  }
+  assert.match(
+    routeCapability(DEFAULT_VEHICLE, false, { travelMode: 'foot' }),
+    /Walking/,
+  );
+  assert.throws(
+    () => routeCapability(DEFAULT_VEHICLE, false, { travelMode: 'plane' }),
+    /Choose/,
+  );
+  await assert.rejects(
+    () =>
+      client.matrix(
+        [
+          { lat: 43, lon: -87 },
+          { lat: 43.1, lon: -87.1 },
+        ],
+        { travelMode: 'bike' },
+      ),
+    /keep your stop order/,
+  );
+});
+
+test('proxy no-route failures do not become a synthetic straight line', async () => {
+  const client = createRouteClient({
+    fetchImpl: async () =>
+      Response.json({ ok: false, error: 'No connected road' }),
+  });
+  await assert.rejects(
+    () =>
+      client.route([
+        { lat: 43, lon: -87 },
+        { lat: 44, lon: -88 },
+      ]),
+    /No connected road/,
   );
 });
 test('cancel signal reaches provider; coordinate text is rejected without a network request', async () => {

@@ -96,6 +96,8 @@ export function createPresentation({
       mountHeightM: camera.mountHeightM,
       active: isActive,
       feedType: camera.feedType,
+      mediaCapabilities: camera.mediaCapabilities || null,
+      videoFailed: Boolean(record.projection?.videoFailed),
       isVideo:
         parts.model.isVideoFeedType(camera.feedType) &&
         record.projection?.mode !== 'image',

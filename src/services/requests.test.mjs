@@ -2,6 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createApplicationRequestServices } from './requests.js';
 
+test('static hosting uses local summary without an unsupported POST, while explicit adapters remain available', async () => {
+  let calls = 0;
+  const fetchImpl = async () => { calls++; return Response.json({ summary: 'configured' }); };
+  const local = createApplicationRequestServices({ staticPages: true, fetchImpl });
+  assert.equal((await local.summary.summarize({})).data.configured, false);
+  assert.equal(calls, 0);
+  const configured = createApplicationRequestServices({ staticPages: true, endpoints: { summary: '/custom' }, fetchImpl });
+  assert.equal((await configured.summary.summarize({})).data.summary, 'configured');
+  assert.equal(calls, 1);
+});
+
 test('independent compatible endpoints receive normalized requests without changing global fetch', async () => {
   const requests = [];
   const original = globalThis.fetch;

@@ -1,3 +1,4 @@
+import { aircraftModelGate } from '../../data/aircraftModelAvailability.js';
 import { displayedKinematics } from '../../data/motionModel.js';
 import * as Cesium from 'cesium';
 import { isExplicitLayerStateOrigin } from '../../data/layerState.js';
@@ -804,7 +805,12 @@ export function createQueries({
         error: flightState.feed._lastError,
         status: flightState.feed._lastStatus,
         retryInSec,
-        source: flightState.feed._lastSource,
+        source:
+          flightState.feed._lastSource +
+          (aircraftModelGate.warning(flightState._models3dEnabled)
+            ? ' (2D icons; 3D unavailable)'
+            : ''),
+        modelWarning: aircraftModelGate.warning(flightState._models3dEnabled),
         fallback: false,
       };
     },

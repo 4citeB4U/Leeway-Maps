@@ -1,5 +1,9 @@
 export function _initCctvPanel() {
   if (!this._cctvPanel) return;
+  this._cctvMediaFilter = this._cctvPanel.querySelector?.('#cctv-media-filter');
+  this.listen(this._cctvMediaFilter, 'change', () =>
+    this._renderCctvState(this._cctvState),
+  );
 
   this.listen(this._cctvEnableBtn, 'click', async () => {
     this._actionGeneration++;

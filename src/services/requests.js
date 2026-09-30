@@ -1,4 +1,5 @@
 import { createOverpassFeatureSource } from '../sources/overpassFeatures.js';
+import { keylessHudSummaryResponse } from '../hudSummaryResponse.js';
 /** Parse bounded retry information from a service response. */
 function retryAfterMs(value) {
   if (value == null || String(value).trim() === '') return null;
@@ -15,6 +16,7 @@ export function createApplicationRequestServices({
   signal: lifetime,
   endpoints = {},
   features,
+  staticPages = import.meta.env?.VITE_LEEWAY_STATIC_PAGES === '1',
 } = {}) {
   const urls = {
     boundaries: '/api/overpass',
@@ -118,6 +120,10 @@ export function createApplicationRequestServices({
     },
     summary: {
       async summarize(context, { signal } = {}) {
+        AbortSignal.any([lifetime, signal].filter(Boolean)).throwIfAborted();
+        if (staticPages && !endpoints.summary) {
+          return { ok: true, status: 200, data: keylessHudSummaryResponse().payload };
+        }
         return request(urls.summary, {
           method: 'POST',
           signal,

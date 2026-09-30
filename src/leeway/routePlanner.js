@@ -12,6 +12,7 @@ import {
   currentLocationPoint,
   createPlannerRequests,
   routeCapability,
+  addressSuggestions,
 } from './routePlannerCore.js';
 import { formatRouteDuration } from '../data/routeSteps.js';
 import { formatDriverDistance as formatRouteDistance } from './driverUnits.js';
@@ -37,8 +38,8 @@ export function mountRoutePlanner({
 }) {
   const root = document.createElement('section');
   root.className = 'lw-route-planner';
-  root.innerHTML = `<div class="lrp-heading"><h2>Plan your route</h2><button type="button" data-do="close" aria-label="Close route planner">×</button></div><p>Enter street addresses or place names. Search, then select the matching address.</p><div data-stops></div>
-  <div class="lrp-actions"><button type="button" data-do="add">＋ Add stop</button><button type="button" data-do="reverse">Reverse order</button><button type="button" data-do="map">Pick stop on map</button><button type="button" data-do="location">Use my location</button></div>
+  root.innerHTML = `<div class="lrp-heading"><h2>Directions</h2><button type="button" data-do="close" aria-label="Close route planner">×</button></div><div class="lrp-travel-modes" role="group" aria-label="Travel mode"><button type="button" data-mode="car" aria-pressed="true">Drive</button><button type="button" data-mode="foot" aria-pressed="false">Walk</button><button type="button" data-mode="bike" aria-pressed="false">Cycle</button></div><p>Choose From and To. Recent addresses appear as you type; press Enter or Search for other places.</p><div data-stops></div>
+  <div class="lrp-actions"><button type="button" data-do="location">Use my location as From</button><button type="button" data-do="reverse" aria-label="Swap From and To">⇅ Swap</button><button type="button" data-do="add">＋ Add stop</button><button type="button" data-do="map">Pick stop on map</button></div>
   <div data-map-confirm hidden><p data-map-address></p><button type="button" data-do="confirm-map">Add route stop</button><button type="button" data-do="discard-map">Cancel</button></div>
   <details><summary>Saved and recent addresses</summary><p>Saved addresses stay on this device. Recent addresses last for this browser session.</p><select data-address-book aria-label="Saved or recent address"></select><div class="lrp-actions"><button type="button" data-do="recall-start">Use as start</button><button type="button" data-do="recall-stop">Add as stop</button><button type="button" data-do="recall-destination">Use as destination</button><button type="button" data-do="delete-saved">Delete saved address</button><button type="button" data-do="clear-recent">Clear recent</button></div></details>
   <details><summary>Import or export route addresses</summary><p>JSON: an array of addresses, or {"addresses":[...]}. CSV: an address column with comma-containing addresses in quotes. Import replaces the current route: 2–12 addresses, including start and destination.</p><input data-import-file type="file" accept=".json,.csv,application/json,text/csv" aria-label="Import route addresses"><div class="lrp-actions"><button type="button" data-do="export-json">Export JSON</button><button type="button" data-do="export-csv">Export CSV</button></div></details>
@@ -60,8 +61,8 @@ export function mountRoutePlanner({
   <label><input data-profile="excludeTolls" type="checkbox"> Require no toll segments (hard-exclusion server required)</label>
   <p>Valhalla truck costing uses mapped dimensions, weight and hazmat restrictions; incomplete map data and oversize permits remain unverified. Hard exclusion routes with any reported toll segment, including at endpoints, are rejected. Neither provider supplies toll prices.</p>
   <label><input data-preview type="checkbox"> Without Valhalla, allow passenger-road preview for this commercial vehicle (not truck clearance)</label></details>
-  <label><input data-optimize type="checkbox" checked> Optimize stop order for estimated fuel use</label><small>Start and destination stay fixed. Uses road distance and constant MPG, not station prices or traffic. Turn off to preserve your order.</small>
-  <div class="lrp-actions"><button type="button" data-do="plan" class="lrp-primary">Get road route</button><button type="button" data-do="optimize">Optimize stops</button><button type="button" data-do="cancel">Cancel route</button><button type="button" data-do="clear">Clear all</button></div>
+  <label><input data-optimize type="checkbox"> Optimize driving stop order</label><small>Optional for three or more locations. Start and destination stay fixed. Uses road distance, not traffic.</small>
+  <div class="lrp-actions" data-plan-actions><button type="button" data-do="plan" class="lrp-primary">Get directions</button><button type="button" data-do="optimize">Optimize stops</button><button type="button" data-do="cancel">Clear route</button><button type="button" data-do="clear">Clear addresses</button></div>
   <p role="status" aria-live="polite" data-status>Ready. Start with two locations.</p><div data-result></div><small>Addresses are sent to OpenStreetMap Nominatim. Route coordinates are sent to your configured Valhalla server, or public OSRM when no server is configured. Availability is not guaranteed. © OpenStreetMap contributors.</small>`;
   (container || document.body).append(root);
   let permanentStorage, sessionAddressStorage;
@@ -91,15 +92,25 @@ export function mountRoutePlanner({
     pendingMapPoint = null,
     addressBookRows = [],
     mpgEdited = false,
-    fuelPriceProvenance = null;
+    fuelPriceProvenance = null,
+    travelMode = 'car';
   const requests = createPlannerRequests();
   const list = root.querySelector('[data-stops]'),
     result = root.querySelector('[data-result]');
+  // Keep the core journey above optional address books and vehicle settings.
+  const advancedStart = root.querySelector('details');
+  for (const node of [
+    root.querySelector('[data-plan-actions]'),
+    root.querySelector('[data-status]'),
+    result,
+  ])
+    root.insertBefore(node, advancedStart);
   const status = (text) => {
     root.querySelector('[data-status]').textContent = text;
     onStatus(text);
   };
-  const snapshot = () => structuredClone({ stops, route, fuelPriceProvenance });
+  const snapshot = () =>
+    structuredClone({ stops, route, fuelPriceProvenance, travelMode });
   function emit(type) {
     const event = { type, state: snapshot() };
     for (const listener of listeners) {
@@ -344,15 +355,53 @@ export function mountRoutePlanner({
       const label = document.createElement('label');
       label.textContent =
         index === 0
-          ? 'Start'
+          ? 'From'
           : index === stops.length - 1
-            ? 'Destination'
+            ? 'To'
             : `Stop ${index}`;
       const field = document.createElement('input');
       field.value = stop.text;
-      field.placeholder = 'Street address, city and state';
+      field.placeholder =
+        index === 0
+          ? 'Starting address or Use my location'
+          : index === stops.length - 1
+            ? 'Where do you want to go?'
+            : 'Add a stop';
       field.setAttribute('aria-label', label.textContent);
       field.autocomplete = 'off';
+      const suggestions = document.createElement('datalist');
+      suggestions.id = `lrp-address-${index}`;
+      field.setAttribute('list', suggestions.id);
+      const localRows = () => [
+        ...addressStore.list('saved'),
+        ...addressStore.list('recent'),
+      ];
+      function suggestLocal() {
+        suggestions.replaceChildren(
+          ...addressSuggestions(field.value, localRows()).map(
+            (record) => new Option(record.address),
+          ),
+        );
+      }
+      field.addEventListener('change', () => {
+        const match = localRows().find(
+          (record) =>
+            record.address === field.value && validPoint(record.point),
+        );
+        if (match) {
+          invalidate();
+          stop.text = match.address;
+          stop.point = { ...match.point };
+          renderStops();
+          status(`${index === 0 ? 'From' : 'To'} address selected.`);
+        }
+      });
+      field.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          void search(index);
+        }
+      });
       field.addEventListener('input', () => {
         stop.text = field.value;
         stop.point = null;
@@ -360,9 +409,10 @@ export function mountRoutePlanner({
         row.querySelector('[data-address-candidates]')?.remove();
         row.querySelector('small')?.remove();
         invalidate();
+        suggestLocal();
         status('Location changed. Search and select it before routing.');
       });
-      label.append(field);
+      label.append(field, suggestions);
       row.append(label);
       const controls = document.createElement('div');
       controls.className = 'lrp-actions';
@@ -381,6 +431,7 @@ export function mountRoutePlanner({
           stops.length <= 2,
         ],
       ]) {
+        if (stops.length === 2 && ['↑', '↓', 'Remove'].includes(text)) continue;
         const button = document.createElement('button');
         button.type = 'button';
         button.textContent = text;
@@ -405,7 +456,7 @@ export function mountRoutePlanner({
         reorder(index, Number(position.value)),
       );
       positionLabel.append(position);
-      row.append(positionLabel);
+      if (stops.length > 2) row.append(positionLabel);
       if (stop.candidates?.length) {
         const select = document.createElement('select');
         select.dataset.addressCandidates = '';
@@ -443,6 +494,8 @@ export function mountRoutePlanner({
       list.append(row);
     });
     root.querySelector('[data-do="add"]').disabled = stops.length >= MAX_STOPS;
+    root.querySelector('[data-do="optimize"]').disabled =
+      stops.length < 3 || travelMode !== 'car';
     emit('stops-changed');
   }
   function reorder(from, to) {
@@ -468,6 +521,10 @@ export function mountRoutePlanner({
         rememberAddress(stop);
       }
       renderStops();
+      if (points.length > 1)
+        list.children[index]
+          ?.querySelector('[data-address-candidates]')
+          ?.focus();
       status(
         points.length
           ? points.length === 1
@@ -480,6 +537,7 @@ export function mountRoutePlanner({
     }
   }
   function profile() {
+    if (travelMode !== 'car') return { ...DEFAULT_VEHICLE };
     const p = { ...DEFAULT_VEHICLE };
     for (const el of root.querySelectorAll('[data-profile]')) {
       const key = el.dataset.profile;
@@ -548,6 +606,7 @@ export function mountRoutePlanner({
   async function plan(
     optimize = root.querySelector('[data-optimize]').checked,
   ) {
+    optimize = Boolean(optimize && travelMode === 'car' && stops.length > 2);
     invalidate();
     disarmMap();
     const active = requests.begin();
@@ -560,6 +619,7 @@ export function mountRoutePlanner({
           valhallaUrl: normalizeValhallaUrl(endpointInput.value),
           hardExclusionsEnabled: root.querySelector('[data-hard-exclusions]')
             .checked,
+          travelMode,
         };
       routeCapability(vehicle, options.preview, options);
       for (let i = 0; i < stops.length; i++)
@@ -634,11 +694,10 @@ export function mountRoutePlanner({
         stops: ordered.map((stop) => ({ ...stop.point })),
       };
       draw(payload);
-      const estimate = fuelEstimate(
-        payload.distanceM,
-        vehicle.mpg,
-        vehicle.fuelPrice,
-      );
+      const estimate =
+        travelMode === 'car'
+          ? fuelEstimate(payload.distanceM, vehicle.mpg, vehicle.fuelPrice)
+          : null;
       const headline = document.createElement('p');
       headline.textContent = `${formatRouteDistance(payload.distanceM)} · ${formatRouteDuration(payload.durationS)} · ${payload.authority}`;
       result.append(headline);
@@ -649,7 +708,7 @@ export function mountRoutePlanner({
       if (fuelPriceProvenance && estimate?.cost != null) {
         costs.textContent += ` Price source: ${formatFuelPriceProvenance(fuelPriceProvenance)}`;
       }
-      result.append(costs);
+      if (travelMode === 'car') result.append(costs);
       if (optimize) {
         const info = document.createElement('p');
         info.textContent = `Order optimized by road distance with start and destination fixed. Estimated distance reduction: ${formatRouteDistance(savedDistance)}. This is not traffic-aware or a guarantee of minimum fuel use.`;
@@ -659,6 +718,7 @@ export function mountRoutePlanner({
         summary = document.createElement('summary');
       summary.textContent = 'Route instructions (not live navigation)';
       details.append(summary);
+      details.open = true;
       const instructions = document.createElement('ol');
       for (const step of payload.steps || []) {
         const li = document.createElement('li');
@@ -741,6 +801,25 @@ export function mountRoutePlanner({
     }
   });
   root.addEventListener('click', (event) => {
+    const mode = event.target.closest('[data-mode]')?.dataset.mode;
+    if (mode && ['car', 'foot', 'bike'].includes(mode)) {
+      invalidate();
+      travelMode = mode;
+      root
+        .querySelectorAll('[data-mode]')
+        .forEach((button) =>
+          button.setAttribute(
+            'aria-pressed',
+            String(button.dataset.mode === mode),
+          ),
+        );
+      root.querySelector('[data-optimize]').disabled = mode !== 'car';
+      renderStops();
+      status(
+        `${mode === 'car' ? 'Driving' : mode === 'foot' ? 'Walking' : 'Cycling'} selected. Get directions to update the route.`,
+      );
+      return;
+    }
     const action = event.target.closest('[data-do]')?.dataset.do;
     if (!action) return;
     if (action === 'close') close();
@@ -838,10 +917,7 @@ export function mountRoutePlanner({
       }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
     }
   });
-  async function routeFromVoice({
-    origin = 'current',
-    destination,
-  } = {}) {
+  async function routeFromVoice({ origin = 'current', destination } = {}) {
     open();
     let destinationText;
     try {

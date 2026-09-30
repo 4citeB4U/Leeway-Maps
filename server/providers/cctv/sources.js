@@ -362,6 +362,15 @@ export async function loadTflSourcesFromOpenData() {
       const imageUrl = String(props.imageUrl || '');
       if (!imageUrl.startsWith(TFL_IMAGE_ORIGIN)) continue; // official-bucket pin
 
+      const candidateVideo = String(props.videoUrl || '');
+      const videoUrl =
+        candidateVideo.startsWith(TFL_IMAGE_ORIGIN) &&
+        /^https:\/\/s3-eu-west-1\.amazonaws\.com\/jamcams\.tfl\.gov\.uk\/[A-Za-z0-9_.-]+\.mp4$/.test(
+          candidateVideo,
+        )
+          ? candidateVideo
+          : '';
+
       // "JamCams_00002.00865" → "tfl-00002.00865" (provider-stable id).
       const rawId = String(place?.id || '').replace(/^JamCams_/, '');
       if (!rawId) continue;
@@ -384,8 +393,8 @@ export async function loadTflSourcesFromOpenData() {
         rangeM: 145,
         mountHeightM: 8,
         groundElevationM: 15, // Thames-basin prior; one-shot snap corrects.
-        feedType: 'image', // stills-first (owner decision); props.videoUrl deliberately unused
-        url: imageUrl,
+        feedType: videoUrl ? 'mp4' : 'image',
+        url: videoUrl || imageUrl,
         snapshotUrl: imageUrl,
         sourceKind: 'tfl-open-data',
         license: 'Powered by TfL Open Data',
