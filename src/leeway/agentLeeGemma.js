@@ -73,9 +73,9 @@ function phonePrompt(content, shell, history) {
       }
     : null;
   return [
-    'You are Agent Lee in LeeWay Logistics. Be clear, calm and concise. Give advice only; you cannot execute map tools through this phone adapter.',
+    'You are Agent Lee, the personal travel copilot in LeeWay Maps. Be clear, calm and concise. Give advice only; you cannot execute map tools through this phone adapter.',
     `Reply in ${getLanguage().name} (${getLanguage().code}); preserve route addresses and numbers.`,
-    'Never claim truck clearance, current hazards, minimum fuel cost, Chatterbox speech or Formula execution without verified evidence. Passenger road routes are previews. The Optimize stops button uses road distance, not truck restrictions or live traffic.',
+    'Never claim current hazards, live transit arrivals, voice playback or Formula execution without verified evidence. Passenger road routes are previews. The Optimize stops button uses road distance, not live traffic. Help with everyday trips and public transportation; you have no company records or commercial dispatch tools.',
     `Current route summary: ${JSON.stringify(summary)}`,
     ...history
       .slice(-4)
@@ -285,7 +285,7 @@ export function mountAgentLeeGemma(application, shell = null) {
   root.id = 'leeway-agent-lee';
   root.innerHTML = `
     <div class="lal-head">
-      <div class="lal-kicker">LEEWAY LOGISTICS · COPILOT</div>
+      <div class="lal-kicker">LEEWAY MAPS · PERSONAL COPILOT</div>
       <div class="lal-title">Agent Lee · Copilot</div>
       <div class="lal-head-actions"><button class="lal-btn" type="button" data-action="conversation-menu" aria-label="Conversation and settings" aria-expanded="false">☰</button><button class="lal-btn" type="button" data-action="close" aria-label="Close Agent Lee">×</button></div>
       <div class="lal-status" data-state="disconnected">LOCAL RUNTIME: DISCONNECTED</div>
@@ -307,7 +307,7 @@ export function mountAgentLeeGemma(application, shell = null) {
       </div>
       <div class="lal-row"><button class="lal-btn" data-action="route-review">Review route</button><button class="lal-btn" data-action="route-optimize">Optimize stops</button></div>
       <div class="lal-quick" aria-label="System copilot controls"><button class="lal-btn" data-command="Open directions">Directions</button><button class="lal-btn" data-command="Show weather radar">Weather</button><button class="lal-btn" data-command="Show CCTV cameras">CCTV</button></div>
-      <button class="lal-btn" type="button" data-action="stop">Stop reply</button><details><summary>Model and voice setup</summary>
+      <button class="lal-btn" type="button" data-action="stop">Stop reply</button><button class="lal-btn" type="button" data-action="setup-toggle" aria-expanded="false" aria-controls="lal-model-voice-setup">Model and voice setup</button><div id="lal-model-voice-setup" hidden>
       <label>Reasoning connection <select class="lal-input" data-setting="provider"><option value="phone">LeeWay Device Bridge phone</option><option value="ollama">Ollama runtime</option></select></label>
       <p class="lal-note">Reuse the model already verified inside your LeeWay Android runtime. Pairing permits requests through the LeeWay relay; credentials stay in this tab.</p>
       <div class="lal-settings"><input data-setting="device" aria-label="Device Bridge device ID" placeholder="Device ID" autocomplete="off"/><input type="password" data-setting="token" aria-label="Device Bridge pairing token" placeholder="Pairing token" autocomplete="off"/></div>
@@ -324,11 +324,19 @@ export function mountAgentLeeGemma(application, shell = null) {
       <p class="lal-note" data-runtime-note>Only models exposed by your configured runtime can be detected and reused. This website cannot scan models in other phone apps. Download uses storage on that runtime. Browser-local Gemma is not configured.</p>
       <p class="lal-note">Agent Lee Voice One is provided by the external LeeWay Voice Fabric. Voice preparation is optional; directions and map controls work without it.</p>
       <div class="lal-row"><button class="lal-btn" data-action="voice-load">Connect Voice Fabric</button><button class="lal-btn" data-action="voice-test">Play voice sample</button><button class="lal-btn" data-action="voice-unload">Disconnect voice</button></div>
-      </details><div class="lal-note" data-voice-status>Voice Fabric is not prepared. No voice engine is embedded in this map.</div>
+      </div><div class="lal-note" data-voice-status>Voice Fabric is not prepared. No voice engine is embedded in this map.</div>
       <p class="lal-note" data-talk-status>Talk is push-to-talk. It requests this browser’s microphone only when pressed, puts the transcript in the text field, and then asks Agent Lee. Recognition availability depends on the browser and its permission.</p>
     </div>
   `;
   document.body.appendChild(root);
+
+  const setupToggle = root.querySelector('[data-action="setup-toggle"]');
+  const setupPanel = root.querySelector('#lal-model-voice-setup');
+  setupToggle.addEventListener('click', () => {
+    const expanded = setupToggle.getAttribute('aria-expanded') !== 'true';
+    setupToggle.setAttribute('aria-expanded', String(expanded));
+    setupPanel.hidden = !expanded;
+  });
 
   const status = root.querySelector('.lal-status');
   const log = root.querySelector('.lal-log');
@@ -579,7 +587,7 @@ export function mountAgentLeeGemma(application, shell = null) {
     const epoch = ++talkEpoch;
     talking = true;
     syncTalkButton();
-    talkStatus.textContent = 'Listening… Speak your logistics request.';
+    talkStatus.textContent = 'Listening… Speak your travel request.';
     conversationState('listening', 'Listening…');
     try {
       copilotMedia.startRecognition({
