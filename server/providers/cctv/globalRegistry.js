@@ -35,6 +35,43 @@ const NETWORKS = [
     'WisDOT 511',
     'key-required',
     'https://511wi.gov/developers/doc',
+    'WISCONSIN_511_API_KEY',
+  ],
+  [
+    'alaska-511',
+    'USA',
+    'US-AK',
+    'Alaska 511',
+    'key-required',
+    'https://511.alaska.gov/developers/doc',
+    'ALASKA_511_API_KEY',
+  ],
+  [
+    'arizona-511',
+    'USA',
+    'US-AZ',
+    'AZ 511',
+    'key-required',
+    'https://www.az511.gov/developers/doc',
+    'ARIZONA_511_API_KEY',
+  ],
+  [
+    'idaho-511',
+    'USA',
+    'US-ID',
+    'Idaho 511',
+    'key-required',
+    'https://511.idaho.gov/developers/doc',
+    'IDAHO_511_API_KEY',
+  ],
+  [
+    'louisiana-511',
+    'USA',
+    'US-LA',
+    '511LA',
+    'key-required',
+    'https://511la.org/developers/doc',
+    'LOUISIANA_511_API_KEY',
   ],
   [
     'new-york-511',
@@ -43,6 +80,7 @@ const NETWORKS = [
     '511NY',
     'key-required',
     'https://511ny.org/help/endpoint/cameras',
+    'NEWYORK_511_API_KEY',
   ],
   [
     'georgia-511',
@@ -51,6 +89,7 @@ const NETWORKS = [
     '511GA',
     'key-required',
     'https://511ga.org/help/endpoint/cameras',
+    'GEORGIA_511_API_KEY',
   ],
   ['nyc-dot', 'USA', 'US-NY', 'NYC DOT', 'open', 'https://webcams.nyctmc.org/'],
   ['ddot', 'USA', 'US-DC', 'DDOT', 'metadata-only', 'https://opendata.dc.gov/'],
@@ -61,6 +100,7 @@ const NETWORKS = [
     'Ontario 511',
     'key-required',
     'https://511on.ca/developers/doc',
+    'ONTARIO_511_API_KEY',
   ],
   [
     'fintraffic',
@@ -132,13 +172,22 @@ const NETWORKS = [
 export function globalTrafficCameraCoverage(packHealth = []) {
   const status = new Map(packHealth.map((pack) => [pack.name, pack]));
   const networks = NETWORKS.map(
-    ([id, countryIso, subdivision, operator, access, sourceUrl]) => ({
+    ([
       id,
       countryIso,
       subdivision,
       operator,
       access,
       sourceUrl,
+      requiredCredential,
+    ]) => ({
+      id,
+      countryIso,
+      subdivision,
+      operator,
+      access,
+      sourceUrl,
+      requiredCredential: requiredCredential || null,
       adapterStatus: 'implemented',
       inventoryStatus: status.get(id)?.status || 'not-queried',
       inventoryCount: status.get(id)?.count || 0,
