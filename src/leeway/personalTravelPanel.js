@@ -87,7 +87,9 @@ export async function mountPersonalTravelPanel(application) {
     'background:#071722;color:#eaffff;padding:18px;overflow:auto;max-height:calc(100vh - 94px)';
   root.innerHTML = `
     <button aria-label="Close travel panel" style="float:right">×</button>
-    <h2>Public world layers</h2>
+    <small style="letter-spacing:.12em;color:#76ecfa;font-weight:800">LEEWAY MAPS · PERSONAL</small>
+    <h2>Travel Cockpit</h2>
+    <p>Directions, traffic, weather, transit, cameras, roadside services, fuel, flights, vessels and offline trip context in one personal map surface.</p>
     <p>Turn on the public-data families you need without loading every feed at once.</p>
     <p>Layer activation and feed availability are separate. Missing, stale, degraded, keyed or unavailable sources remain labeled by the underlying layer.</p>
     <div data-bundles style="display:grid;gap:8px;margin:14px 0">
