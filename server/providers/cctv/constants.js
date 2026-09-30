@@ -141,6 +141,48 @@ export const WISCONSIN_511_ANCHORS = [
   { lat: 42.7261, lon: -87.7829 }, // Racine
 ];
 
+/** Shared Travel-IQ / 511 v2 camera APIs verified from official developer docs. */
+export const ALASKA_511_CAMERAS_URL =
+  'https://511.alaska.gov/api/v2/get/cameras';
+export const ALASKA_511_IMAGE_ORIGIN = 'https://511.alaska.gov/map/Cctv/';
+export const DEFAULT_ALASKA_511_MAX_SOURCES = 1000;
+export const ALASKA_511_ANCHORS = [
+  { lat: 61.2181, lon: -149.9003 }, // Anchorage
+  { lat: 64.8378, lon: -147.7164 }, // Fairbanks
+  { lat: 58.3019, lon: -134.4197 }, // Juneau
+];
+
+export const ARIZONA_511_CAMERAS_URL =
+  'https://az511.com/api/v2/get/cameras';
+export const ARIZONA_511_IMAGE_ORIGIN = 'https://az511.com/map/Cctv/';
+export const DEFAULT_ARIZONA_511_MAX_SOURCES = 1000;
+export const ARIZONA_511_ANCHORS = [
+  { lat: 33.4484, lon: -112.074 }, // Phoenix
+  { lat: 32.2226, lon: -110.9747 }, // Tucson
+  { lat: 35.1983, lon: -111.6513 }, // Flagstaff
+];
+
+export const IDAHO_511_CAMERAS_URL =
+  'https://511.idaho.gov/api/v2/get/cameras';
+export const IDAHO_511_IMAGE_ORIGIN = 'https://511.idaho.gov/map/Cctv/';
+export const DEFAULT_IDAHO_511_MAX_SOURCES = 1000;
+export const IDAHO_511_ANCHORS = [
+  { lat: 43.615, lon: -116.2023 }, // Boise
+  { lat: 43.4927, lon: -112.0408 }, // Idaho Falls
+  { lat: 47.6777, lon: -116.7805 }, // Coeur d'Alene
+];
+
+export const LOUISIANA_511_CAMERAS_URL =
+  'https://511la.org/api/v2/get/cameras';
+export const LOUISIANA_511_IMAGE_ORIGIN = 'https://511la.org/map/Cctv/';
+export const DEFAULT_LOUISIANA_511_MAX_SOURCES = 1000;
+export const LOUISIANA_511_ANCHORS = [
+  { lat: 29.9511, lon: -90.0715 }, // New Orleans
+  { lat: 30.4515, lon: -91.1871 }, // Baton Rouge
+  { lat: 32.5252, lon: -93.7502 }, // Shreveport
+  { lat: 30.2241, lon: -92.0198 }, // Lafayette
+];
+
 /** New York 511 statewide keyed camera API. */
 export const NEWYORK_511_CAMERAS_URL = 'https://511ny.org/api/v2/get/cameras';
 export const NEWYORK_511_IMAGE_ORIGIN = 'https://511ny.org/map/Cctv/';
