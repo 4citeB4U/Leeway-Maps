@@ -47,9 +47,36 @@ export function nationalCameraJurisdictionAction(row = {}) {
   const canViewCameras = sources.some(
     (source) => source?.integrationStatus === 'integrated',
   );
-  if (canViewCameras) return { label: 'VIEW CAMERAS', canViewCameras: true };
-  if (sources.length) return { label: 'LOCATE SOURCE', canViewCameras: false };
-  return { label: 'LOCATE', canViewCameras: false };
+  if (canViewCameras)
+    return {
+      label: 'VIEW CAMERAS',
+      canViewCameras: true,
+      requiredCredential: null,
+    };
+
+  const credentialSource = sources.find(
+    (source) =>
+      source?.integrationStatus === 'key-required' &&
+      String(source?.requiredCredential || '').trim(),
+  );
+  if (credentialSource)
+    return {
+      label: 'API KEY REQUIRED',
+      canViewCameras: false,
+      requiredCredential: String(credentialSource.requiredCredential).trim(),
+    };
+
+  if (sources.length)
+    return {
+      label: 'LOCATE SOURCE',
+      canViewCameras: false,
+      requiredCredential: null,
+    };
+  return {
+    label: 'LOCATE',
+    canViewCameras: false,
+    requiredCredential: null,
+  };
 }
 
 export function mountNationalCameraCatalog({
