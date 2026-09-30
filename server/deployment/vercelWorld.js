@@ -132,7 +132,7 @@ export function createWorldPlugins({ sourceRoot = defaultSourceRoot } = {}) {
     adsbLolProxy(),
     adsbdbProxy(),
     trackBackfillProxies(),
-    cctvProxy({ sourceRoot }),
+    cctvProxy({ sourceRoot, statelessMedia: true }),
     weatherProxy(),
     transitProxy(),
     celestrakProxy(),

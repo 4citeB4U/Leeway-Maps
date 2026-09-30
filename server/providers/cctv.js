@@ -38,7 +38,7 @@ export { CCTV_FRAME_FETCH_TIMEOUT_MS, fetchCctvImageFromUpstream };
  *
  * @returns {import('vite').Plugin}
  */
-export function cctvProxy({ sourceRoot = process.cwd() } = {}) {
+export function cctvProxy({ sourceRoot = process.cwd(), statelessMedia = false } = {}) {
   const getCctvSources = createCctvCatalog({ sourceRoot });
   const getFrame = createCctvFrameCache();
   /** @type {Map<string,{id:string,status:string,sourceKind:string,label:string,message:string,updatedAt:number}>} */
@@ -68,7 +68,8 @@ export function cctvProxy({ sourceRoot = process.cwd() } = {}) {
     const feedType = normalizeFeedType(source?.feedType || 'image');
     return {
       id: cameraId,
-      feedType,
+      feedType: statelessMedia && source?.snapshotUrl ? 'image' : feedType,
+      mediaMode: statelessMedia ? 'snapshots' : 'streams-and-snapshots',
       mediaUrl: isVideoFeedType(feedType)
         ? `/api/cctv/media/${encodeURIComponent(cameraId)}`
         : null,
@@ -131,12 +132,8 @@ export function cctvProxy({ sourceRoot = process.cwd() } = {}) {
           );
           return;
         }
-        const sources = await getCctvSources();
-        const sourceById = new Map(
-          sources.map((source) => [source.id, source]),
-        );
-
         if (url.pathname === '/sources') {
+          const sources = await getCctvSources();
           const body = {
             sources: sources.map((source) => ({
               id: source.id,
@@ -153,7 +150,9 @@ export function cctvProxy({ sourceRoot = process.cwd() } = {}) {
               rangeM: source.rangeM,
               mountHeightM: source.mountHeightM,
               groundElevationM: source.groundElevationM,
-              feedType: normalizeFeedType(source.feedType),
+              feedType: statelessMedia && source.snapshotUrl ? 'image' : normalizeFeedType(source.feedType),
+              mediaLimitation: statelessMedia && normalizeFeedType(source.feedType) === 'hls'
+                ? (source.snapshotUrl ? 'Snapshot fallback: streaming requires a persistent media runtime.' : 'This HLS-only camera requires a persistent media runtime.') : '',
               sourceKind:
                 source.sourceKind || (source.url ? 'configured' : 'fallback'),
               poseSource: source.poseSource,
@@ -180,7 +179,7 @@ export function cctvProxy({ sourceRoot = process.cwd() } = {}) {
           const cameraId =
             decodeURIComponent(url.pathname.replace('/stream/', '').trim()) ||
             'camera';
-          const source = sourceById.get(cameraId);
+          const source = await getCctvSources.resolve(cameraId);
           const payload = buildStreamPayload(source, cameraId);
           res.writeHead(200, {
             'Content-Type': 'application/json',
@@ -200,10 +199,15 @@ export function cctvProxy({ sourceRoot = process.cwd() } = {}) {
             return;
           }
           const cameraId = decodeURIComponent(match[1]);
-          const source = sourceById.get(cameraId);
+          const source = await getCctvSources.resolve(cameraId);
           const mediaUrl = source?.url || '';
           const feedType = normalizeFeedType(source?.feedType || 'image');
           const leaseId = url.searchParams.get('lease');
+          if (statelessMedia && feedType === 'hls') {
+            res.writeHead(503, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+            res.end(JSON.stringify({ error: 'HLS requires a persistent media runtime; use a camera snapshot when available.' }));
+            return;
+          }
           if (feedType === 'hls' && !/^[a-f0-9-]{36}$/i.test(leaseId || '')) {
             res.writeHead(400);
             res.end();
@@ -457,7 +461,7 @@ export function cctvProxy({ sourceRoot = process.cwd() } = {}) {
         const cameraId =
           decodeURIComponent(url.pathname.replace('/frame/', '').trim()) ||
           'camera';
-        const source = sourceById.get(cameraId);
+        const source = await getCctvSources.resolve(cameraId);
         const priorHealth = health.get(cameraId);
         if (priorHealth?.retryAt > Date.now()) {
           const seconds = Math.max(

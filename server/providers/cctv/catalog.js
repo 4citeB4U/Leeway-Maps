@@ -28,6 +28,17 @@ import { loadGeorgia511Sources, loadNewYork511Sources } from './iteris511.js';
 /** Env kill switch: unset or anything but "0" means enabled. */
 const envEnabled = (name) => String(process.env[name] || '1').trim() !== '0';
 
+const CAMERA_PACK_IDS = [
+  [/^\d+$/, 'austin'], [/^ca-d\d+-/, 'caltrans'], [/^tfl-/, 'tfl'],
+  [/^il-gateway-/, 'illinois-gateway'], [/^wi511-/, 'wisconsin-511'],
+  [/^ny511-/, 'new-york-511'], [/^ga511-/, 'georgia-511'],
+  [/^nyc-dot-/, 'nyc-dot'], [/^ddot-/, 'ddot'], [/^on-/, 'ontario'],
+  [/^fi-/, 'fintraffic'], [/^drivebc-/, 'drivebc'], [/^txdot-/, 'txdot'],
+  [/^tln-/, 'tallinn'], [/^ee-tarktee-/, 'tarktee'],
+  [/^warendorf-/, 'warendorf'], [/^nsw-/, 'nsw'], [/^calgary-/, 'calgary'],
+  [/^deldot-/, 'deldot'],
+];
+
 /**
  * Live open-data packs, in merge order. Adding a region is one entry here
  * plus its loader in sources.js; the catalog cap is shared across entries
@@ -183,6 +194,8 @@ export function createCctvCatalog({
   const lastGoodPacks = new Map();
   let packHealth = [];
   let refreshed = false;
+  const lookupCache = new Map();
+  const lookupInflight = new Map();
   /** @type {Array<object>} Cached merged + normalized CCTV source list. */
   let _cctvSourceCache = [];
   /** @type {number} Epoch-ms when the source cache was last refreshed. */
@@ -330,5 +343,43 @@ export function createCctvCatalog({
   }
 
   getCctvSources.status = () => packHealth.map((entry) => ({ ...entry }));
+  // Frame requests can land on a different serverless instance than /sources.
+  // Rehydrate that one official provider, not the entire world catalog, and
+  // search before the combined catalog cap. Never derive arbitrary URLs from
+  // client input or assume a recognizable id proves that a camera exists.
+  getCctvSources.resolve = async (cameraId) => {
+    const id = String(cameraId || '');
+    if (!id || id.length > 300) return null;
+    const configured = [...loadSourcesFromFile(sourceRoot), ...loadSourcesFromEnv()];
+    const override = configured.findLast(item => String(item?.id ?? '').trim() === id);
+    if (override) return normalizeSourceItem(override);
+    const useLive = String(process.env.CCTV_FORCE_AUSTIN || '').trim() === '1' ||
+      (!configured.length && String(process.env.CCTV_PREFER_AUSTIN || '1').trim() !== '0');
+    if (!useLive) return null;
+    const name = CAMERA_PACK_IDS.find(([pattern]) => pattern.test(id))?.[1];
+    const pack = livePacks.find(item => item.name === name);
+    if (!pack?.enabled()) return null;
+    const warm = lastGoodPacks.get(name);
+    if (warm && now() - warm.updatedAt <= cacheMs) {
+      return warm.sources.find(item => item.id === id) || null;
+    }
+    let entry = lookupCache.get(name);
+    if (!entry || now() - entry.at > cacheMs) {
+      if (!lookupInflight.has(name)) {
+        lookupInflight.set(name, Promise.resolve().then(() => pack.load({ sourceRoot })).then(rows => {
+          const sources = (Array.isArray(rows) ? rows : []).filter(Boolean).map(normalizeSourceItem);
+          const value = { at: now(), sources };
+          lookupCache.set(name, value);
+          return value;
+        }).catch(() => {
+          const value = { at: now(), sources: [] };
+          lookupCache.set(name, value);
+          return value;
+        }).finally(() => lookupInflight.delete(name)));
+      }
+      entry = await lookupInflight.get(name);
+    }
+    return entry.sources.find(item => item.id === id) || null;
+  };
   return getCctvSources;
 }

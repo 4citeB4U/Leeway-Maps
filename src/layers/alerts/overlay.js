@@ -27,7 +27,7 @@ export function createAlertOverlay({
     panel?.remove();
     panel = null;
   }
-  function showRecords(rows) {
+  function showRecords(rows, page = 0) {
     if (!documentRef || !viewer?.container) return;
     close();
     panel = documentRef.createElement('section');
@@ -39,7 +39,22 @@ export function createAlertOverlay({
     button.textContent = 'Close';
     button.onclick = close;
     panel.append(button);
-    for (const row of rows.slice(0, 100)) {
+    if (snapshot?.stale || error) {
+      const warning = documentRef.createElement('p');
+      warning.textContent = 'Source is stale or unavailable. These details may have changed.';
+      panel.append(warning);
+    }
+    for (const [label, target, visible] of [
+      ['Previous alerts', page - 1, page > 0],
+      ['Next alerts', page + 1, rows.length > (page + 1) * 100],
+    ]) {
+      if (!visible) continue;
+      const navigation = documentRef.createElement('button');
+      navigation.textContent = label;
+      navigation.onclick = () => showRecords(rows, target);
+      panel.append(navigation);
+    }
+    for (const row of rows.slice(page * 100, (page + 1) * 100)) {
       const title = documentRef.createElement('h3');
       title.textContent = row.name;
       const text = documentRef.createElement('p');

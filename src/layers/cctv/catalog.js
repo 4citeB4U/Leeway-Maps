@@ -202,6 +202,7 @@ export function createCatalog({ state: layerState, services, parts, source }) {
         ageMinutes: parts.model.safeNumber(source.ageMinutes, NaN),
         warningAge: Boolean(source.warningAge),
         catalogStatus: source.catalogStatus || '',
+        mediaLimitation: source.mediaLimitation || '',
         // Shipped precompute (see server/providers/cctv/groundHeights.js).
         groundHeights:
           source.groundHeights && typeof source.groundHeights === 'object'

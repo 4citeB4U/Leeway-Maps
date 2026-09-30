@@ -175,6 +175,7 @@ export function _renderCctvState(state) {
         activeCamera.catalogStatus === 'stale'
           ? ' · CATALOG STALE · media checked separately'
           : '';
+      const mediaLimitation = activeCamera.mediaLimitation ? ` · ${activeCamera.mediaLimitation}` : '';
       // A partner-supplied feed inside a pack names its owner here.
       const credit = activeCamera.credit ? ` · ${activeCamera.credit}` : '';
       const calBadge = activeCamera.calBadge
@@ -184,7 +185,7 @@ export function _renderCctvState(state) {
       const freshness = Number.isFinite(activeCamera.ageMinutes)
         ? ` · ${activeCamera.warningAge ? 'AGING · ' : ''}${Math.max(0, Math.round(activeCamera.ageMinutes))} MIN OLD`
         : '';
-      this._cctvMeta.textContent = `${activeCamera.city} · HDG ${Math.round(activeCamera.headingDeg)}° · FOV ${Math.round(activeCamera.fovDeg)}° · RANGE ${Math.round(activeCamera.rangeM)}m · ${projLabel}${calBadge ? ` · ${calBadge}` : ''} · ${provider}${credit}${freshness}${catalogWarning}${statusMsg}`;
+      this._cctvMeta.textContent = `${activeCamera.city} · HDG ${Math.round(activeCamera.headingDeg)}° · FOV ${Math.round(activeCamera.fovDeg)}° · RANGE ${Math.round(activeCamera.rangeM)}m · ${projLabel}${calBadge ? ` · ${calBadge}` : ''} · ${provider}${credit}${freshness}${catalogWarning}${mediaLimitation}${statusMsg}`;
     } else if (cameras.length > 0) {
       this._cctvMeta.textContent = enabled
         ? `${cameras.length} cameras loaded · click a camera to activate`
