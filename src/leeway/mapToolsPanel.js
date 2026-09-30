@@ -49,6 +49,7 @@ export function mountMapToolsPanel({ shell, documentRef = document } = {}) {
  #leeway-map-tools>.lmt-content{min-height:0;overflow:auto;padding:10px;flex:1;overscroll-behavior:contain}
  body.leeway-enterprise-shell #leeway-map-tools :is(#control-panel,#data-panel,#scene-panel,#pp-toggles){position:relative!important;inset:auto!important;transform:none!important;opacity:1!important;visibility:visible!important;width:100%!important;max-width:none!important;max-height:none!important;margin:0!important;display:block!important}
  #leeway-map-tools #pp-toggles{margin-top:12px!important}#leeway-map-tools .pp-panel-body{max-height:none!important;overflow:visible!important}
+ #leeway-map-tools #style-buttons{display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));overflow:visible;gap:8px}#leeway-map-tools .style-btn{min-width:0;padding:12px 6px}#leeway-map-tools #map-stack-chips{display:flex;flex-wrap:wrap;overflow:visible}#leeway-map-tools .map-stack-chip{flex:1 1 100px;min-width:0}
  #leeway-map-tools .panel-glow{display:none}#leeway-map-tools :is(.panel-inner,.data-panel-inner,.scene-panel-inner){max-height:none;overflow:visible}
  #leeway-map-tools #control-panel-popover{position:relative!important;inset:auto!important;transform:none!important;max-height:none!important;width:auto!important}
  #leeway-map-tools :is(.dock-pin-btn,.panel-collapse-btn,#control-panel-toggle){display:none!important}
