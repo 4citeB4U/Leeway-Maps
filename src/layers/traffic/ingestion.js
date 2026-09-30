@@ -1,3 +1,4 @@
+import { materializeTrafficRoads } from './roadWork.js';
 import {
   TRAFFIC_TIMING_ENABLED,
   OVERPASS_URL,
@@ -163,6 +164,11 @@ export function createIngestion({
     layerState._flowPending = 0;
     layerState._activeFetchAbort = new AbortController();
     const requestSignal = layerState._activeFetchAbort.signal;
+    const groundHeightCache = new Map();
+    const parseRoads = data => materializeTrafficRoads(data, row => layerState._parseRoads(row, trace), {
+      signal: requestSignal, heightCache: groundHeightCache,
+      isCurrent: () => layerState._enabled && generation === layerState._loadGeneration,
+    });
     const clamped = parts.viewport.clampBounds(bounds);
 
     // Cache key: fixed-precision bounding-box string for deterministic lookups
@@ -259,7 +265,10 @@ export function createIngestion({
         );
         // Discard stale response if a newer load was triggered while waiting
         if (generation !== layerState._loadGeneration) return;
-        cache.major = layerState._parseRoads(majorData, trace);
+        const majorRoads = await parseRoads(majorData);
+        requestSignal.throwIfAborted();
+        if (generation !== layerState._loadGeneration || !layerState._enabled) return;
+        cache.major = majorRoads;
         if (
           !(await parts.flow.applyFlowThenRender(
             cache.major,
@@ -293,7 +302,10 @@ export function createIngestion({
       );
       if (generation !== layerState._loadGeneration) return;
 
-      cache.full = layerState._parseRoads(fullData, trace);
+      const fullRoads = await parseRoads(fullData);
+      requestSignal.throwIfAborted();
+      if (generation !== layerState._loadGeneration || !layerState._enabled) return;
+      cache.full = fullRoads;
       if (
         !(await parts.flow.applyFlowThenRender(
           cache.full,

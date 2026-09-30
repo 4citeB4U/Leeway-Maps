@@ -157,8 +157,9 @@ export function createApplicationTools({
   defer(() => {
     if (window.__godsEyeView === debug) delete window.__godsEyeView;
   });
-  const voiceCommands = initGevVoiceCommands({
-    ...voice,
+  const { initialize: initializeVoice = initGevVoiceCommands, ...voiceOptions } = voice;
+  const voiceCommands = initializeVoice({
+    ...voiceOptions,
     floorServices: operations.surface.groundFloor,
     annotationResolver: operations.annotationResolver,
     searchNavigation: operations.searchAndFlyTo,

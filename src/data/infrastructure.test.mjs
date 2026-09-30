@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import * as Cesium from 'cesium';
-import { createInfrastructureLayers } from '@leeway/logistics-transit-world/infrastructure';
-import { createLocalGeoJsonLayer } from '@leeway/logistics-transit-world/infrastructure/geojson';
+import { createInfrastructureLayers } from '@leeway/maps/infrastructure';
+import { createLocalGeoJsonLayer } from '@leeway/maps/infrastructure/geojson';
 
 function services() {
   const records = new Map();
@@ -42,9 +42,9 @@ test('package exports import without an application, DOM, fetch, or timers', () 
     for (const key of ['window', 'document']) {
       delete globalThis[key];
     }
-    await import('@leeway/logistics-transit-world/infrastructure');
-    await import('@leeway/logistics-transit-world/infrastructure/geojson');
-    await import('@leeway/logistics-transit-world/infrastructure/lod');
+    await import('@leeway/maps/infrastructure');
+    await import('@leeway/maps/infrastructure/geojson');
+    await import('@leeway/maps/infrastructure/lod');
   `,
     ],
     { cwd: new URL('../..', import.meta.url), encoding: 'utf8' },
@@ -172,7 +172,7 @@ test('consumer build includes only infrastructure code and resolves assets under
       assetsInlineLimit: 0,
       rollupOptions: {
         input: fileURLToPath(
-          import.meta.resolve('@leeway/logistics-transit-world/infrastructure'),
+          import.meta.resolve('@leeway/maps/infrastructure'),
         ),
         external: ['cesium'],
         preserveEntrySignatures: 'strict',

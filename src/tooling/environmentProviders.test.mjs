@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { promises as fsp } from 'node:fs';
-import { terrainHeightsProxy } from '@leeway/logistics-transit-world/server/providers/terrain';
-import { tomtomProxy } from '@leeway/logistics-transit-world/server/providers/traffic';
-import { firmsProxy } from '@leeway/logistics-transit-world/server/providers/firms';
-import { gbfsProxy } from '@leeway/logistics-transit-world/server/providers/gbfs';
+import { terrainHeightsProxy } from '@leeway/maps/server/providers/terrain';
+import { tomtomProxy } from '@leeway/maps/server/providers/traffic';
+import { firmsProxy } from '@leeway/maps/server/providers/firms';
+import { gbfsProxy } from '@leeway/maps/server/providers/gbfs';
 import { localProviderPlugins } from '../../server/providers/local.js';
 
 function install(plugin) {

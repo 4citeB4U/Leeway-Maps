@@ -9,7 +9,7 @@ import {
   filterTrailing24h,
   isLikelyCsv,
   parseFirmsCsv,
-} from '@leeway/logistics-transit-world/sources/firms-csv';
+} from '@leeway/maps/sources/firms-csv';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = fs.readFileSync(

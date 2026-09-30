@@ -11,14 +11,14 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { overpassProxy } from '@leeway/logistics-transit-world/server/providers/overpass';
-import { militaryInstallationsProxy } from '@leeway/logistics-transit-world/server/providers/military-installations';
+import { overpassProxy } from '@leeway/maps/server/providers/overpass';
+import { militaryInstallationsProxy } from '@leeway/maps/server/providers/military-installations';
 import {
   regionalBriefProxy,
   weatherEffectsProxy,
-} from '@leeway/logistics-transit-world/server/providers/regional';
-import { openAiRealtimeProxy } from '@leeway/logistics-transit-world/server/providers/openai';
-import { keySetupEndpoint } from '@leeway/logistics-transit-world/server/standalone/key-setup';
+} from '@leeway/maps/server/providers/regional';
+import { openAiRealtimeProxy } from '@leeway/maps/server/providers/openai';
+import { keySetupEndpoint } from '@leeway/maps/server/standalone/key-setup';
 import { realtimeInstructions } from '../../server/providers/openai/instructions.js';
 import { GEV_REALTIME_TOOLS } from '../../server/providers/openai/tools.js';
 

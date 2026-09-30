@@ -93,5 +93,5 @@ test('advanced view retains every original preset and complete layer/context con
   );
   assert.match(source, /data-panel/);
   assert.match(source, /control-panel-toggle/);
-  assert.match(source, /body:is\(\.leeway-gods-eye,\.cockpit-mode\) :is\(#first-run-launcher,#leeway-agent-lee,#leeway-transit-world,#leeway-enterprise-workspace\)\{display:none!important\}/);
+  assert.match(source, /body:is\(\.leeway-gods-eye,\.cockpit-mode\) :is\(#first-run-launcher,#leeway-agent-lee:not\(\.leeway-open\),#leeway-transit-world,#leeway-enterprise-workspace\)\{display:none!important\}/);
 });

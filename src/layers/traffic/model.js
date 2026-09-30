@@ -1,3 +1,4 @@
+import { sampleTrafficHeight } from './roadWork.js';
 import * as Cesium from 'cesium';
 import {
   flowDensityMult,
@@ -55,7 +56,7 @@ export function createModel({ state: layerState, services, parts, source }) {
           firstCoord[0],
           firstCoord[1],
         );
-        const sampled = layerState._viewer.scene.sampleHeight(carto);
+        const sampled = sampleTrafficHeight(layerState._viewer.scene, carto, roadData.groundHeightCache);
         if (Number.isFinite(sampled)) baseHeight = sampled;
       }
 

@@ -93,7 +93,7 @@ export function mountGodsEyeControls({
   const style = documentRef.createElement('style');
   style.textContent = `
  body.leeway-gods-eye #leeway-world-shell,body.cockpit-mode #leeway-world-shell{display:none!important}
- body:is(.leeway-gods-eye,.cockpit-mode) :is(#first-run-launcher,#leeway-agent-lee,#leeway-transit-world,#leeway-enterprise-workspace){display:none!important}
+ body:is(.leeway-gods-eye,.cockpit-mode) :is(#first-run-launcher,#leeway-agent-lee:not(.leeway-open),#leeway-transit-world,#leeway-enterprise-workspace){display:none!important}
  #leeway-gods-eye-controls{position:fixed;left:100px;bottom:110px;z-index:9801;pointer-events:none;max-width:min(390px,80vw);font:13px/1.45 system-ui;color:#edfaff}
  #leeway-gods-eye-controls button{pointer-events:auto;color:#edfaff;background:#102333;border:1px solid #479eb6;border-radius:7px;padding:8px;margin:4px;cursor:pointer}
  #leeway-gods-eye-controls .lge-aircraft{pointer-events:auto;background:rgba(3,14,23,.96);border:1px solid #479eb6;border-radius:10px;padding:12px;white-space:pre-line;max-height:40vh;overflow:auto}

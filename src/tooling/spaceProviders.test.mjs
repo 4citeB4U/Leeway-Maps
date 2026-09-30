@@ -6,11 +6,11 @@ import {
   rocketLaunchesProxy,
   launchLibraryRequestHeaders,
   LL2_CACHE_TTL_MS,
-} from '@leeway/logistics-transit-world/server/providers/space';
+} from '@leeway/maps/server/providers/space';
 import {
   celestrakTleUrl,
   launchLibraryRecentUrl,
-} from '@leeway/logistics-transit-world/sources/space';
+} from '@leeway/maps/sources/space';
 import * as compatibility from '../../server/providers/local.js';
 
 function install(plugin, preview = false) {

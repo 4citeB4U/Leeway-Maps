@@ -1,3 +1,4 @@
+import { sampleTrafficHeight } from './roadWork.js';
 import * as Cesium from 'cesium';
 import {
   TRAFFIC_TIMING_ENABLED,
@@ -290,7 +291,7 @@ export function createTiming({ state: layerState, services, parts, source }) {
         /* TRACE_ONLY_BEGIN */
         const _trafficTimingSampleStart = performance.now();
         /* TRACE_ONLY_END */
-        const sampled = layerState._viewer.scene.sampleHeight(carto);
+        const sampled = sampleTrafficHeight(layerState._viewer.scene, carto, roadData.groundHeightCache);
         /* TRACE_ONLY_BEGIN */
         _trafficTimingSampleHeightMs +=
           performance.now() - _trafficTimingSampleStart;

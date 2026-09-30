@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createTransitService } from '@leeway/logistics-transit-world/sources/transit-service';
-import { createTransitSource } from '@leeway/logistics-transit-world/layers/transit/source';
+import { createTransitService } from '@leeway/maps/sources/transit-service';
+import { createTransitSource } from '@leeway/maps/layers/transit/source';
 
 const request = (path, method = 'GET') => ({
   url: `https://example.test${path}`,

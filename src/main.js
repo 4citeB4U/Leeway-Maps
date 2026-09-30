@@ -5,6 +5,7 @@ import { mountAgentLeeGemma } from './leeway/agentLeeGemma.js';
 import { mountMapsShell } from './leeway/mapsShell.js';
 import { installWorldApiBridge } from './leeway/worldApiBridge.js';
 import { mountInstallControls } from './leeway/pwa.js';
+import { initAgentLeeVoiceEntry } from './leeway/agentLeeVoiceEntry.js';
 
 document.body.dataset.leewayEdition = 'personal';
 installWorldApiBridge();
@@ -17,6 +18,7 @@ const application = createStandaloneApplication({
   googleApiKey: import.meta.env.GOOGLE_MAPS_API_KEY,
   cesiumToken: import.meta.env.CESIUM_ION_TOKEN,
   allowQaRegistration: import.meta.env.DEV,
+  voice: { initialize: initAgentLeeVoiceEntry },
 });
 
 application
