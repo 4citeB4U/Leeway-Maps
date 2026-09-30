@@ -8,14 +8,18 @@ test('coverage separates implemented international adapters from inventory and l
     { name: 'fintraffic', status: 'ready', count: 300, updatedAt: 123 },
   ]);
   assert.equal(result.countryCount, 7);
-  assert.equal(result.networks.length, 19);
+  assert.equal(result.networks.length, 23);
   assert.equal(result.usJurisdictions.length, 56);
   const finland = result.networks.find((x) => x.countryIso === 'FIN');
   assert.equal(finland.inventoryCount, 300);
   assert.equal(finland.mediaStatus, 'verify-per-camera');
   const ontario = result.networks.find((x) => x.id === 'ontario');
   assert.equal(ontario.access, 'key-required');
+  assert.equal(ontario.requiredCredential, 'ONTARIO_511_API_KEY');
   assert.equal(ontario.inventoryStatus, 'not-queried');
+  const alaska = result.networks.find((x) => x.id === 'alaska-511');
+  assert.equal(alaska.access, 'key-required');
+  assert.equal(alaska.requiredCredential, 'ALASKA_511_API_KEY');
 });
 
 test('cold coverage, health and jurisdiction routes answer without any upstream requests', async () => {
