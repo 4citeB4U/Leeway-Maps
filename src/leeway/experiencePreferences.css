@@ -1,0 +1,88 @@
+.lw-preferences {
+  position: fixed;
+  z-index: 11030;
+  top: 84px;
+  right: 16px;
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100dvh - 180px);
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 20px;
+  border: 1px solid #6899aa;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #173546, #081922);
+  color: #effaff;
+  box-shadow: 0 16px 50px #0008;
+  font:
+    16px/1.5 system-ui,
+    sans-serif;
+}
+.lw-preferences[hidden] {
+  display: none;
+}
+.lw-preferences header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+}
+.lw-preferences h2 {
+  font-size: 22px;
+  margin: 0;
+}
+.lw-preferences h3 {
+  font-size: 19px;
+}
+.lw-preferences label {
+  display: grid;
+  gap: 8px;
+}
+.lw-preferences select,
+.lw-preferences button {
+  min-height: 48px;
+  padding: 10px;
+  border: 1px solid #71b4c5;
+  border-radius: 10px;
+  background: #123344;
+  color: #fff;
+  font: inherit;
+}
+.lw-preferences select {
+  width: 100%;
+}
+.lw-preferences button {
+  margin-top: 10px;
+  cursor: pointer;
+}
+.lw-preferences audio {
+  width: 100%;
+  margin-top: 12px;
+}
+.lw-preferences input {
+  max-width: 100%;
+  font: inherit;
+}
+.lw-preferences p {
+  font-size: 14px;
+  color: #d1e3ea;
+}
+.lw-preferences nav {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.lw-preferences a {
+  color: #8cf4e5;
+  display: inline-block;
+  padding: 8px 0;
+}
+.lw-preferences :focus-visible {
+  outline: 3px solid #9ff6ff;
+  outline-offset: 2px;
+}
+@media (max-width: 700px) {
+  .lw-preferences {
+    top: 140px;
+    max-height: calc(100dvh - 245px);
+  }
+}

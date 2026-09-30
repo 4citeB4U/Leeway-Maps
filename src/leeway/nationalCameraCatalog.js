@@ -1,0 +1,198 @@
+function ensureStyles(documentRef) {
+  if (documentRef.getElementById('leeway-national-camera-catalog-styles'))
+    return;
+  const style = documentRef.createElement('style');
+  style.id = 'leeway-national-camera-catalog-styles';
+  style.textContent = `
+    .lnc-root { pointer-events:auto; position:absolute; top:76px; right:12px; z-index:9796;
+      width:min(560px,calc(100vw - 106px)); max-height:calc(100vh - 94px); overflow:hidden;
+      border:1px solid rgba(71,225,242,.28); border-radius:15px; background:rgba(3,15,24,.97);
+      color:#eaffff; box-shadow:0 18px 55px rgba(0,0,0,.42); backdrop-filter:blur(16px); display:none; }
+    .lnc-root.open { display:flex; flex-direction:column; }
+    .lnc-head { display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:10px; padding:16px; border-bottom:1px solid rgba(255,255,255,.08); }
+    .lnc-head strong { letter-spacing:.10em; font-size:12px; }
+    .lnc-head span { margin-left:auto; font-size:9px; opacity:.65; }
+    .lnc-close { width:48px; height:48px; border:1px solid rgba(117,239,251,.35); border-radius:18px; background:linear-gradient(150deg,#294a58,#0b202b); color:#fff; font:700 25px/1 system-ui,sans-serif; cursor:pointer; box-shadow:inset 0 1px 0 #fff3,0 4px 0 #020a0f; }
+    .lnc-toolbar { display:grid; grid-template-columns:1fr auto; gap:8px; padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.07); }
+    .lnc-toolbar input { min-width:0; height:36px; border-radius:8px; border:1px solid rgba(71,225,242,.20);
+      background:#071722; color:#efffff; padding:0 10px; font:inherit; outline:none; }
+    .lnc-toolbar button { border:1px solid rgba(71,225,242,.24); background:rgba(71,225,242,.06); color:#eaffff;
+      border-radius:8px; padding:0 10px; cursor:pointer; font:inherit; }
+    .lnc-summary { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; padding:10px 12px; }
+    .lnc-metric { padding:8px; border:1px solid rgba(255,255,255,.07); border-radius:8px; background:rgba(255,255,255,.025); }
+    .lnc-metric b { display:block; font-size:15px; color:#75effb; } .lnc-metric span { font-size:8px; opacity:.6; }
+    .lnc-list { overflow:auto; padding:0 10px 12px; display:grid; gap:7px; }
+    .lnc-row { border:1px solid rgba(255,255,255,.08); border-radius:9px; padding:9px 10px; background:rgba(255,255,255,.025); }
+    .lnc-row-head { display:flex; align-items:center; gap:8px; }
+    .lnc-code { min-width:29px; color:#72edfa; font-weight:800; }
+    .lnc-name { font-weight:700; }
+    .lnc-state { margin-left:auto; font-size:8px; padding:3px 6px; border-radius:999px; border:1px solid rgba(255,255,255,.12); }
+    .lnc-state.integrated { color:#76f0af; border-color:rgba(118,240,175,.35); }
+    .lnc-state.seeded { color:#ffd877; border-color:rgba(255,216,119,.35); }
+    .lnc-state.research-required { color:#a9b9c1; }
+    .lnc-source { margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,.06); font-size:9px; line-height:1.45; }
+    .lnc-source strong { color:#dffcff; } .lnc-source small { display:block; opacity:.62; margin-top:2px; }
+    .lnc-empty { padding:20px; text-align:center; opacity:.6; }
+  `;
+  documentRef.head.appendChild(style);
+}
+
+export function mountNationalCameraCatalog({
+  host = document.body,
+  notify = () => {},
+} = {}) {
+  ensureStyles(document);
+  const root = document.createElement('section');
+  root.className = 'lnc-root';
+  root.setAttribute('aria-label', 'National public traffic camera catalog');
+  root.innerHTML = `
+    <div class="lnc-head">
+      <strong>U.S. PUBLIC TRAFFIC CAMERA CATALOG</strong>
+      <span data-status>NOT LOADED</span>
+      <button class="lnc-close" type="button" data-close aria-label="Close national camera catalog">×</button>
+    </div>
+    <div class="lnc-toolbar">
+      <input data-search aria-label="Filter jurisdictions" placeholder="Filter state, territory, operator, system..." />
+      <button type="button" data-refresh>REFRESH</button>
+    </div>
+    <div class="lnc-summary" data-summary></div>
+    <div class="lnc-list" data-list><div class="lnc-empty">Loading national catalog…</div></div>
+  `;
+  host.appendChild(root);
+
+  const search = root.querySelector('[data-search]');
+  const list = root.querySelector('[data-list]');
+  const summaryNode = root.querySelector('[data-summary]');
+  const status = root.querySelector('[data-status]');
+  let payload = null;
+  let loading = false;
+
+  function escapeHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function render() {
+    const summary = payload?.summary || {};
+    summaryNode.innerHTML = [
+      ['56', 'JURISDICTIONS'],
+      [summary.seededJurisdictionCount ?? 0, 'SEEDED'],
+      [summary.integratedSourceCount ?? 0, 'INTEGRATED SOURCES'],
+      [summary.researchRequiredJurisdictionCount ?? 0, 'RESEARCH QUEUE'],
+    ]
+      .map(
+        ([value, label]) =>
+          `<div class="lnc-metric"><b>${escapeHtml(value)}</b><span>${label}</span></div>`,
+      )
+      .join('');
+
+    const q = search.value.trim().toLowerCase();
+    const rows = (payload?.jurisdictions || []).filter((row) => {
+      if (!q) return true;
+      const haystack = [
+        row.code,
+        row.name,
+        row.type,
+        ...(row.sources || []).flatMap((source) => [
+          source.operator,
+          source.system,
+          source.integrationStatus,
+        ]),
+      ]
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+
+    if (!rows.length) {
+      list.innerHTML = '<div class="lnc-empty">No matching jurisdiction.</div>';
+      return;
+    }
+
+    list.innerHTML = rows
+      .map((row) => {
+        const state = row.integrated ? 'integrated' : row.researchStatus;
+        const sources = (row.sources || [])
+          .map(
+            (source) => `
+        <div class="lnc-source">
+          <strong>${escapeHtml(source.system || source.operator)}</strong>
+          · ${escapeHtml(source.integrationStatus || 'unknown')}
+          <small>${escapeHtml(source.operator || '')}${source.notes ? ' · ' + escapeHtml(source.notes) : ''}</small>
+        </div>
+      `,
+          )
+          .join('');
+        return `
+        <article class="lnc-row">
+          <div class="lnc-row-head">
+            <span class="lnc-code">${escapeHtml(row.code)}</span>
+            <span class="lnc-name">${escapeHtml(row.name)}</span>
+            <span class="lnc-state ${escapeHtml(state)}">${escapeHtml(state.toUpperCase())}</span>
+          </div>
+          ${sources || '<div class="lnc-source"><small>Official source research not yet completed. No feed is implied.</small></div>'}
+        </article>
+      `;
+      })
+      .join('');
+  }
+
+  async function refresh() {
+    if (loading) return false;
+    loading = true;
+    status.textContent = 'CHECKING';
+    try {
+      const response = await fetch('/api/cctv/jurisdictions', {
+        headers: { Accept: 'application/json' },
+      });
+      if (!response.ok)
+        throw new Error(`National catalog HTTP ${response.status}`);
+      payload = await response.json();
+      status.textContent = `${payload?.summary?.jurisdictionCount || 0} JURISDICTIONS`;
+      render();
+      return true;
+    } catch (error) {
+      status.textContent = 'UNAVAILABLE';
+      list.innerHTML =
+        '<div class="lnc-empty">National catalog provider is unavailable.</div>';
+      notify(error?.message || 'National catalog unavailable');
+      return false;
+    } finally {
+      loading = false;
+    }
+  }
+
+  search.addEventListener('input', render);
+  root
+    .querySelector('[data-refresh]')
+    .addEventListener('click', () => void refresh());
+  root.querySelector('[data-close]').addEventListener('click', () => {
+    root.classList.remove('open');
+    root.dispatchEvent(
+      new CustomEvent('leeway:right-panel-close', { bubbles: true }),
+    );
+  });
+
+  return {
+    root,
+    open() {
+      root.classList.add('open');
+      if (!payload) void refresh();
+    },
+    close() {
+      root.classList.remove('open');
+    },
+    toggle() {
+      if (root.classList.contains('open')) this.close();
+      else this.open();
+    },
+    refresh,
+    destroy() {
+      root.remove();
+    },
+  };
+}

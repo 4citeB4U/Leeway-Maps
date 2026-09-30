@@ -1,0 +1,16 @@
+.lw-fuel-ledger { margin: 12px 0; padding: 12px; color: #e7f1f8; background: #112231; border: 1px solid #476175; border-radius: 12px; font: 14px/1.45 system-ui, sans-serif; }
+.lw-fuel-ledger summary { cursor: pointer; padding: 8px 0; font-weight: 650; }
+.lw-fuel-ledger details details { border-top: 1px solid #476175; margin-top: 10px; }
+.lw-fuel-ledger p { margin: 10px 0; }
+.lw-fuel-grid, .lw-fuel-ledger form { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 10px; }
+.lw-fuel-ledger label { display: flex; flex-direction: column; gap: 5px; }
+.lw-fuel-ledger input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 42px; padding: 8px; border: 1px solid #8299aa; border-radius: 6px; color: #f2f7fc; background: #091521; }
+.lw-fuel-ledger button { min-height: 42px; margin: 5px 5px 5px 0; padding: 8px 12px; border: 1px solid #82b2ce; border-radius: 7px; color: #eef8ff; background: #234b65; cursor: pointer; }
+.lw-fuel-ledger button:disabled { opacity: .55; cursor: default; }
+.lw-fuel-ledger :focus-visible { outline: 3px solid #ffd36e; outline-offset: 2px; }
+.lw-fuel-ledger .lw-fuel-check { flex-direction: row; align-items: center; }
+.lw-fuel-check input { width: 22px; min-height: 22px; }
+.lw-fuel-ledger form p { grid-column: 1 / -1; }
+.lw-fuel-ledger ul { padding-left: 0; list-style: none; max-height: 240px; overflow-y: auto; }
+.lw-fuel-ledger li { display: flex; align-items: center; gap: 8px; justify-content: space-between; border-bottom: 1px solid #476175; }
+.lw-fuel-ledger [data-status] { color: #ffdf94; }

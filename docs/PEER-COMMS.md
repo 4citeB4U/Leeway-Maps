@@ -1,0 +1,13 @@
+# Peer communications
+
+`mountPeerComms({baseUrl})` mounts a peer panel and returns `open`, `close`, `toggle`, and `destroy`. Default service base is `/api/peers`; a separately deployed service can be configured using `VITE_LEEWAY_PEER_API` and must permit the deployed origin. Static Pages does not run the identity/signaling service.
+
+Sign in uses the backend's operator-provisioned username/password adapter, returning a short-lived signed user/organization ticket. No display-name form or browser-generated user ID is an authentication substitute. An advanced operator-issued ticket option uses the same verified identity. Credentials and tickets are not stored in localStorage. Sign out, expired authorization, page exit, channel close and channel end release media; signed tickets have a bounded lifetime.
+
+Directory visibility is explicit and restricted by backend authorization. No location coordinates are sent. Invitations specify text, audio or video. The recipient must accept; the browser checks the accepted event's invite ID against its local outgoing/accepted intent before opening any device. Camera/microphone permission is requested only after mutual acceptance for the chosen media. Audio tracks start muted, transmit while Hold to talk is held, and mute on release, pointer cancellation, blur or visibility changes. Video is optional; text-only sessions never request media.
+
+WebRTC carries peer media and ordered text data-channel messages. The REST server forwards only negotiation messages. ICE candidates can reveal network information to the invited peer as with standard WebRTC. No recording, broadcast channel, public anonymous access or native radio frequencies are implemented. Full-screen and split-map modes change layout only; closing ends the active channel.
+
+`GET /me` supplies authorized ICE server configuration and TURN availability. TURN is required on some carrier, corporate and restrictive NAT networks. An empty ICE list, successful login, accepted invitation or mocked protocol test does not establish media connectivity. Physical two-user desktop/mobile tests and audio/video quality qualification remain required. Missing identity configuration fails visibly; no demo peers or successful connection states are fabricated.
+
+REST contract: `/login`, `/me`, `/presence`, `/directory`, `/inbox?after=N`, `/invite`, `/respond`, `/signal`, `/hangup`. Accepted events include `inviteId`, `sessionId`, `peer`, `initiator`, `media`. Session signals carry `description` or `candidate`. The browser bounds message size, pending ICE candidates and text buffering, and ignores wrong-session signaling. Backend authorization, ticket signing/expiry, organization isolation and invitation/session ownership are separate required gates.

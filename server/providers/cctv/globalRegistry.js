@@ -1,0 +1,157 @@
+import { nationalTrafficCameraJurisdictions } from './nationalRegistry.js';
+
+// Implemented adapters, not a promise of continuous feed availability or
+// worldwide coverage. Every region below has a loader in catalog.js.
+const NETWORKS = [
+  [
+    'austin',
+    'USA',
+    'US-TX',
+    'Austin Transportation',
+    'open',
+    'https://data.austintexas.gov/',
+  ],
+  ['caltrans', 'USA', 'US-CA', 'Caltrans', 'open', 'https://cwwp2.dot.ca.gov/'],
+  [
+    'tfl',
+    'GBR',
+    'GB-ENG',
+    'Transport for London',
+    'open',
+    'https://api.tfl.gov.uk/Place/Type/JamCam',
+  ],
+  [
+    'illinois-gateway',
+    'USA',
+    'US-IL',
+    'Travel Midwest',
+    'open',
+    'https://www.travelmidwest.com/',
+  ],
+  [
+    'wisconsin-511',
+    'USA',
+    'US-WI',
+    'WisDOT 511',
+    'key-required',
+    'https://511wi.gov/developers/doc',
+  ],
+  [
+    'new-york-511',
+    'USA',
+    'US-NY',
+    '511NY',
+    'key-required',
+    'https://511ny.org/help/endpoint/cameras',
+  ],
+  [
+    'georgia-511',
+    'USA',
+    'US-GA',
+    '511GA',
+    'key-required',
+    'https://511ga.org/help/endpoint/cameras',
+  ],
+  ['nyc-dot', 'USA', 'US-NY', 'NYC DOT', 'open', 'https://webcams.nyctmc.org/'],
+  ['ddot', 'USA', 'US-DC', 'DDOT', 'metadata-only', 'https://opendata.dc.gov/'],
+  [
+    'ontario',
+    'CAN',
+    'CA-ON',
+    'Ontario 511',
+    'key-required',
+    'https://511on.ca/developers/doc',
+  ],
+  [
+    'fintraffic',
+    'FIN',
+    '',
+    'Fintraffic',
+    'open',
+    'https://www.digitraffic.fi/en/road-traffic/',
+  ],
+  [
+    'drivebc',
+    'CAN',
+    'CA-BC',
+    'DriveBC',
+    'open',
+    'https://www.drivebc.ca/api/webcams/',
+  ],
+  ['txdot', 'USA', 'US-TX', 'TxDOT ITS', 'open', 'https://its.txdot.gov/'],
+  [
+    'tallinn',
+    'EST',
+    '',
+    'Tallinn intersections',
+    'open',
+    'https://ristmikud.tallinn.ee/',
+  ],
+  [
+    'tarktee',
+    'EST',
+    '',
+    'Estonian Transport Administration',
+    'open',
+    'https://tarktee.transpordiamet.ee/',
+  ],
+  [
+    'warendorf',
+    'DEU',
+    'DE-NW',
+    'Kreis Warendorf',
+    'open',
+    'https://www.kreis-warendorf.de/',
+  ],
+  [
+    'nsw',
+    'AUS',
+    'AU-NSW',
+    'Transport for NSW',
+    'open',
+    'https://data.livetraffic.com/cameras/traffic-cam.json',
+  ],
+  [
+    'calgary',
+    'CAN',
+    'CA-AB',
+    'City of Calgary',
+    'open',
+    'https://data.calgary.ca/resource/k7p9-kppz.json',
+  ],
+  [
+    'deldot',
+    'USA',
+    'US-DE',
+    'DelDOT',
+    'open',
+    'https://tmc.deldot.gov/json/videocamera.json',
+  ],
+];
+
+export function globalTrafficCameraCoverage(packHealth = []) {
+  const status = new Map(packHealth.map((pack) => [pack.name, pack]));
+  const networks = NETWORKS.map(
+    ([id, countryIso, subdivision, operator, access, sourceUrl]) => ({
+      id,
+      countryIso,
+      subdivision,
+      operator,
+      access,
+      sourceUrl,
+      adapterStatus: 'implemented',
+      inventoryStatus: status.get(id)?.status || 'not-queried',
+      inventoryCount: status.get(id)?.count || 0,
+      inventoryUpdatedAt: status.get(id)?.updatedAt ?? null,
+      mediaStatus:
+        access === 'metadata-only' ? 'metadata-only' : 'verify-per-camera',
+    }),
+  );
+  return {
+    scope:
+      'Implemented networks only; catalogs and inventories do not prove live camera media or universal coverage.',
+    networks,
+    usJurisdictions: nationalTrafficCameraJurisdictions(),
+    countryCount: new Set(networks.map((network) => network.countryIso)).size,
+  };
+}

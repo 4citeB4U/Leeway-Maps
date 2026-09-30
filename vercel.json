@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "VITE_LEEWAY_STATIC_PAGES=1 npm run build -- --base=/",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 60,
+      "includeFiles": "{config/cctv_sources.*.json,src/data/local_data/cctv_ground_heights/cctv_ground_heights.json,node_modules/@meri-imperiumi/eccodes-wasm/build/eccodes/**}"
+    }
+  }
+}

@@ -1,0 +1,22 @@
+name: Verify independent LeeWay Maps
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.14.0'
+          cache: npm
+      - run: npm ci
+      - name: Verify isolation and live-data contracts
+        run: node --test src/leeway/productSplit.test.mjs src/leeway/publicApiConfig.test.mjs src/leeway/worldApiBridge.test.mjs src/data/airlineIdentity.test.mjs src/sources/transitNetworkService.test.mjs server/providers/cctv/catalogResilience.test.mjs server/providers/cctv/frameCache.test.mjs server/deployment/vercelWorld.test.mjs
+      - run: npm run build

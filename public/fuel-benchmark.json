@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "source": "https://www.eia.gov/petroleum/gasdiesel/includes/gas_diesel_rss.xml",
+  "sourceName": "US Energy Information Administration",
+  "asOf": "2026-09-21",
+  "fetchedAt": "2026-09-28T06:57:30.354Z",
+  "kind": "WEEKLY_REGIONAL_DIESEL_AVERAGE",
+  "units": "USD/US gallon",
+  "regions": [
+    {
+      "region": "U.S.",
+      "priceUsdPerGallon": 6.529
+    },
+    {
+      "region": "East Coast",
+      "priceUsdPerGallon": 6.268
+    },
+    {
+      "region": "New England",
+      "priceUsdPerGallon": 6.517
+    },
+    {
+      "region": "Central Atlantic",
+      "priceUsdPerGallon": 6.546
+    },
+    {
+      "region": "Lower Atlantic",
+      "priceUsdPerGallon": 6.139
+    },
+    {
+      "region": "Midwest",
+      "priceUsdPerGallon": 6.68
+    },
+    {
+      "region": "Gulf Coast",
+      "priceUsdPerGallon": 6.177
+    },
+    {
+      "region": "Rocky Mountain",
+      "priceUsdPerGallon": 6.34
+    },
+    {
+      "region": "West Coast",
+      "priceUsdPerGallon": 7.456
+    },
+    {
+      "region": "West Coast less California",
+      "priceUsdPerGallon": 6.791
+    },
+    {
+      "region": "California",
+      "priceUsdPerGallon": 8.246
+    }
+  ]
+}

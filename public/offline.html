@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#07121b" />
+    <title>LeeWay · Saved offline trip</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #07121b;
+        color: #edfaff;
+        font: 16px/1.5 system-ui;
+      }
+      main {
+        max-width: 1100px;
+        margin: auto;
+        padding: 18px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+      h1 {
+        margin: 0;
+        font-size: 28px;
+      }
+      a {
+        color: #74f5ff;
+      }
+      button {
+        min-height: 44px;
+        border: 1px solid #74f5ff;
+        background: #113343;
+        color: #fff;
+        border-radius: 9px;
+        padding: 10px 15px;
+        font: 600 15px system-ui;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      button:focus-visible,
+      a:focus-visible {
+        outline: 3px solid #ffe29c;
+        outline-offset: 3px;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      .note {
+        color: #bdd1dc;
+        font-size: 14px;
+      }
+      .warning {
+        background: #543c14;
+        border: 1px solid #ffdb87;
+        padding: 12px;
+        border-radius: 10px;
+      }
+      .card {
+        padding: 16px;
+        border: 1px solid #426476;
+        border-radius: 12px;
+        background: #0b202d;
+        margin: 14px 0;
+      }
+      .controls {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      #route-map {
+        display: block;
+        width: 100%;
+        height: min(48vh, 480px);
+        background: #08151f;
+        border: 1px solid #315365;
+        border-radius: 10px;
+        touch-action: none;
+        cursor: grab;
+      }
+      #gps-state {
+        font-size: clamp(20px, 4vw, 29px);
+        font-weight: 750;
+        line-height: 1.3;
+      }
+      .metrics {
+        display: flex;
+        gap: 30px;
+        align-items: center;
+        margin: 14px 0;
+      }
+      .metrics strong {
+        font-size: 36px;
+      }
+      .metrics span {
+        display: block;
+        color: #bdd1dc;
+        font-size: 13px;
+      }
+      li {
+        margin-bottom: 10px;
+        overflow-wrap: anywhere;
+      }
+      summary {
+        cursor: pointer;
+        min-height: 44px;
+        padding-top: 8px;
+        font-weight: 700;
+      }
+      #empty {
+        padding: 30px 0;
+      }
+      #delete {
+        border-color: #fbab91;
+        color: #ffd9cd;
+      }
+      footer {
+        margin-top: 24px;
+        border-top: 1px solid #426476;
+        padding-top: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Saved offline trip</h1>
+        <a href="./">Return to full map when connected</a>
+      </header>
+      <p class="note">
+        Your full God-eye / Cesium map remains the online map. This offline view
+        preserves one trip's route geometry and directions without downloading a
+        basemap.
+      </p>
+      <section id="empty">
+        <h2>No trip loaded</h2>
+        <p id="empty-text">
+          Loading saved trip from this browser. If this screen does not update,
+          reconnect once to install the offline trip assets.
+        </p>
+      </section>
+      <section id="trip-content" hidden>
+        <p id="saved-at"></p>
+        <p id="stale" class="warning" hidden>
+          This route was saved more than 24 hours ago. It may be outdated; no
+          current road conditions have been checked.
+        </p>
+        <p id="summary"></p>
+        <p id="authority" class="note"></p>
+        <div class="card">
+          <div class="controls">
+            <button id="zoom-in" type="button" aria-label="Zoom in saved route">
+              Zoom +</button
+            ><button
+              id="zoom-out"
+              type="button"
+              aria-label="Zoom out saved route"
+            >
+              Zoom −</button
+            ><button id="fit" type="button">Fit route</button>
+          </div>
+          <p class="note">
+            Saved geometry only — no street basemap. Drag to pan. Numbered dots
+            are saved stops.
+          </p>
+          <svg
+            id="route-map"
+            viewBox="0 0 900 480"
+            role="img"
+            aria-label="Saved trip geometry and stops"
+          ></svg>
+        </div>
+        <div class="card">
+          <p id="gps-state" role="status" aria-live="polite">GPS is off.</p>
+          <div class="metrics">
+            <div>
+              <strong id="speed">—</strong><span>MPH · current GPS only</span>
+            </div>
+            <div>
+              <strong id="remaining">—</strong><span>remaining · estimate</span>
+            </div>
+          </div>
+          <div class="controls">
+            <button id="gps-start" type="button">Use GPS on saved trip</button
+            ><button id="gps-stop" type="button" disabled>Stop GPS</button>
+          </div>
+          <p class="note">
+            Location permission is requested only when you press Use GPS. GPS
+            fixes are not stored. Off-route guidance pauses; calculating a new
+            road route requires a connection and routing service.
+          </p>
+        </div>
+        <details open class="card">
+          <summary>Saved stops</summary>
+          <ol id="stops"></ol>
+        </details>
+        <details open class="card">
+          <summary>Saved turn directions</summary>
+          <ol id="directions"></ol>
+        </details>
+      </section>
+      <footer>
+        <p>
+          No fresh weather, traffic, closures, prices or truck restrictions are
+          available here. New arbitrary offline road routing requires a
+          downloaded regional road graph; this version does not include one.
+        </p>
+        <p class="note">
+          Privacy: the saved trip contains precise route coordinates and stop
+          labels in this browser's local storage. It is replaced when you
+          calculate another trip. Anyone using this browser profile can view it.
+          Delete it below to remove this copy.
+        </p>
+        <button id="delete" type="button">
+          Delete saved trip from this device
+        </button>
+      </footer>
+    </main>
+    <script type="module" src="./offlineTripPage.js"></script>
+  </body>
+</html>

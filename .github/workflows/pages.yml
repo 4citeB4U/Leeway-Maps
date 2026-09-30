@@ -1,0 +1,84 @@
+name: Deploy LeeWay Maps to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: 'true'
+      VITE_LEEWAY_STATIC_PAGES: '1'
+      VITE_LEEWAY_WORLD_API_URL: ${{ vars.LEEWAY_WORLD_API_URL }}
+      VITE_LEEWAY_VALHALLA_URL: ${{ vars.LEEWAY_VALHALLA_URL }}
+      VITE_BASE_PATH: '/Leeway-Maps/'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.14.0'
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify personal isolation
+        run: node --test src/leeway/productSplit.test.mjs src/leeway/publicApiConfig.test.mjs
+
+      - name: Refresh dated EIA regional diesel benchmark
+        continue-on-error: true
+        run: node scripts/refresh-fuel-benchmark.mjs
+
+      - name: Build Pages site
+        run: npm run build
+
+      - name: Normalize Cesium artifact path
+        run: |
+          if [ -d "dist/Leeway-Maps/cesium" ]; then
+            rm -rf dist/cesium
+            mv "dist/Leeway-Maps/cesium" dist/cesium
+            rm -rf "dist/Leeway-Maps"
+          fi
+
+      - name: Add Pages marker
+        run: touch dist/.nojekyll
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
