@@ -44,7 +44,7 @@ jobs:
         run: npm ci
 
       - name: Verify personal isolation
-        run: node --test src/leeway/productSplit.test.mjs src/leeway/publicApiConfig.test.mjs
+        run: node --test src/leeway/productSplit.test.mjs src/leeway/publicApiConfig.test.mjs src/leeway/nationalCameraCatalog.test.mjs src/leeway/personalTravelPanel.test.mjs
 
       - name: Refresh dated EIA regional diesel benchmark
         continue-on-error: true
