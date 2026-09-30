@@ -23,9 +23,10 @@ test('canonical preparation timeout and bridge progress/errors reach the UI and 
  };
  const voice=createVoiceFabricAdapter({loadSdk:async()=>({createLeeWayVoice:opts=>{options=opts;return client;}}),onState:s=>states.push(s)});
  await voice.prepare();
- assert.equal(options.timeoutMs,900000);
+ assert.equal(options.timeoutMs,120000);
+ assert.equal(options.prepareInactivityMs,900000);
  assert.equal(VOICE_FABRIC_HANDSHAKE_MS,120000);
- assert.ok(states.some(s=>/1.5 GB/.test(s.message||'') && /15 minutes/.test(s.message)));
+ assert.ok(states.some(s=>/1.5 GB/.test(s.message||'') && /15 minutes without progress/.test(s.message)));
  assert.ok(states.some(s=>/Selecting Agent Lee Voice One/.test(s.message||'')));
  assert.ok(states.some(s=>s.message==='Loading voice model 42%'));
  events.get('voice.error')({message:'Engine unavailable'});

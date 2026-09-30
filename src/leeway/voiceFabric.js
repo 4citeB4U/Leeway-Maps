@@ -15,7 +15,7 @@ export function awaitVoiceHandshake(request, stage, signal, timeoutMs = VOICE_FA
   });
 }
 export function createVoiceFabricAdapter({
-  loadSdk = () => import(/* @vite-ignore */ `${VOICE_FABRIC_URL}/src/voice-sdk.js`),
+  loadSdk = () => import(/* @vite-ignore */ `${VOICE_FABRIC_URL}/src/voice-sdk.js?v=prepare-progress-v1`),
   onState = () => {},
 } = {}) {
   let client, preparing, muted = false, generation = 0, lifecycle = 0;
@@ -35,13 +35,13 @@ export function createVoiceFabricAdapter({
       state({ status: 'loading', message: 'Connecting to external LeeWay Voice Fabric. Text and map controls remain available.' });
       const sdk = await awaitVoiceHandshake(loadSdk(), 'SDK loading', abort.signal);
       ensureCurrent();
-      client ||= sdk.createLeeWayVoice({ origin: VOICE_FABRIC_URL, timeoutMs: VOICE_FABRIC_TIMEOUT_MS });
+      client ||= sdk.createLeeWayVoice({ origin: VOICE_FABRIC_URL, timeoutMs: VOICE_FABRIC_HANDSHAKE_MS, prepareInactivityMs: VOICE_FABRIC_TIMEOUT_MS });
       const activeClient = client;
       const report = (value = {}) => {
         if (epoch !== lifecycle || client !== activeClient || muted) return;
         const percent = Number.isFinite(value.progress) ? Math.round(value.progress) : Number(value.total) > 0 && Number.isFinite(value.loaded) ? Math.round(100 * value.loaded / value.total) : null;
         const message = value.message || (stage === 'preparing'
-          ? `Preparing Agent Lee Voice One${value.file ? ` · ${value.file}` : ''}${percent === null ? '' : ` · ${percent}%`}. First load is about 1.5 GB and may take up to 15 minutes. Map controls remain available.`
+          ? `Preparing Agent Lee Voice One${value.file ? ` · ${value.file}` : ''}${percent === null ? '' : ` · ${percent}%`}. First load is about 1.5 GB and may take several minutes; preparation stops after 15 minutes without progress. Map controls remain available.`
           : `Voice Fabric: ${value.status || 'working'}`);
         state({ ...value, message, status: value.status === 'unavailable' ? 'unavailable' : stage === 'preparing' ? 'loading' : value.status || 'working' });
       };
@@ -58,7 +58,7 @@ export function createVoiceFabricAdapter({
       await awaitVoiceHandshake(activeClient.selectVoice(SELECTED_VOICE), 'voice selection', abort.signal);
       ensureCurrent();
       stage = 'preparing';
-      state({ status: 'loading', message: 'Preparing Agent Lee Voice One. First model load is about 1.5 GB and may take up to 15 minutes. Text and map controls remain available.' });
+      state({ status: 'loading', message: 'Preparing Agent Lee Voice One. First model load is about 1.5 GB and may take several minutes; preparation stops after 15 minutes without progress. Text and map controls remain available.' });
       const result = await activeClient.prepare();
       ensureCurrent();
       if (!result.ready || result.selectedVoiceId !== SELECTED_VOICE) throw new Error('Agent Lee Voice One is unavailable');
