@@ -56,3 +56,52 @@ test('cold coverage, health and jurisdiction routes answer without any upstream 
     globalThis.fetch = before;
   }
 });
+
+test('serverless CCTV advertises snapshot fallback and refuses in-memory HLS sessions', async () => {
+  const prior = process.env.CCTV_SOURCES_JSON;
+  process.env.CCTV_SOURCES_JSON = JSON.stringify([
+    {
+      id: 'proof-hls',
+      feedType: 'hls',
+      url: 'https://video.example/playlist.m3u8',
+      snapshotUrl: 'https://image.example/frame.jpg',
+    },
+  ]);
+  try {
+    let middleware;
+    cctvProxy({ statelessMedia: true }).configureServer({
+      middlewares: {
+        use(_path, handler) {
+          middleware = handler;
+        },
+      },
+    });
+    const run = async (url) => {
+      let code, payload;
+      await middleware(
+        { url, method: 'GET' },
+        {
+          writeHead(status) {
+            code = status;
+          },
+          end(body) {
+            payload = JSON.parse(body);
+          },
+        },
+      );
+      return { code, payload };
+    };
+    const catalog = await run('/sources');
+    assert.equal(catalog.payload.sources[0].feedType, 'image');
+    assert.match(
+      catalog.payload.sources[0].mediaLimitation,
+      /refreshed snapshots/,
+    );
+    const media = await run('/media/proof-hls');
+    assert.equal(media.code, 503);
+    assert.match(media.payload.error, /persistent media runtime/);
+  } finally {
+    if (prior === undefined) delete process.env.CCTV_SOURCES_JSON;
+    else process.env.CCTV_SOURCES_JSON = prior;
+  }
+});

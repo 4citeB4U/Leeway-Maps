@@ -3,6 +3,12 @@
   "framework": "vite",
   "buildCommand": "VITE_LEEWAY_STATIC_PAGES=1 npm run build -- --base=/",
   "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/world?__leeway_path=:path*"
+    }
+  ],
   "functions": {
     "api/*.js": {
       "maxDuration": 60,

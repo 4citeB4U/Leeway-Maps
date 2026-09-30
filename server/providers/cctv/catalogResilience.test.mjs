@@ -2,6 +2,66 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createCctvCatalog } from './catalog.js';
 
+test('a cold instance resolves a known frame ID with only its official provider and shares lookups', async () => {
+  let selectedCalls = 0;
+  let unrelatedCalls = 0;
+  const get = createCctvCatalog({
+    sourceRoot: '/nonexistent-cctv-test',
+    livePacks: [
+      {
+        name: 'nyc-dot',
+        enabled: () => true,
+        load: async () => {
+          selectedCalls++;
+          return [
+            {
+              id: 'nyc-dot-proof',
+              snapshotUrl: 'https://webcams.nyctmc.org/api/cameras/proof/image',
+              lat: 40.7,
+              lon: -74,
+            },
+          ];
+        },
+      },
+      {
+        name: 'tfl',
+        enabled: () => true,
+        load: async () => {
+          unrelatedCalls++;
+          throw new Error('unrelated catalog');
+        },
+      },
+    ],
+  });
+  const [a, b] = await Promise.all([
+    get.resolve('nyc-dot-proof'),
+    get.resolve('nyc-dot-proof'),
+  ]);
+  assert.equal(a.id, 'nyc-dot-proof');
+  assert.equal(b.id, a.id);
+  assert.equal(selectedCalls, 1);
+  assert.equal(unrelatedCalls, 0);
+  assert.equal(await get.resolve('nyc-dot-not-registered'), null);
+  assert.equal(await get.resolve('https://127.0.0.1/private'), null);
+  assert.equal(selectedCalls, 1);
+});
+
+test('cold frame lookup respects a disabled pack', async () => {
+  const get = createCctvCatalog({
+    sourceRoot: '/nonexistent-cctv-test',
+    livePacks: [
+      {
+        name: 'nyc-dot',
+        enabled: () => false,
+        load: async () => {
+          throw new Error('must not fetch');
+        },
+      },
+    ],
+  });
+  assert.equal(await get.resolve('nyc-dot-proof'), null);
+});
+
 test('a failed pack retains bounded stale locations while another remains healthy', async () => {
   let clock = 100;
   let fail = false;

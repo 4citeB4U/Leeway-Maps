@@ -175,7 +175,9 @@ export function _renderCctvState(state) {
         activeCamera.catalogStatus === 'stale'
           ? ' · CATALOG STALE · media checked separately'
           : '';
-      const mediaLimitation = activeCamera.mediaLimitation ? ` · ${activeCamera.mediaLimitation}` : '';
+      const mediaLimitation = activeCamera.mediaLimitation
+        ? ` · ${activeCamera.mediaLimitation}`
+        : '';
       // A partner-supplied feed inside a pack names its owner here.
       const credit = activeCamera.credit ? ` · ${activeCamera.credit}` : '';
       const calBadge = activeCamera.calBadge

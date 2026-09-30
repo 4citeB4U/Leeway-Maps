@@ -33,6 +33,28 @@ function pathnameOf(value) {
   return new URL(String(value || '/'), 'https://leeway.invalid').pathname;
 }
 
+export function restoreVercelApiPath(value, query = {}) {
+  try {
+    const url = new URL(String(value || '/'), 'https://leeway.invalid');
+    const routed = url.searchParams.get('__leeway_path') ?? query.__leeway_path;
+    // Preserve the original pathname when Vercel already provides it. Internal
+    // query parameters cannot redirect a normal incoming route to another API.
+    if (
+      url.pathname === '/api/world' &&
+      typeof routed === 'string' &&
+      routed &&
+      !routed.startsWith('/') &&
+      !/[\r\n?#]/.test(routed)
+    ) {
+      url.pathname = `/api/${routed}`;
+    }
+    url.searchParams.delete('__leeway_path');
+    return url.pathname + url.search;
+  } catch {
+    return value; // The main handler returns its tested 400 response.
+  }
+}
+
 function mountMatches(pathname, mount) {
   return pathname === mount || pathname.startsWith(`${mount}/`);
 }

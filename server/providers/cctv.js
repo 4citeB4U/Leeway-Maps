@@ -38,7 +38,10 @@ export { CCTV_FRAME_FETCH_TIMEOUT_MS, fetchCctvImageFromUpstream };
  *
  * @returns {import('vite').Plugin}
  */
-export function cctvProxy({ sourceRoot = process.cwd(), statelessMedia = false } = {}) {
+export function cctvProxy({
+  sourceRoot = process.cwd(),
+  statelessMedia = false,
+} = {}) {
   const getCctvSources = createCctvCatalog({ sourceRoot });
   const getFrame = createCctvFrameCache();
   /** @type {Map<string,{id:string,status:string,sourceKind:string,label:string,message:string,updatedAt:number}>} */
@@ -150,9 +153,16 @@ export function cctvProxy({ sourceRoot = process.cwd(), statelessMedia = false }
               rangeM: source.rangeM,
               mountHeightM: source.mountHeightM,
               groundElevationM: source.groundElevationM,
-              feedType: statelessMedia && source.snapshotUrl ? 'image' : normalizeFeedType(source.feedType),
-              mediaLimitation: statelessMedia && normalizeFeedType(source.feedType) === 'hls'
-                ? (source.snapshotUrl ? 'Snapshot fallback: streaming requires a persistent media runtime.' : 'This HLS-only camera requires a persistent media runtime.') : '',
+              feedType:
+                statelessMedia && source.snapshotUrl
+                  ? 'image'
+                  : normalizeFeedType(source.feedType),
+              mediaLimitation:
+                statelessMedia && normalizeFeedType(source.feedType) === 'hls'
+                  ? source.snapshotUrl
+                    ? 'Live video unavailable here; showing refreshed snapshots.'
+                    : 'Live video unavailable here; this camera has no public snapshot.'
+                  : '',
               sourceKind:
                 source.sourceKind || (source.url ? 'configured' : 'fallback'),
               poseSource: source.poseSource,
@@ -204,8 +214,16 @@ export function cctvProxy({ sourceRoot = process.cwd(), statelessMedia = false }
           const feedType = normalizeFeedType(source?.feedType || 'image');
           const leaseId = url.searchParams.get('lease');
           if (statelessMedia && feedType === 'hls') {
-            res.writeHead(503, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-            res.end(JSON.stringify({ error: 'HLS requires a persistent media runtime; use a camera snapshot when available.' }));
+            res.writeHead(503, {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-store',
+            });
+            res.end(
+              JSON.stringify({
+                error:
+                  'HLS requires a persistent media runtime; use a camera snapshot when available.',
+              }),
+            );
             return;
           }
           if (feedType === 'hls' && !/^[a-f0-9-]{36}$/i.test(leaseId || '')) {

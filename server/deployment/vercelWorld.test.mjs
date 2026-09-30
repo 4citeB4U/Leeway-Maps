@@ -7,6 +7,7 @@ import {
   createMiddlewareRouter,
   createVercelWorldHandler,
   createWorldPlugins,
+  restoreVercelApiPath,
 } from './vercelWorld.js';
 
 function response() {
@@ -35,6 +36,10 @@ test('Vercel bundles dynamic public CCTV catalogs, heights and weather WASM with
     await readFile(new URL('vercel.json', root), 'utf8'),
   );
   const rule = config.functions['api/*.js'];
+  assert.deepEqual(config.rewrites, [
+    { source: '/api/:path*', destination: '/api/world?__leeway_path=:path*' },
+  ]);
+  await access(new URL('api/world.js', root));
   assert.equal(rule.maxDuration, 60);
   for (const file of [
     'config/cctv_sources.austin.json',
@@ -54,6 +59,29 @@ test('Vercel bundles dynamic public CCTV catalogs, heights and weather WASM with
   ]) {
     assert.equal(posix.matchesGlob(file, rule.includeFiles), false, file);
   }
+});
+
+test('explicit Vercel rewrite restores nested API paths and preserves provider parameters', () => {
+  assert.equal(
+    restoreVercelApiPath('/api/world?__leeway_path=cctv%2Fcoverage'),
+    '/api/cctv/coverage',
+  );
+  assert.equal(
+    restoreVercelApiPath('/api/world?lat=43&lon=-88', {
+      __leeway_path: 'weather',
+    }),
+    '/api/weather?lat=43&lon=-88',
+  );
+  assert.equal(
+    restoreVercelApiPath(
+      '/api/cctv/sources?__leeway_path=setup&city=milwaukee',
+    ),
+    '/api/cctv/sources?city=milwaukee',
+  );
+  assert.equal(
+    restoreVercelApiPath('/api/world?__leeway_path=peers%2Flogin'),
+    '/api/peers/login',
+  );
 });
 
 test('router strips a mount prefix and restores the request URL', async () => {
