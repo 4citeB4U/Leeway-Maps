@@ -297,6 +297,7 @@ export function createCards({ state: layerState, services, parts, source }) {
     layerState._cardFetchCount += 1;
 
     const image = new Image();
+    image.crossOrigin = 'anonymous';
     layerState._cardFetchImages.add(image);
     const settle = (ok) => {
       image.onload = null;

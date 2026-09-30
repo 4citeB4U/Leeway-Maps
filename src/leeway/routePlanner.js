@@ -73,7 +73,7 @@ export function mountRoutePlanner({
   const endpointInput = root.querySelector('[data-valhalla]');
   try {
     endpointInput.value =
-      localStorage.getItem('leeway.valhalla.url') ??
+      localStorage.getItem('leeway.maps.valhalla.url') ??
       (import.meta.env?.VITE_LEEWAY_VALHALLA_URL || '');
   } catch {
     endpointInput.value = import.meta.env?.VITE_LEEWAY_VALHALLA_URL || '';
@@ -786,7 +786,7 @@ export function mountRoutePlanner({
   endpointInput.addEventListener('change', () => {
     try {
       localStorage.setItem(
-        'leeway.valhalla.url',
+        'leeway.maps.valhalla.url',
         normalizeValhallaUrl(endpointInput.value),
       );
     } catch (error) {

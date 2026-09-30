@@ -230,7 +230,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
         <button class="lws-chip" data-action="world">◉ World</button>
         <button class="lws-chip" data-action="route">Directions</button>
         <button class="lws-chip hide-sm" data-action="layers">▱ Layers⌄</button>
-        
+
         <button class="lws-chip" data-action="roadside">Road stops</button><button class="lws-chip" data-action="capabilities">Capabilities</button><button class="lws-chip hide-sm" data-action="map-only">Hide controls</button>
         <div class="lws-avatar">AL</div><div class="lws-agent-status">Agent Lee · Copilot<br>Open to connect</div>
       </div>
@@ -735,13 +735,16 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   }
 
   async function updateLocationBadge() {
-    const point = viewCenterPoint();
+    const devicePoint = deviceLocation.getPoint();
+    const point = devicePoint || viewCenterPoint();
+    const sourceLabel = devicePoint ? (devicePoint.accuracy > 10000 ? 'APPROXIMATE DEVICE LOCATION' : 'DEVICE LOCATION') : 'MAP AREA';
     if (!point || !locationBadge) return;
-    const cell = `${point.lat.toFixed(1)},${point.lon.toFixed(1)}`;
+    const cell = `${sourceLabel}:${point.lat.toFixed(3)},${point.lon.toFixed(3)}`;
     if (cell === locationCell) return;
     locationCell = cell;
     const generation = ++locationRequestGeneration;
-    locationBadge.querySelector('strong').textContent = 'LOCATING…';
+    locationBadge.querySelector('strong').textContent = sourceLabel;
+    locationBadge.querySelector('span').textContent = 'Identifying area…';
     try {
       const response = await fetch(
         `/api/regional-brief?latitude=${encodeURIComponent(point.lat)}&longitude=${encodeURIComponent(point.lon)}`,
@@ -754,18 +757,18 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       const strong = locationBadge.querySelector('strong');
       const detail = locationBadge.querySelector('span');
       strong.textContent =
-        place?.locality || place?.region || place?.country || 'WORLD';
+        `${sourceLabel} · ${place?.locality || place?.region || place?.country || 'Unknown area'}`;
       detail.textContent =
         [place?.region, place?.country]
           .filter(
             (value, index, values) => value && values.indexOf(value) === index,
           )
-          .join(' · ') || 'Geographic context';
+          .join(' · ') + (devicePoint ? ` · accuracy about ${Math.round(devicePoint.accuracy)} m` : ' · not your device location');
     } catch {
       if (generation !== locationRequestGeneration) return;
-      locationBadge.querySelector('strong').textContent = 'MAP';
+      locationBadge.querySelector('strong').textContent = sourceLabel;
       locationBadge.querySelector('span').textContent =
-        'Geographic context unavailable';
+        `${point.lat.toFixed(4)}, ${point.lon.toFixed(4)} · place name unavailable`; 
     }
   }
 
@@ -1291,7 +1294,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     }
   });
 
-  const deviceLocation = mountDeviceLocation({viewer,button:shell.querySelector('[data-dock="locate"]'),notify:say,onChange:()=>{queueMicrotask(()=>mapReports.refresh());}});
+  const deviceLocation = mountDeviceLocation({viewer,button:shell.querySelector('[data-dock="locate"]'),notify:say,onChange:()=>{queueMicrotask(()=>{mapReports.refresh();void updateLocationBadge();});}});
   const mapReports = mountMapReports({
     shell, viewer, dataManager, getPoint: () => deviceLocation.getPoint() || viewCenterPoint(),
     onWeather: () => setRightPanel('weather', { toggle: false }),

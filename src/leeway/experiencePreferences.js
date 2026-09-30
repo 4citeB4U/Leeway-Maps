@@ -24,12 +24,12 @@ export function mountExperiencePreferences() {
     audio = root.querySelector('audio');
   let mediaUrl;
   const coverage = {
-    en: 'Map and voice controls are translated. Business workflows, guidance details and provider content are not fully translated yet. Voice availability depends on the selected service.',
-    es: 'Los controles del mapa y de voz están traducidos. Los procesos empresariales, los detalles de navegación y el contenido de proveedores aún no están completamente traducidos. La voz depende del servicio elegido.',
-    fr: 'Les commandes de carte et de voix sont traduites. Les processus métier, les détails du guidage et les contenus des fournisseurs ne sont pas encore entièrement traduits. La voix dépend du service choisi.',
-    zh: '地图和语音控件已翻译。业务流程、导航详情和数据提供方内容尚未完全翻译。语音支持取决于所选服务。',
-    ru: 'Элементы карты и голосового управления переведены. Бизнес-процессы, подробности навигации и данные поставщиков пока переведены не полностью. Голос зависит от выбранного сервиса.',
-    mn: 'Газрын зураг болон дууны удирдлагыг орчуулсан. Бизнесийн үйл явц, чиглүүлэлтийн дэлгэрэнгүй мэдээлэл, нийлүүлэгчийн агуулгыг бүрэн орчуулаагүй. Дууны боломж сонгосон үйлчилгээнээс хамаарна.',
+    en: 'Map and voice controls are translated. Guidance details and provider content are not fully translated yet. Voice availability depends on the selected service.',
+    es: 'Los controles del mapa y de voz están traducidos. Los detalles de navegación y el contenido de proveedores aún no están completamente traducidos. La voz depende del servicio elegido.',
+    fr: 'Les commandes de carte et de voix sont traduites. Les détails du guidage et les contenus des fournisseurs ne sont pas encore entièrement traduits. La voix dépend du service choisi.',
+    zh: '地图和语音控件已翻译。导航详情和数据提供方内容尚未完全翻译。语音支持取决于所选服务。',
+    ru: 'Элементы карты и голосового управления переведены. Подробности навигации и данные поставщиков пока переведены не полностью. Голос зависит от выбранного сервиса.',
+    mn: 'Газрын зураг болон дууны удирдлагыг орчуулсан. Чиглүүлэлтийн дэлгэрэнгүй мэдээлэл, нийлүүлэгчийн агуулгыг бүрэн орчуулаагүй. Дууны боломж сонгосон үйлчилгээнээс хамаарна.',
   };
   const musicNotes = {
     en: 'Device files stay on this device. Music apps open separately and keep their own login, playback and voice controls. Agent Lee does not control them.',
@@ -68,7 +68,7 @@ export function mountExperiencePreferences() {
   });
   // First-use language onboarding does not block the map or request location.
   try {
-    if (!localStorage.getItem('leeway.language')) root.hidden = false;
+    if (!localStorage.getItem('leeway.maps.language')) root.hidden = false;
   } catch {}
   return {
     open() {

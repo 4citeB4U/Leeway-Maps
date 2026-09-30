@@ -1,6 +1,6 @@
 import * as Cesium from 'cesium';
 import { staticFrameRefreshMs } from '../../data/cctvLod.js';
-import { frameFetchDue, cardFetchPolicy } from '../../data/cctvCards.js';
+import { frameFetchDue, cardFetchPolicy, CCTV_CARD_FADE_END_M } from '../../data/cctvCards.js';
 import { DEFAULT_CAMERA_CALIBRATION } from './policy.js';
 
 export function createModel({ state: layerState, services, parts, source }) {
@@ -498,7 +498,12 @@ export function createModel({ state: layerState, services, parts, source }) {
     // quota and uses the same source-owned pacing/retry/cache lifecycle.
     if (layerState._activeCameraCardEnabled && layerState._activeCameraId)
       consider(layerState._activeCameraId);
-    for (const id of layerState._cardIds) consider(id);
+    // The overlay has zero opacity above its fade ceiling. Do not keep
+    // downloading/decoding invisible ambient thumbnails at globe altitude.
+    // The explicit active camera above, and its separate player, remain live.
+    const cameraHeight = layerState._viewer?.camera?.positionCartographic?.height;
+    if (!Number.isFinite(cameraHeight) || cameraHeight < CCTV_CARD_FADE_END_M)
+      for (const id of layerState._cardIds) consider(id);
     const policy = cardFetchPolicy({
       // The cold-fill burst yields to the staggered geometry drain: 4 concurrent
       // image fetch+decodes mid-drain starve the mesh-floor queue on weak GPUs

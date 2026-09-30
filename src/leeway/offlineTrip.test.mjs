@@ -164,5 +164,5 @@ test('serialized route excludes arbitrary credentials, chat and GPS history prop
   assert.ok(!encoded.includes('private'));
   const value = JSON.parse(encoded);
   assert.equal(value.version, 1);
-  assert.equal(OFFLINE_TRIP_KEY, 'leeway.logistics.offlineTrip.v1');
+  assert.equal(OFFLINE_TRIP_KEY, 'leeway.maps.offlineTrip.v1');
 });

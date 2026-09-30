@@ -1,6 +1,6 @@
 /* Cache the installed application's static shell after an online visit. Never
    intercept live APIs, tiles, locations, model files, TTS, or route responses. */
-const CACHE = 'leeway-maps-offline-v2';
+const CACHE = 'leeway-maps-offline-v3';
 const base = self.registration.scope;
 const offline = new URL('offline.html', base).href;
 const offlineAssets = [
@@ -23,7 +23,7 @@ self.addEventListener('activate', (event) => {
           keys
             .filter(
               (key) =>
-                key.startsWith('leeway-logistics-offline-') && key !== CACHE,
+                key.startsWith('leeway-maps-offline-') && key !== CACHE,
             )
             .map((key) => caches.delete(key)),
         ),

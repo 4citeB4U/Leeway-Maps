@@ -37,7 +37,7 @@ export function mountMapReports({ shell, viewer, dataManager, getPoint, onWeathe
     renderTraffic();
     const point = getPoint();
     if (!point) return;
-    const key = `${point.lat.toFixed(2)},${point.lon.toFixed(2)}`;
+    const key = `${point.accuracy != null ? 'device' : 'map'}:${point.lat.toFixed(2)},${point.lon.toFixed(2)}`;
     if (key === cell && Date.now() - updated < 300000) return;
     request?.abort();
     const controller = new AbortController();request = controller;cell = key;updated = Date.now();
@@ -47,7 +47,7 @@ export function mountMapReports({ shell, viewer, dataManager, getPoint, onWeathe
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const payload = await res.json();
       if (destroyed || request !== controller) return;
-      weather.textContent = `${point.accuracy != null ? 'YOUR LOCATION' : 'MAP AREA'} · ${weatherReport(payload)}`;
+      weather.textContent = `${point.accuracy != null ? (point.accuracy > 10000 ? 'APPROXIMATE DEVICE AREA' : 'YOUR LOCATION') : 'MAP AREA'} · ${weatherReport(payload)}`;
       weather.title = `Map area ${key}. Open-Meteo · observation ${payload.weather?.observedAt || 'unknown'}. Click for weather details.`;
     } catch {
       if (!destroyed && request === controller) weather.textContent = 'Weather unavailable · Open details';

@@ -60,16 +60,21 @@ export function createFrames({ state: layerState, services, parts, source }) {
     }
     const ctx = runtime.signatureCtx;
     if (!ctx) return null;
+    runtime.imageOriginBlocked = false;
     try {
       ctx.clearRect(0, 0, FRAME_SIGNATURE_W, FRAME_SIGNATURE_H);
       ctx.drawImage(image, 0, 0, FRAME_SIGNATURE_W, FRAME_SIGNATURE_H);
       return frameSignatureFromPixels(
         ctx.getImageData(0, 0, FRAME_SIGNATURE_W, FRAME_SIGNATURE_H).data,
       );
-    } catch {
-      // Tainted canvas (a cross-origin source served without CORS) or a decode
-      // race. Returning null means "assume changed", so behavior degrades to
-      // the unconditional redraw this optimization replaced.
+    } catch (error) {
+      // Never forward an origin-unclean frame to Cesium: a later texImage2D
+      // upload throws outside this function and stops the entire scene.
+      if (error?.name === 'SecurityError') {
+        runtime.imageOriginBlocked = true;
+        runtime.imageReady = false;
+        if (runtime.signatureCanvas) runtime.signatureCanvas.width = FRAME_SIGNATURE_W;
+      }
       return null;
     }
   }
@@ -102,8 +107,18 @@ export function createFrames({ state: layerState, services, parts, source }) {
     const buffer = runtime.buffers[runtime.bufferIndex];
     const ctx = buffer.getContext('2d');
     if (!ctx) return null;
-    ctx.clearRect(0, 0, buffer.width, buffer.height);
-    ctx.drawImage(runtime.canvas, 0, 0);
+    try {
+      ctx.clearRect(0, 0, buffer.width, buffer.height);
+      ctx.drawImage(runtime.canvas, 0, 0);
+      // Reading one pixel checks the canvas origin-clean flag before the GPU
+      // sees it. It does not inspect or retain camera content.
+      ctx.getImageData?.(0, 0, 1, 1);
+    } catch (error) {
+      if (error?.name !== 'SecurityError') throw error;
+      buffer.width = PROJECTION_CANVAS_WIDTH;
+      runtime.imageOriginBlocked = true;
+      return null;
+    }
     return buffer;
   }
 
@@ -328,6 +343,10 @@ export function createFrames({ state: layerState, services, parts, source }) {
         // two Cesium needs to rebind, which IS the periodic white flash from the
         // owner field tests (2026-07-04 and 2026-07-30).
         const signature = projectionFrameSignature(runtime);
+        if (runtime.imageOriginBlocked) {
+          paintPlaceholderThrottled(record, runtime, {message: 'Camera image blocked by source CORS'});
+          return;
+        }
         runtime.drawnImageStamp = runtime.imageStamp;
         if (signature !== null && signature === runtime.lastFrameSignature) {
           // Identical pixels — leave the canvas, and therefore the bound

@@ -315,7 +315,7 @@ const rows = {
 };
 let selected;
 try {
-  selected = localStorage.getItem('leeway.language');
+  selected = localStorage.getItem('leeway.maps.language');
 } catch {}
 let current = LANGUAGES.some((l) => l.code === selected) ? selected : 'en';
 export function getLanguage() {
@@ -356,7 +356,7 @@ export function setLanguage(code) {
     throw new Error('Unsupported interface language.');
   current = code;
   try {
-    localStorage.setItem('leeway.language', code);
+    localStorage.setItem('leeway.maps.language', code);
   } catch {}
   globalThis.document?.documentElement.setAttribute('lang', code);
   globalThis.dispatchEvent?.(new Event('leeway:language'));

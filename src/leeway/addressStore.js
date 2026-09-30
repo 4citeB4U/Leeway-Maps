@@ -1,6 +1,6 @@
 export const ADDRESS_KEYS = {
-  saved: 'leeway.addresses.saved.v1',
-  recent: 'leeway.addresses.recent.v1',
+  saved: 'leeway.maps.addresses.saved.v1',
+  recent: 'leeway.maps.addresses.recent.v1',
 };
 export function addressText(value) {
   const text = String(value ?? '').trim();

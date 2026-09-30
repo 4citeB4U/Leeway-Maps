@@ -2,7 +2,7 @@ import * as Cesium from 'cesium';
 
 export function validDeviceFix(position, now = Date.now()) {
   const c = position?.coords;
-  if (!c || ![c.latitude,c.longitude,c.accuracy,position.timestamp].every(Number.isFinite) || Math.abs(c.latitude)>90 || Math.abs(c.longitude)>180 || c.accuracy<0 || now-position.timestamp>120000) return null;
+  if (!c || ![c.latitude,c.longitude,c.accuracy,position.timestamp].every(Number.isFinite) || Math.abs(c.latitude)>90 || Math.abs(c.longitude)>180 || c.accuracy<0 || position.timestamp>now+10000 || now-position.timestamp>120000) return null;
   return {lat:c.latitude,lon:c.longitude,accuracy:c.accuracy,at:position.timestamp};
 }
 
@@ -20,18 +20,22 @@ export function mountDeviceLocation({viewer,button,onChange=()=>{},notify=()=>{}
   }
   function failure(error) {
     if(destroyed)return;
+    fix=null;onChange(null);
     if(button){button.dataset.locationState='unavailable';button.title=error.code===1?'Allow location access to use your device location':'Device location unavailable; press to retry';}
     if(error.code===1)notify('Location access is off. Reports use the map area until you allow location.');
   }
   if(geolocation)watch=geolocation.watchPosition(accept,failure,{enableHighAccuracy:true,maximumAge:10000,timeout:20000});
   async function recenter() {
     if(!geolocation){notify('This browser does not provide device location.');return;}
-    if(!fix || Date.now()-fix.at>30000) {
+    // Every explicit press asks the device again. Never reuse the map center or
+    // an earlier browser/IP-derived fix as an exact current position.
+    {
       notify('Finding your device location…');
       try{accept(await new Promise((resolve,reject)=>geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,maximumAge:0,timeout:20000})));}
       catch(error){failure(error);notify(error.code===1?'Allow location access in your browser to center the map.':'Unable to get a fresh device location.');return;}
     }
     if(!fix)return;
+    if(fix.accuracy>10000){notify(`The device only returned an approximate location (within ${Math.round(fix.accuracy/1000)} km). Enable precise location in your device and browser settings, then retry. The map has not been moved.`);return;}
     viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(fix.lon,fix.lat,Math.max(500,fix.accuracy*5)),orientation:{heading:0,pitch:-Math.PI/2,roll:0},duration:1});
     notify(`Your device location · accuracy about ${Math.round(fix.accuracy)} m`);
   }

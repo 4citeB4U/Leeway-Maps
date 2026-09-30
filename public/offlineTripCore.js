@@ -1,4 +1,4 @@
-export const OFFLINE_TRIP_KEY = 'leeway.logistics.offlineTrip.v1';
+export const OFFLINE_TRIP_KEY = 'leeway.maps.offlineTrip.v1';
 export const LIMITS = Object.freeze({
   points: 20000,
   steps: 500,

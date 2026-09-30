@@ -244,6 +244,7 @@ export function createProjection({
             runtime.videoFailed = true;
             runtime.mode = 'image';
             runtime.image = new Image();
+            runtime.image.crossOrigin = 'anonymous';
             runtime.image.decoding = 'async';
             runtime.image.onload = () => {
               runtime.imageLoading = false;
