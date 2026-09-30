@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createVoiceFabricAdapter } from './voiceFabric.js';
+import { createVoiceFabricAdapter, awaitVoiceHandshake, VOICE_FABRIC_HANDSHAKE_MS } from './voiceFabric.js';
 test('external clone is selected; mute prevents initialization and has no alternate voice', async () => {
   const calls = [];
   const client = { connect: async()=>{}, selectVoice: async id=>calls.push(id), prepare: async()=>({ready:true,selectedVoiceId:'agent-lee-voice-one'}), speak:async text=>calls.push(text), stop:async()=>{}, destroy(){} };
@@ -23,7 +23,10 @@ test('canonical preparation timeout and bridge progress/errors reach the UI and 
  };
  const voice=createVoiceFabricAdapter({loadSdk:async()=>({createLeeWayVoice:opts=>{options=opts;return client;}}),onState:s=>states.push(s)});
  await voice.prepare();
- assert.equal(options.timeoutMs,120000);
+ assert.equal(options.timeoutMs,900000);
+ assert.equal(VOICE_FABRIC_HANDSHAKE_MS,120000);
+ assert.ok(states.some(s=>/1.5 GB/.test(s.message||'') && /15 minutes/.test(s.message)));
+ assert.ok(states.some(s=>/Selecting Agent Lee Voice One/.test(s.message||'')));
  assert.ok(states.some(s=>s.message==='Loading voice model 42%'));
  events.get('voice.error')({message:'Engine unavailable'});
  assert.equal(states.at(-1).status,'unavailable');
@@ -42,10 +45,29 @@ test('disconnect during SDK load cannot resurrect an iframe or invalidate a newe
  const sdk={createLeeWayVoice(){creations++;return client;}};
  const voice=createVoiceFabricAdapter({loadSdk:()=>++loads===1?new Promise(r=>resolveOld=r):Promise.resolve(sdk)});
  const old=voice.prepare();
+ const rejection=assert.rejects(old,{name:'AbortError'});
  voice.destroy();
  await voice.prepare();
- const rejection=assert.rejects(old,{name:'AbortError'});
  resolveOld(sdk); await rejection;
  assert.equal(creations,1);assert.equal(destroys,0);
  assert.equal(await voice.prepare(),client);
+});
+
+test('bounded handshake rejects timeout and cancels promptly without awaiting cold load', async () => {
+ await assert.rejects(awaitVoiceHandshake(new Promise(()=>{}),'voice selection',undefined,5),/voice selection timed out/);
+ const controller=new AbortController();
+ const wait=awaitVoiceHandshake(new Promise(()=>{}),'connection',controller.signal);
+ const rejection=assert.rejects(wait,{name:'AbortError'});
+ controller.abort(); await rejection;
+ assert.equal(await awaitVoiceHandshake(Promise.resolve('connected'),'connection'), 'connected');
+});
+
+test('disconnect during long preparation releases subscriptions and does not announce ready later', async () => {
+ let resolvePrepare,started; const reached=new Promise(r=>started=r); const events=new Map(); const states=[];let destroyed=false;
+ const client={on(type,fn){events.set(type,fn);return()=>events.delete(type);},connect:async()=>{},selectVoice:async()=>{},prepare(){started();return new Promise(r=>resolvePrepare=r);},destroy(){destroyed=true;}};
+ const voice=createVoiceFabricAdapter({loadSdk:async()=>({createLeeWayVoice:()=>client}),onState:s=>states.push(s)});
+ const pending=voice.prepare();const rejection=assert.rejects(pending,{name:'AbortError'});
+ await reached;voice.destroy();assert.equal(events.size,0);assert.equal(destroyed,true);
+ resolvePrepare({ready:true,selectedVoiceId:'agent-lee-voice-one'});await rejection;
+ assert.equal(states.some(s=>s.status==='ready'),false);
 });

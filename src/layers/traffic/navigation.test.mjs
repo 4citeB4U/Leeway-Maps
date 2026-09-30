@@ -43,6 +43,7 @@ function setup(t, requestRoads) {
   const viewer = {
     camera,
     scene: {
+      requestRender() {},
       canvas: { width: 100, height: 100 },
       preRender: new Cesium.Event(),
       primitives: { add: (value) => value, remove: () => true },

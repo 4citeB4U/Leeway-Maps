@@ -1,4 +1,5 @@
 import * as Cesium from 'cesium';
+import { TRAFFIC_POSITION_INTERVAL_MS } from './animation.js';
 import { TRAFFIC_TIMING_ENABLED } from './policy.js';
 import {
   claimCameraSensitivity,
@@ -11,7 +12,7 @@ export function createLifecycle({
   parts,
   source,
 }) {
-  const { holdContinuousRender, releaseContinuousRender } = services.render;
+  const { releaseContinuousRender } = services.render;
   const { resetFlowTileCache } = source;
 
   const methods = {
@@ -77,7 +78,14 @@ export function createLifecycle({
      */
     enable(viewer) {
       layerState._enabled = true;
-      holdContinuousRender('traffic'); // per-frame animator (perf wave 2)
+      // A 20 Hz request timer animates parked traffic without forcing the entire
+      // map into a continuous display-rate render loop. Other layers may render
+      // faster; animate() independently limits position-buffer uploads.
+      clearInterval(layerState._animationTimer);
+      layerState._animationTimer = setInterval(() => {
+        if (layerState._enabled && (layerState._dots.length || layerState._heatJamPrim))
+          viewer.scene.requestRender();
+      }, TRAFFIC_POSITION_INTERVAL_MS);
       layerState._lastAnimTime = 0;
       layerState._pointCollection.show = true;
 
@@ -136,6 +144,8 @@ export function createLifecycle({
     disable(viewer) {
       layerState._enabled = false;
       releaseContinuousRender('traffic');
+      clearInterval(layerState._animationTimer);
+      layerState._animationTimer = null;
       clearTimeout(layerState._fetchTimeout);
       clearInterval(layerState._enableKickTimer);
       layerState._enableKickTimer = null;

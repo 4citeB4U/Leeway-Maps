@@ -1,30 +1,49 @@
 // Transport only: voice engine, reference and queue belong to Voice Fabric.
 export const VOICE_FABRIC_URL = 'https://4citeb4u.github.io/LeeWay-Voice-Fabric';
-export const VOICE_FABRIC_TIMEOUT_MS = 120000;
+export const VOICE_FABRIC_TIMEOUT_MS = 15 * 60_000;
+export const VOICE_FABRIC_HANDSHAKE_MS = 120_000;
 const SELECTED_VOICE = 'agent-lee-voice-one';
+export function awaitVoiceHandshake(request, stage, signal, timeoutMs = VOICE_FABRIC_HANDSHAKE_MS) {
+  return new Promise((resolve, reject) => {
+    const cleanup = () => { clearTimeout(timer); signal?.removeEventListener('abort', abort); };
+    const fail = error => { cleanup(); reject(error); };
+    const abort = () => fail(new DOMException('Voice connection was cancelled.', 'AbortError'));
+    const timer = setTimeout(() => fail(new Error(`Voice Fabric ${stage} timed out. Text and map controls remain available.`)), timeoutMs);
+    if (signal?.aborted) abort();
+    else signal?.addEventListener('abort', abort, { once: true });
+    Promise.resolve(request).then(value => { cleanup(); resolve(value); }, fail);
+  });
+}
 export function createVoiceFabricAdapter({
   loadSdk = () => import(/* @vite-ignore */ `${VOICE_FABRIC_URL}/src/voice-sdk.js`),
   onState = () => {},
 } = {}) {
   let client, preparing, muted = false, generation = 0, lifecycle = 0;
   let unsubscribe = [];
+  let handshakeAbort;
   const state = (value) => onState({ provider: 'LeeWay Voice Fabric', ...value });
   const clearListeners = () => { for (const off of unsubscribe) off?.(); unsubscribe = []; };
   async function prepare() {
     if (preparing) return preparing;
     const epoch = lifecycle;
+    const abort = handshakeAbort = new AbortController();
+    let stage = 'connecting';
     const ensureCurrent = () => {
       if (epoch !== lifecycle) throw new DOMException('Voice connection was cancelled.', 'AbortError');
     };
     preparing = (async () => {
-      state({ status: 'loading' });
-      const sdk = await loadSdk();
+      state({ status: 'loading', message: 'Connecting to external LeeWay Voice Fabric. Text and map controls remain available.' });
+      const sdk = await awaitVoiceHandshake(loadSdk(), 'SDK loading', abort.signal);
       ensureCurrent();
       client ||= sdk.createLeeWayVoice({ origin: VOICE_FABRIC_URL, timeoutMs: VOICE_FABRIC_TIMEOUT_MS });
       const activeClient = client;
       const report = (value = {}) => {
         if (epoch !== lifecycle || client !== activeClient || muted) return;
-        state({ ...value, status: value.status || 'working' });
+        const percent = Number.isFinite(value.progress) ? Math.round(value.progress) : Number(value.total) > 0 && Number.isFinite(value.loaded) ? Math.round(100 * value.loaded / value.total) : null;
+        const message = value.message || (stage === 'preparing'
+          ? `Preparing Agent Lee Voice One${value.file ? ` · ${value.file}` : ''}${percent === null ? '' : ` · ${percent}%`}. First load is about 1.5 GB and may take up to 15 minutes. Map controls remain available.`
+          : `Voice Fabric: ${value.status || 'working'}`);
+        state({ ...value, message, status: value.status === 'unavailable' ? 'unavailable' : stage === 'preparing' ? 'loading' : value.status || 'working' });
       };
       unsubscribe = [
         activeClient.on?.('voice.state', report),
@@ -32,13 +51,18 @@ export function createVoiceFabricAdapter({
       ];
       const connection = activeClient.connect();
       activeClient.frame?.setAttribute('allow', 'autoplay');
-      await connection;
+      await awaitVoiceHandshake(connection, 'connection', abort.signal);
       ensureCurrent();
-      await activeClient.selectVoice(SELECTED_VOICE);
+      stage = 'selecting';
+      state({ status: 'loading', message: 'Selecting Agent Lee Voice One in Voice Fabric.' });
+      await awaitVoiceHandshake(activeClient.selectVoice(SELECTED_VOICE), 'voice selection', abort.signal);
       ensureCurrent();
+      stage = 'preparing';
+      state({ status: 'loading', message: 'Preparing Agent Lee Voice One. First model load is about 1.5 GB and may take up to 15 minutes. Text and map controls remain available.' });
       const result = await activeClient.prepare();
       ensureCurrent();
       if (!result.ready || result.selectedVoiceId !== SELECTED_VOICE) throw new Error('Agent Lee Voice One is unavailable');
+      stage = 'ready';
       state({ status: muted ? 'muted' : 'ready', voice: result.selectedVoiceId });
       return activeClient;
     })().catch(error => {
@@ -75,6 +99,6 @@ export function createVoiceFabricAdapter({
       if (current === generation) state({ status: muted ? 'muted' : 'stopped' });
     },
     resume() { muted = false; state({ status: 'idle' }); },
-    destroy() { generation++; lifecycle++; clearListeners(); client?.destroy(); client = null; preparing = null; },
+    destroy() { generation++; lifecycle++; handshakeAbort?.abort(); clearListeners(); client?.destroy(); client = null; preparing = null; },
   };
 }

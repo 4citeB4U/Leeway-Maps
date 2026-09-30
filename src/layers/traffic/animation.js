@@ -14,6 +14,34 @@ import {
   HEAT_JAM_PULSE_ALPHA,
 } from './policy.js';
 
+export const TRAFFIC_POSITION_INTERVAL_MS = 50;
+
+/** Consume distance across short/duplicate segments without extrapolating off road.
+ * At a road end retain the existing staggered recycle and direction. */
+export function advanceTrafficDot(dot, distance, random = Math.random) {
+  let remaining = Math.max(0, Number.isFinite(distance) ? distance : 0);
+  let crossed = false;
+  dot.t = Math.max(0, Math.min(1, dot.t));
+  for (let visited = 0; visited <= dot.numSegments; visited++) {
+    const length = Math.max(0, dot.segmentDist[dot.segIdx] || 0);
+    const available = length * (dot.direction > 0 ? 1 - dot.t : dot.t);
+    if (length > 0 && remaining < available) {
+      dot.t += dot.direction * remaining / length;
+      return crossed;
+    }
+    remaining = Math.max(0, remaining - available);
+    crossed = true;
+    dot.segIdx += dot.direction;
+    if (dot.segIdx >= dot.numSegments || dot.segIdx < 0) {
+      dot.segIdx = dot.direction > 0 ? 0 : dot.numSegments - 1;
+      dot.t = dot.direction > 0 ? random() * 0.3 : 1 - random() * 0.3;
+      return crossed;
+    }
+    dot.t = dot.direction > 0 ? 0 : 1;
+  }
+  return crossed;
+}
+
 export function createAnimation({
   state: layerState,
   services,
@@ -201,9 +229,13 @@ export function createAnimation({
 
   function animate() {
     const now = Date.now();
+    // Other layers may render at display refresh rate. Upload this collection at
+    // most 20 Hz; accumulate elapsed time across skipped frames before moving.
+    if (layerState._lastAnimTime && now - layerState._lastAnimTime >= 0 &&
+        now - layerState._lastAnimTime < TRAFFIC_POSITION_INTERVAL_MS) return;
     // Delta time in seconds, capped to avoid jumps when returning from background tab
     const dt = layerState._lastAnimTime
-      ? Math.min((now - layerState._lastAnimTime) / 1000, 0.1)
+      ? Math.max(0, Math.min((now - layerState._lastAnimTime) / 1000, 0.1))
       : 0.016;
     layerState._lastAnimTime = now;
 
@@ -227,36 +259,8 @@ export function createAnimation({
         burst = CREEP_BURST;
       }
 
-      // Convert m/s speed to parametric t-delta for the current segment length
-      const segLen = dot.segmentDist[dot.segIdx] || 1;
-      const tDelta = (dot.mps * burst * dt) / segLen;
-
-      // Advance parametric position along the road in the current direction
-      dot.t += tDelta * dot.direction;
-
-      // Handle forward segment boundary crossing (t >= 1.0)
-      if (dot.t >= 1.0) {
-        dot.t -= 1.0;
-        dot.segIdx++;
-        if (dot.segIdx >= dot.numSegments) {
-          // End of road: recycle to the road's entry with a small stagger —
-          // cars don't reverse at the end of a street (field-test round 1).
-          // Direction is preserved, so one-way flow stays legal.
-          dot.segIdx = 0;
-          dot.t = Math.random() * 0.3;
-        }
+      if (advanceTrafficDot(dot, dot.mps * burst * dt))
         maybeStopLight(dot, now);
-      } else if (dot.t <= 0.0) {
-        // Handle backward segment boundary crossing (t <= 0.0)
-        dot.t += 1.0;
-        dot.segIdx--;
-        if (dot.segIdx < 0) {
-          // Start of road (traveling backward): recycle to the far end.
-          dot.segIdx = dot.numSegments - 1;
-          dot.t = 1.0 - Math.random() * 0.3;
-        }
-        maybeStopLight(dot, now);
-      }
 
       // Lerp between pre-computed Cartesian3 waypoints (no trig needed).
       // Pass the scratch directly: PointPrimitive's position setter clones the
