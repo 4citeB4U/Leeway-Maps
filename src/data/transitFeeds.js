@@ -127,6 +127,20 @@ function metroTransitRouteMode(routeId) {
  * }>>}
  */
 export const TRANSIT_FEED_REGISTRY = Object.freeze([
+  ...[
+    ['mta-lirr', 'Long Island Rail Road', 'lirr%2Fgtfs-lirr', 40.79, -73.25, 115],
+    ['mta-mnr', 'Metro-North Railroad', 'mnr%2Fgtfs-mnr', 41.05, -73.75, 140],
+  ].map(([id, name, suffix, lat, lon, radius]) => Object.freeze({
+    id, name, operator: `MTA ${name}`, region: 'New York metropolitan area',
+    center: Object.freeze({ lat, lon }), loadRadiusKm: radius,
+    url: `https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/${suffix}`,
+    license: 'MTA data feed terms and conditions',
+    licenseUrl: 'https://www.mta.info/developers/terms-and-conditions',
+    attribution: `Data obtained from MTA ${name}; redistributed by LeeWay servers. No MTA endorsement. Reports older than one minute may not be real time.`,
+    defaultEnabled: true, defaultMode: 'rail', routeMode: () => 'rail',
+    realtimeLagWarningMs: 60000,
+    terms: Object.freeze({ quote: null, note: 'Server-side redistribution allowed; users must not fetch MTA directly. Label lag over one minute. Accuracy, completeness and timeliness are not guaranteed. Text attribution only.' }),
+  })),
   Object.freeze({
     id: 'mbta',
     historyRetention: true,

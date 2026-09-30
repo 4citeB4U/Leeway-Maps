@@ -405,6 +405,10 @@ export function buildTransitSelectionCopy(
     ? Math.max(0, Math.round(entry.sample.actualDelayMs / 1000))
     : null;
   const behind = lagS === null ? '' : ` · shown ${lagS} s behind`;
+  if (feed.realtimeLagWarningMs && (ageS * 1000 > feed.realtimeLagWarningMs || lagS * 1000 > feed.realtimeLagWarningMs)) {
+    details.push('Delayed more than one minute: this information may not be real time.');
+  }
+  if (feed.realtimeLagWarningMs) details.push(feed.attribution);
   details.splice(
     motion.length ? 2 : 1,
     0,

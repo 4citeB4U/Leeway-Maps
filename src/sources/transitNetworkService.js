@@ -1,6 +1,7 @@
 import { readResponseTextCapped } from './httpBody.js';
 import { makeRateLimiter } from './rateLimit.js';
 import { transitOsmQuery, normalizeTransitOsm } from '../data/transitOsm.js';
+import { mtaRailFeeds, fetchMtaRailVehicles } from './mtaRail.js';
 
 const BASE = 'https://transit.land/api/v2/rest/';
 const reply = (status, body) =>
@@ -87,7 +88,9 @@ export function createTransitNetworkService({
     if (!route)
       return reply(404, { error: 'Unknown transit network operation' });
     const mappedOnly = !apiKey && ['routes', 'stops'].includes(route.kind);
-    if (!apiKey && !mappedOnly)
+    const officialRail = !apiKey && route.kind === 'vehicles'
+      ? mtaRailFeeds(Number(route.target.searchParams.get('lat')), Number(route.target.searchParams.get('lon'))) : [];
+    if (!apiKey && !mappedOnly && !officialRail.length)
       return reply(503, {
         status: 'credentials-required',
         error:
@@ -119,6 +122,13 @@ export function createTransitNetworkService({
             mappedOnly ? 40000 : route.kind === 'vehicles' ? 30000 : 12000,
           );
           try {
+            if (officialRail.length) {
+              const body = await fetchMtaRailVehicles(officialRail, { fetchImpl, signal: controller.signal });
+              if (!body.coverage.some(feed => feed.status === 'available')) return { status: 502, body: { error: 'MTA rail feeds temporarily unavailable' } };
+              cache.set(key, { body, until: Date.now() + 15000 });
+              if (cache.size > 128) cache.delete(cache.keys().next().value);
+              return { status: 200, body };
+            }
             if (mappedOnly) {
               const query = transitOsmQuery(
                 route.kind,

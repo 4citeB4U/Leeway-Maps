@@ -793,5 +793,10 @@ body.leeway-enterprise-shell #leeway-world-shell .lws-context-inspector .cctv-pa
  max-height:100%!important;overflow-y:auto;
 }
 @media(max-width:700px){
- body.leeway-enterprise-shell #leeway-world-shell .lws-context-inspector {top:245px;bottom:220px;right:62px;width:calc(100vw - 74px);max-height:calc(100dvh - 465px);}
+ body.leeway-enterprise-shell #leeway-world-shell .lws-location-badge {white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+ body.leeway-enterprise-shell #leeway-world-shell .lws-location-badge strong {display:block;overflow:hidden;text-overflow:ellipsis;}
+ body.leeway-enterprise-shell #leeway-world-shell .lws-right-tabs {top:245px;}
+ /* Override the original mobile panel anchors: reserve the report and location row. */
+ body.leeway-enterprise-shell :is(#leeway-transit-world,#right-context-rail,#weather-panel,.lnc-root),
+ body.leeway-enterprise-shell #leeway-world-shell .lws-context-inspector {top:245px!important;bottom:230px;right:72px!important;width:calc(100vw - 82px)!important;max-height:calc(100dvh - 475px)!important;}
 }

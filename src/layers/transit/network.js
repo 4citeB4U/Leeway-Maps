@@ -190,7 +190,7 @@ export function createTransitNetworkLayer({
       count = 0;
       activeSource = data.mappedOnly
         ? 'OpenStreetMap · mapped network'
-        : 'Transitland';
+        : data.source || 'Transitland';
       for (const item of (data[kind] || []).slice(
         0,
         kind === 'vehicles' ? 3000 : 100,
@@ -284,7 +284,7 @@ export function createTransitNetworkLayer({
       error = null;
       coverage =
         kind === 'vehicles'
-          ? `${count} current GPS fixes · ${data.coverage?.length || 0} feeds checked${count ? '' : '; no accessible current GPS from this source'}`
+          ? `${count} reported GPS fixes · ${data.coverage?.length || 0} feeds checked${data.source?.startsWith('MTA') ? ' · LIRR / Metro-North only; see report timestamps' : ''}${count ? '' : '; no accessible current GPS from this source'}`
           : `${count} ${kind} within ${kind === 'stops' ? '3' : '10'} km${data.partial ? ' · partial results; pan for more' : ''} · ${data.mappedOnly ? 'mapped network; live times unavailable' : 'published routes; no GPS implied'}`;
     } catch (failure) {
       if (revision === generation && !signal.aborted) {
