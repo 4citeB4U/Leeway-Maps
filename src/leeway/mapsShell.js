@@ -809,14 +809,22 @@ export function mountMapsShell(
       () => void updateLocationBadge(),
     ) || null;
 
-  async function locate(query) {
+  async function locate(query, { altitude = 6000 } = {}) {
     if (!query || !viewer) return false;
     try {
       const matches = await locationSearch.search(query);
       const point = matches[0];
       if (!point) throw new Error('No matching location');
+      const requestedAltitude = Number(altitude);
+      const safeAltitude = Number.isFinite(requestedAltitude)
+        ? Math.max(1000, requestedAltitude)
+        : 6000;
       await viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(point.lon, point.lat, 6000),
+        destination: Cesium.Cartesian3.fromDegrees(
+          point.lon,
+          point.lat,
+          safeAltitude,
+        ),
         duration: 1.2,
       });
       say(
@@ -835,6 +843,41 @@ export function mountMapsShell(
   const nationalCatalog = mountNationalCameraCatalog({
     host: shell,
     notify: say,
+    onJurisdictionSelect: async (row, action) => {
+      const name = String(row?.name || '').trim();
+      if (!name) return false;
+      const altitude =
+        row?.type === 'federal-district'
+          ? 85000
+          : row?.type === 'territory'
+            ? 300000
+            : 500000;
+      const found = await locate(
+        `${name}, ${row?.country || 'United States'}`,
+        { altitude },
+      );
+      if (!found) return false;
+
+      nationalCatalog.close();
+      if (!action?.canViewCameras) {
+        setRightPanel(null, { toggle: false });
+        say(
+          `${name} located · this registry does not claim an integrated public camera feed yet`,
+        );
+        return true;
+      }
+
+      if (!dataManager?.layers?.has('cctv')) {
+        say(`${name} located · CCTV layer unavailable in this build`);
+        return true;
+      }
+      if (!dataManager.isEnabled?.('cctv')) {
+        await dataManager.setEnabled('cctv', true, { origin: 'user' });
+      }
+      setRightPanel('cctv', { toggle: false });
+      say(`${name} cameras enabled · select a camera marker to open its feed`);
+      return true;
+    },
   });
 
   function setNav(id) {

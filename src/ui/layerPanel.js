@@ -18,15 +18,18 @@ const FEED_STATE_LABELS = Object.freeze({
 // Presentation order is independent of catalog registration and startup order.
 const PANEL_GROUPS = [
   {
-    label: 'Movement',
+    label: 'Transportation',
     ids: [
-      'satellites',
       'flights',
       'military',
       'local-adsb',
       'ais-live-vessels',
       'traffic',
+      'traffic-incidents',
       'transit',
+      'transit-routes',
+      'transit-stops',
+      'transit-vehicles',
       'bikeshare',
     ],
   },
@@ -40,18 +43,26 @@ const PANEL_GROUPS = [
       'alpr-cameras',
       'military-installations',
       'local-datacenters',
+      'osm-pipelines',
       'telegeography-submarine-cables',
       'local-dams',
     ],
   },
   {
-    label: 'Events',
-    ids: ['rocket-launches', 'earthquakes', 'local-firms', 'fire-perimeters'],
+    label: 'World Activity',
+    ids: [
+      'satellites',
+      'rocket-launches',
+      'earthquakes',
+      'local-firms',
+      'fire-perimeters',
+    ],
   },
   {
     label: 'Weather',
     ids: [
       'wind',
+      'weather-alerts',
       'weather-radar',
       'weather-satellite',
       'weather-lightning',
