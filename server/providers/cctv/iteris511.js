@@ -11,6 +11,22 @@ HOW = Server-side key injection, official-origin frame synthesis, bounded caps.
 LICENSE = MIT, matching this repository.
 */
 import {
+  ALASKA_511_CAMERAS_URL,
+  ALASKA_511_IMAGE_ORIGIN,
+  DEFAULT_ALASKA_511_MAX_SOURCES,
+  ALASKA_511_ANCHORS,
+  ARIZONA_511_CAMERAS_URL,
+  ARIZONA_511_IMAGE_ORIGIN,
+  DEFAULT_ARIZONA_511_MAX_SOURCES,
+  ARIZONA_511_ANCHORS,
+  IDAHO_511_CAMERAS_URL,
+  IDAHO_511_IMAGE_ORIGIN,
+  DEFAULT_IDAHO_511_MAX_SOURCES,
+  IDAHO_511_ANCHORS,
+  LOUISIANA_511_CAMERAS_URL,
+  LOUISIANA_511_IMAGE_ORIGIN,
+  DEFAULT_LOUISIANA_511_MAX_SOURCES,
+  LOUISIANA_511_ANCHORS,
   GEORGIA_511_CAMERAS_URL,
   GEORGIA_511_IMAGE_ORIGIN,
   DEFAULT_GEORGIA_511_MAX_SOURCES,
@@ -174,6 +190,98 @@ async function loadKeyed511Pack({
     console.warn(`[CCTV] ${provider} camera download failed`);
     return [];
   }
+}
+
+export function loadAlaska511Sources({
+  env = process.env,
+  fetchImpl = fetch,
+} = {}) {
+  return loadKeyed511Pack({
+    env,
+    fetchImpl,
+    keyNames: ['ALASKA_511_API_KEY', 'CCTV_ALASKA_511_KEY'],
+    endpoint: ALASKA_511_CAMERAS_URL,
+    imageOrigin: ALASKA_511_IMAGE_ORIGIN,
+    prefix: 'ak511-',
+    provider: 'Alaska Department of Transportation & Public Facilities / Alaska 511',
+    stateLabel: 'Alaska',
+    cityId: 'alaska',
+    bounds: { south: 51, north: 72, west: -180, east: 180 },
+    sourceKind: 'alaska-511-official',
+    license: 'Alaska 511 developer API and data-feed terms apply',
+    maxEnv: 'CCTV_ALASKA_511_MAX_SOURCES',
+    maxDefault: DEFAULT_ALASKA_511_MAX_SOURCES,
+    anchors: ALASKA_511_ANCHORS,
+  });
+}
+
+export function loadArizona511Sources({
+  env = process.env,
+  fetchImpl = fetch,
+} = {}) {
+  return loadKeyed511Pack({
+    env,
+    fetchImpl,
+    keyNames: ['ARIZONA_511_API_KEY', 'CCTV_ARIZONA_511_KEY'],
+    endpoint: ARIZONA_511_CAMERAS_URL,
+    imageOrigin: ARIZONA_511_IMAGE_ORIGIN,
+    prefix: 'az511-',
+    provider: 'Arizona Department of Transportation / AZ 511',
+    stateLabel: 'Arizona',
+    cityId: 'arizona',
+    bounds: { south: 31.2, north: 37.1, west: -114.9, east: -109.0 },
+    sourceKind: 'arizona-511-official',
+    license: 'AZ 511 developer API and data-feed terms apply',
+    maxEnv: 'CCTV_ARIZONA_511_MAX_SOURCES',
+    maxDefault: DEFAULT_ARIZONA_511_MAX_SOURCES,
+    anchors: ARIZONA_511_ANCHORS,
+  });
+}
+
+export function loadIdaho511Sources({
+  env = process.env,
+  fetchImpl = fetch,
+} = {}) {
+  return loadKeyed511Pack({
+    env,
+    fetchImpl,
+    keyNames: ['IDAHO_511_API_KEY', 'CCTV_IDAHO_511_KEY'],
+    endpoint: IDAHO_511_CAMERAS_URL,
+    imageOrigin: IDAHO_511_IMAGE_ORIGIN,
+    prefix: 'id511-',
+    provider: 'Idaho Transportation Department / Idaho 511',
+    stateLabel: 'Idaho',
+    cityId: 'idaho',
+    bounds: { south: 41.9, north: 49.1, west: -117.3, east: -111.0 },
+    sourceKind: 'idaho-511-official',
+    license: 'Idaho 511 developer API and data-feed terms apply',
+    maxEnv: 'CCTV_IDAHO_511_MAX_SOURCES',
+    maxDefault: DEFAULT_IDAHO_511_MAX_SOURCES,
+    anchors: IDAHO_511_ANCHORS,
+  });
+}
+
+export function loadLouisiana511Sources({
+  env = process.env,
+  fetchImpl = fetch,
+} = {}) {
+  return loadKeyed511Pack({
+    env,
+    fetchImpl,
+    keyNames: ['LOUISIANA_511_API_KEY', 'CCTV_LOUISIANA_511_KEY'],
+    endpoint: LOUISIANA_511_CAMERAS_URL,
+    imageOrigin: LOUISIANA_511_IMAGE_ORIGIN,
+    prefix: 'la511-',
+    provider: 'Louisiana Department of Transportation and Development / 511LA',
+    stateLabel: 'Louisiana',
+    cityId: 'louisiana',
+    bounds: { south: 28.8, north: 33.1, west: -94.1, east: -88.8 },
+    sourceKind: 'louisiana-511-official',
+    license: '511LA developer API and data-feed terms apply',
+    maxEnv: 'CCTV_LOUISIANA_511_MAX_SOURCES',
+    maxDefault: DEFAULT_LOUISIANA_511_MAX_SOURCES,
+    anchors: LOUISIANA_511_ANCHORS,
+  });
 }
 
 export function loadNewYork511Sources({
