@@ -53,6 +53,6 @@ test('app explicitly substitutes Agent Lee and original presentation permits its
   const source = relative => readFileSync(new URL(relative, import.meta.url), 'utf8');
   assert.match(source('../main.js'), /voice:\s*\{\s*initialize:\s*initAgentLeeVoiceEntry\s*\}/);
   assert.match(source('../app/tools.js'), /const voiceCommands = initializeVoice\(/);
-  assert.match(source('./godsEyeControls.js'), /#leeway-agent-lee:not\(\.leeway-open\)/);
+  assert.doesNotMatch(source('./mapViewControls.js'), /#leeway-agent-lee[^\n]*display:none/);
   assert.doesNotMatch(source('./agentLeeVoiceEntry.js'), /realtimeSession|createRealtime|fetch\(/);
 });

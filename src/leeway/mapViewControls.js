@@ -1,13 +1,14 @@
 import { scheduleLabel } from '../data/airlineIdentity.js';
 
-/** Reuse the retained God's Eye controllers, rather than reimplementing camera modes. */
-export function createGodsEyeActions({
+/** Aircraft camera actions within the regular map workspace. */
+export function createMapViewActions({
   styleManager,
   catalog,
-  onAdvanced = () => {},
 }) {
   return {
     async cockpit() {
+      if (styleManager?.getCockpitState?.()?.active)
+        return styleManager.controlCockpit?.('exit') || { ok: true };
       const target = styleManager?.getAircraftTrackingTarget?.();
       if (!target?.id)
         return {
@@ -29,51 +30,35 @@ export function createGodsEyeActions({
       const ok = !!layer?.refocusTrackedById?.(target.id, { origin: 'user' });
       return { ok, error: ok ? null : 'Select an aircraft to follow first' };
     },
-    advanced(enabled = true) {
-      onAdvanced(enabled);
-      return { ok: true };
-    },
     exit() {
       styleManager?.controlCockpit?.('exit');
-      onAdvanced(false);
       return { ok: true };
     },
   };
 }
 
-export function mountGodsEyeControls({
+export function mountMapViewControls({
   application,
   shell,
-  onPresentation = () => {},
   documentRef = document,
   eventTarget = window,
 }) {
   const components = application.getComponents(),
     styleManager = components.controls?.styleManager,
     catalog = components.data?.catalog;
-  let advanced = false,
-    destroyed = false;
+  let destroyed = false;
   const body = documentRef.body;
+  body.classList.remove('leeway-gods-eye');
+  body.classList.add('leeway-enterprise-shell');
   const dock = shell.querySelector('.lws-dock');
-  const launcher = documentRef.createElement('button');
-  launcher.type = 'button';
-  launcher.className = 'lws-dock-btn';
-  launcher.textContent = "God's Eye";
-  launcher.title =
-    'Original camera views, full layers, scenes and visual presets';
-  dock?.appendChild(launcher);
   const cockpitLauncher = documentRef.createElement('button');
   cockpitLauncher.type = 'button';
   cockpitLauncher.className = 'lws-dock-btn';
   cockpitLauncher.textContent = 'Cockpit';
   dock?.appendChild(cockpitLauncher);
   const host = documentRef.createElement('section');
-  host.id = 'leeway-gods-eye-controls';
-  host.setAttribute('aria-label', "God's Eye view controls");
-  const restore = documentRef.createElement('button');
-  restore.type = 'button';
-  restore.textContent = 'Back to map workspace';
-  restore.hidden = true;
+  host.id = 'leeway-map-view-controls';
+  host.setAttribute('aria-label', 'Aircraft view controls');
   const card = documentRef.createElement('section');
   card.className = 'lge-aircraft';
   card.hidden = true;
@@ -86,53 +71,25 @@ export function mountGodsEyeControls({
   follow.textContent = 'Follow aircraft';
   const cockpit = documentRef.createElement('button');
   cockpit.type = 'button';
-  cockpit.textContent = 'Cockpit · first person';
+  cockpit.textContent = 'Cockpit - first person';
   card.append(title, details, follow, cockpit);
-  host.append(restore, card, status);
+  host.append(card, status);
   body.appendChild(host);
   const style = documentRef.createElement('style');
   style.textContent = `
- body.leeway-gods-eye #leeway-world-shell,body.cockpit-mode #leeway-world-shell{display:none!important}
- body:is(.leeway-gods-eye,.cockpit-mode) :is(#first-run-launcher,#leeway-agent-lee:not(.leeway-open),#leeway-transit-world,#leeway-enterprise-workspace){display:none!important}
- #leeway-gods-eye-controls{position:fixed;left:100px;bottom:110px;z-index:9801;pointer-events:none;max-width:min(390px,80vw);font:13px/1.45 system-ui;color:#edfaff}
- #leeway-gods-eye-controls button{pointer-events:auto;color:#edfaff;background:#102333;border:1px solid #479eb6;border-radius:7px;padding:8px;margin:4px;cursor:pointer}
- #leeway-gods-eye-controls .lge-aircraft{pointer-events:auto;background:rgba(3,14,23,.96);border:1px solid #479eb6;border-radius:10px;padding:12px;white-space:pre-line;max-height:40vh;overflow:auto}
- #leeway-gods-eye-controls [hidden]{display:none!important}
- #leeway-gods-eye-controls [role=status]:empty{display:none}
- #leeway-gods-eye-controls [role=status]:not(:empty){background:#102333;padding:8px}
- body.leeway-gods-eye #leeway-gods-eye-controls,body.cockpit-mode #leeway-gods-eye-controls{left:auto;right:12px;bottom:12px}
- body.leeway-gods-eye #leeway-gods-eye-controls .lge-aircraft,body.cockpit-mode #leeway-gods-eye-controls .lge-aircraft{display:none}
+ #leeway-map-view-controls{position:fixed;top:166px;left:12px;bottom:auto;z-index:9801;pointer-events:none;max-width:min(390px,80vw);font:13px/1.45 system-ui;color:#edfaff}
+ #leeway-map-view-controls button{pointer-events:auto;color:#edfaff;background:#102333;border:1px solid #479eb6;border-radius:7px;padding:8px;margin:4px;cursor:pointer}
+ #leeway-map-view-controls .lge-aircraft{pointer-events:auto;background:rgba(3,14,23,.96);border:1px solid #479eb6;border-radius:10px;padding:12px;white-space:pre-line;max-height:calc(100dvh - 336px);overflow:auto}
+ @media(max-width:700px){
+ #leeway-map-view-controls{top:245px;left:10px;max-width:calc(100vw - 82px)}
+ #leeway-map-view-controls .lge-aircraft{max-height:calc(100dvh - 475px)}
+ }
+ #leeway-map-view-controls [hidden]{display:none!important}
+ #leeway-map-view-controls [role=status]:empty{display:none}
+ #leeway-map-view-controls [role=status]:not(:empty){background:#102333;padding:8px}
  `;
   documentRef.head.appendChild(style);
-  function presentation() {
-    const cockpitActive = body.classList.contains('cockpit-mode');
-    const original = advanced || cockpitActive;
-    body.classList.toggle('leeway-gods-eye', advanced);
-    body.classList.toggle('leeway-enterprise-shell', !original);
-    restore.hidden = !original;
-    onPresentation(original);
-    eventTarget.dispatchEvent(new Event('resize'));
-  }
-  function openAdvanced(enabled) {
-    advanced = enabled;
-    status.textContent = '';
-    presentation();
-    if (enabled) {
-      for (const [id, button] of [
-        ['data-panel', '[data-collapse-target="data-panel"]'],
-        ['control-panel', '#control-panel-toggle'],
-      ]) {
-        const panel = documentRef.getElementById(id);
-        if (panel?.classList.contains('collapsed'))
-          documentRef.querySelector(button)?.click();
-      }
-    }
-  }
-  const actions = createGodsEyeActions({
-    styleManager,
-    catalog,
-    onAdvanced: openAdvanced,
-  });
+  const actions = createMapViewActions({ styleManager, catalog });
   async function run(action) {
     try {
       const result = await actions[action]();
@@ -144,13 +101,15 @@ export function mountGodsEyeControls({
       status.textContent = error.message || 'View unavailable';
     }
   }
-  launcher.onclick = () => run('advanced');
   cockpitLauncher.onclick = () => run('cockpit');
   cockpit.onclick = () => run('cockpit');
   follow.onclick = () => run('follow');
-  restore.onclick = () => run('exit');
   function refresh() {
     if (destroyed) return;
+    const cockpitActive = Boolean(styleManager?.getCockpitState?.()?.active);
+    cockpitLauncher.textContent = cockpitActive ? 'Exit cockpit' : 'Cockpit';
+    cockpitLauncher.setAttribute('aria-pressed', String(cockpitActive));
+    cockpit.textContent = cockpitActive ? 'Exit cockpit' : 'Cockpit - first person';
     const target = styleManager?.getAircraftTrackingTarget?.();
     const info = catalog?.get(target?.layerId)?.getTrackedInfo?.();
     card.hidden = !info;
@@ -174,7 +133,8 @@ export function mountGodsEyeControls({
       .join('\n');
   }
   const onCockpit = () => {
-    presentation();
+    body.classList.remove('leeway-gods-eye');
+    body.classList.add('leeway-enterprise-shell');
     refresh();
   };
   eventTarget.addEventListener('gev:cockpit-mode-changed', onCockpit);
@@ -195,7 +155,6 @@ export function mountGodsEyeControls({
       eventTarget.removeEventListener('gev:awareness-subject-cleared', refresh);
       host.remove();
       style.remove();
-      launcher.remove();
       cockpitLauncher.remove();
       body.classList.remove('leeway-gods-eye');
     },
