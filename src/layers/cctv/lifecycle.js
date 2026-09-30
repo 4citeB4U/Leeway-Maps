@@ -213,9 +213,7 @@ export function createLifecycle({
         // Start with the camera nearest the current map view. The catalog is
         // assembled provider-by-provider, so record zero can be thousands of
         // miles from the operator and is never a meaningful default.
-        layerState._activeCameraId =
-          parts.navigation.nearestCameraIdToViewer() ||
-          layerState._records[0].camera.id;
+        layerState._activeCameraId = parts.navigation.nearestCameraIdToViewer();
       }
 
       // Task 5: if the prior batch lost init's bounded race, apply it post-hoc
@@ -365,9 +363,7 @@ export function createLifecycle({
         return Boolean(coverage && layerState._recordById.has(coverage[1]));
       });
       if (!layerState._activeCameraId && layerState._records.length) {
-        layerState._activeCameraId =
-          parts.navigation.nearestCameraIdToViewer() ||
-          layerState._records[0].camera.id;
+        layerState._activeCameraId = parts.navigation.nearestCameraIdToViewer();
         layerState._autoHopSuspended = false;
       }
       const activeRecord = parts.selection.getActiveRecord();

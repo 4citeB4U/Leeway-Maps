@@ -199,7 +199,9 @@ export function _renderCctvState(state) {
         ? `${cameras.length} cameras loaded · click a camera to activate`
         : `${cameras.length} cameras loaded · enable CCTV to activate`;
     } else {
-      this._cctvMeta.textContent = 'Enable CCTV to load camera intersections';
+      this._cctvMeta.textContent = enabled
+        ? 'No public cameras are available near this map view. A local provider may be unavailable. Zoom out or choose another area to explore the catalog.'
+        : 'Enable CCTV to load camera intersections';
     }
   }
 

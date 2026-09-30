@@ -1,3 +1,4 @@
+import {getLocationProvider} from './locationProvider.js';
 import * as Cesium from 'cesium';
 import { createDriveSession } from './driveModeCore.js';
 import './driveMode.css';
@@ -14,7 +15,7 @@ export function mountDriveMode({
   planner,
   viewer = null,
   documentRef = document,
-  geolocation = navigator.geolocation,
+  geolocation = getLocationProvider(),
   onCopilot = () => {},
   onCloseCopilot = () => {},
   onRadio = () => {},

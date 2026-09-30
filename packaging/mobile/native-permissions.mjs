@@ -27,6 +27,10 @@ if (platform === 'android') {
       'LeeWay uses the microphone only when you start a voice request.',
     ],
     [
+      'NSLocationAlwaysAndWhenInUseUsageDescription',
+      'LeeWay uses your location to show nearby routes when you request it.',
+    ],
+    [
       'NSLocationWhenInUseUsageDescription',
       'LeeWay uses your location to show nearby routes when you request it.',
     ],

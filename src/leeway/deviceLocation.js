@@ -1,3 +1,4 @@
+import {getLocationProvider, locationError} from './locationProvider.js';
 import * as Cesium from 'cesium';
 
 export function validDeviceFix(position, now = Date.now()) {
@@ -7,21 +8,21 @@ export function validDeviceFix(position, now = Date.now()) {
 }
 
 /** Device consent remains browser-owned. Fixes live only in memory. */
-export function mountDeviceLocation({viewer,button,onChange=()=>{},notify=()=>{},geolocation=globalThis.navigator?.geolocation}) {
+export function mountDeviceLocation({viewer,button,onChange=()=>{},notify=()=>{},geolocation=getLocationProvider()}) {
   let fix=null,marker=null,watch=null,destroyed=false;
   function accept(position) {
-    const next=validDeviceFix(position);if(!next||destroyed)return;
+    const next=validDeviceFix(position);if(!next||destroyed)return false;
     fix=next;
     const at=Cesium.Cartesian3.fromDegrees(next.lon,next.lat);
     if(!marker) marker=viewer.entities.add({name:'Your device location',position:at,point:{pixelSize:13,color:Cesium.Color.fromCssColorString('#269cff'),outlineColor:Cesium.Color.WHITE,outlineWidth:3,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND},ellipse:{semiMajorAxis:Math.max(1,next.accuracy),semiMinorAxis:Math.max(1,next.accuracy),material:Cesium.Color.fromCssColorString('#269cff').withAlpha(.15),heightReference:Cesium.HeightReference.CLAMP_TO_GROUND}});
     else {marker.position=at;marker.ellipse.semiMajorAxis=Math.max(1,next.accuracy);marker.ellipse.semiMinorAxis=Math.max(1,next.accuracy);}
-    if(button){button.title=`Device location · accuracy about ${Math.round(next.accuracy)} m`;button.dataset.locationState='available';}
-    viewer.scene.requestRender?.();onChange(next);
+    if(button){button.title=`Device location · accuracy about ${Math.round(next.accuracy)} m`;button.dataset.locationState='available';delete button.dataset.locationError;}
+    viewer.scene.requestRender?.();onChange(next);return true;
   }
   function failure(error) {
     if(destroyed)return;
-    fix=null;onChange(null);
-    if(button){button.dataset.locationState='unavailable';button.title=error.code===1?'Allow location access to use your device location':'Device location unavailable; press to retry';}
+    fix=null;if(marker){viewer.entities.remove(marker);marker=null;viewer.scene.requestRender?.();}onChange(null);
+    if(button){button.dataset.locationState='unavailable';button.dataset.locationError=String(locationError(error).code);button.title=locationError(error).message;}
     if(error.code===1)notify('Location access is off. Reports use the map area until you allow location.');
   }
   if(geolocation)watch=geolocation.watchPosition(accept,failure,{enableHighAccuracy:true,maximumAge:10000,timeout:20000});
@@ -31,8 +32,8 @@ export function mountDeviceLocation({viewer,button,onChange=()=>{},notify=()=>{}
     // an earlier browser/IP-derived fix as an exact current position.
     {
       notify('Finding your device location…');
-      try{accept(await new Promise((resolve,reject)=>geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,maximumAge:0,timeout:20000})));}
-      catch(error){failure(error);notify(error.code===1?'Allow location access in your browser to center the map.':'Unable to get a fresh device location.');return;}
+      try{const position=await new Promise((resolve,reject)=>geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,maximumAge:0,timeout:20000}));if(!accept(position)){failure({code:2});notify('The device returned an outdated or invalid location. Please retry.');return;}}
+      catch(error){failure(error);notify(locationError(error).message);return;}
     }
     if(!fix)return;
     if(fix.accuracy>10000){notify(`The device only returned an approximate location (within ${Math.round(fix.accuracy/1000)} km). Enable precise location in your device and browser settings, then retry. The map has not been moved.`);return;}

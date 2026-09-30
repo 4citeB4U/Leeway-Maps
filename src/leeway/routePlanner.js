@@ -1,3 +1,4 @@
+import {getLocationProvider} from './locationProvider.js';
 import * as Cesium from 'cesium';
 import {
   createRouteClient,
@@ -246,7 +247,7 @@ export function mountRoutePlanner({
       }
     });
   async function useMyLocation() {
-    if (!navigator.geolocation) {
+    if (!getLocationProvider()) {
       status('Location is unavailable in this browser.');
       return null;
     }
@@ -256,7 +257,7 @@ export function mountRoutePlanner({
     status('Waiting for location permission…');
     try {
       const position = await new Promise((resolve, reject) =>
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
+        getLocationProvider().getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true,
           timeout: 20000,
           maximumAge: 0,

@@ -1,3 +1,5 @@
+import { createRestoreQueue } from './restoreQueue.js';
+
 const VALID_DISPOSITIONS = new Set([
   'enabled-only',
   'enabled+options',
@@ -1137,6 +1139,7 @@ export class LayerStateCoordinator {
     }
     try {
       await this._waitForRestoreGate();
+      const queueRestore = createRestoreQueue(2);
       const enabled = new Set(this._durableState.enabledLayerIds);
       const settled = await Promise.allSettled(
         LAYER_STATE_REGISTRY.map(async (entry) => {
@@ -1171,15 +1174,18 @@ export class LayerStateCoordinator {
             !options ||
             Object.keys(options).length === 0 ||
             this.dataManager.setLayerParams(entry.id, options, { origin });
-          return this.dataManager
-            .restoreLayerState(
+          const restore = () => this.dataManager.restoreLayerState(
               entry.id,
               {
                 enabled: targetEnabled,
                 params: null,
               },
               { origin, signal: controller.signal },
-            )
+            );
+          // Reserve parameters above immediately, so a later explicit user
+          // edit wins even while this expensive initialization is queued.
+          // Disabled layers do not consume a loading slot.
+          return (targetEnabled ? queueRestore(restore, controller.signal) : restore())
             .then((result) => ({
               ...result,
               appliedOptions: paramsSucceeded && options ? options : {},
@@ -1200,8 +1206,8 @@ export class LayerStateCoordinator {
           phase: 'coordinator',
           ...currentLayerOutcome(this.dataManager, entry.id),
           appliedOptions: {},
-          cancellationReason: null,
-          errorClass: result.reason?.name || 'Error',
+          cancellationReason: result.reason?.name === 'AbortError' ? 'superseded' : null,
+          errorClass: result.reason?.name === 'AbortError' ? 'cancelled' : result.reason?.name || 'Error',
           error: String(result.reason?.message || result.reason),
           persistenceWrite: false,
           succeeded: false,

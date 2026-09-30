@@ -7,8 +7,9 @@
     "configure": "node configure.mjs"
   },
   "dependencies": {
-    "@capacitor/core": "8.5.2",
     "@capacitor/android": "8.5.2",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/geolocation": "8.2.2",
     "@capacitor/ios": "8.5.2"
   },
   "devDependencies": {

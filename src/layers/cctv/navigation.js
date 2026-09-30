@@ -62,29 +62,10 @@ export function createNavigation({
       );
       return distanceKm <= radiusKm;
     });
-    if (local.length) return local;
-
-    let nearest = null;
-    for (const record of layerState._records) {
-      const distanceKm = parts.model.haversineKm(
-        center.lat,
-        center.lon,
-        record.camera.lat,
-        record.camera.lon,
-      );
-      if (!nearest || distanceKm < nearest.distanceKm)
-        nearest = { record, distanceKm };
-    }
-    if (!nearest) return [];
-    const cityId = String(nearest.record.camera.cityId || '').trim();
-    const city = String(nearest.record.camera.city || '').trim();
-    return layerState._records.filter((record) =>
-      cityId
-        ? record.camera.cityId === cityId
-        : city
-          ? record.camera.city === city
-          : record === nearest.record,
-    );
+    // An unavailable local provider is an empty scope, not permission to
+    // substitute a camera thousands of kilometres away. The full catalog stays
+    // available when the operator deliberately zooms out to the global view.
+    return local;
   }
 
   function nearestCameraIdToViewer() {
@@ -104,7 +85,7 @@ export function createNavigation({
         best = { id: record.camera.id, distKm };
       }
     }
-    return best?.id || null;
+    return best && best.distKm <= scopeRadiusKm() ? best.id : null;
   }
 
   /**

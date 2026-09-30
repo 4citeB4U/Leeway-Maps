@@ -46,6 +46,9 @@ jobs:
       - name: Verify personal isolation
         run: node --test src/leeway/personalStorageIsolation.test.mjs src/leeway/voiceFabric.test.mjs src/leeway/agentLeeVoiceIntegration.test.mjs src/leeway/productSplit.test.mjs src/leeway/publicApiConfig.test.mjs src/leeway/nationalCameraCatalog.test.mjs src/leeway/cctvExperience.test.mjs src/leeway/productFeatureCatalog.test.mjs src/leeway/featureCenter.test.mjs src/leeway/personalTravelPanel.test.mjs server/providers/cctv/iteris511.test.mjs server/providers/cctv/nationalRegistry.test.mjs server/providers/cctv/globalRegistry.test.mjs
 
+      - name: Verify location, rendering and camera regressions
+        run: node --test src/leeway/deviceLocation.test.mjs src/leeway/locationProvider.test.mjs src/data/restoreQueue.test.mjs src/layers/cctv/originSafety.test.mjs src/layers/cctv/navigation.scope.test.mjs src/data/cctvMediaRange.test.mjs
+
       - name: Refresh dated EIA regional diesel benchmark
         continue-on-error: true
         run: node scripts/refresh-fuel-benchmark.mjs
