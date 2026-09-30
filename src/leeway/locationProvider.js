@@ -6,7 +6,7 @@ export function locationError(error) {
     : nativeCode === 'OS-PLUG-GLOC-0003' ? 1
       : nativeCode === 'OS-PLUG-GLOC-0010' ? 3 : 2;
   return { code, nativeCode, message: code === 1
-    ? 'Location permission was denied. Allow precise location for this app in device settings.'
+    ? 'Location permission was denied. Allow location for this site in browser settings and for this app in device settings, then retry.'
     : code === 3
       ? 'The device did not return a position before the timeout. Check device and browser location services, then retry.'
       : 'The device location provider could not determine a position. Location permission alone does not guarantee a fix. Check device location services and retry.',
@@ -21,7 +21,10 @@ export function createLocationProvider({
 } = {}) {
   if (!native) return browser;
   let pluginPromise;
-  const plugin = () => pluginPromise ||= loadNative();
+  const plugin = () => pluginPromise ||= Promise.resolve().then(loadNative).catch(error => {
+    pluginPromise = null;
+    throw error;
+  });
   const watches = new Map();
   let sequence = 0;
   return {

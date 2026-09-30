@@ -12,3 +12,17 @@ test('each location press requests a fresh device position, never the map center
 test('a state-sized device estimate cannot move the map as an exact location',async()=>{const h=harness(150000);await h.api.recenter();assert.equal(h.moves.length,0);assert.match(h.messages.at(-1),/approximate location/);h.api.destroy();});
 
 test('an invalid fresh response cannot reuse an earlier fix or leave its marker',async()=>{let count=0,removed=0,moves=0;const viewer={entities:{add:x=>x,remove(){removed++;}},scene:{requestRender(){}},camera:{flyTo(){moves++;}}};const geolocation={watchPosition(){return 1;},clearWatch(){},getCurrentPosition(ok){ok({coords:{latitude:34.7,longitude:-92.2,accuracy:20},timestamp:++count===1?Date.now():1});}};const api=mountDeviceLocation({viewer,geolocation});await api.recenter();await api.recenter();assert.equal(moves,1);assert.equal(api.getPoint(),null);assert.equal(removed,1);api.destroy();});
+test('permission failure remains retryable and success clears its error',async()=>{
+ let count=0;const button={dataset:{}};
+ const viewer={entities:{add:x=>x,remove(){}},scene:{requestRender(){}},camera:{flyTo(){}}};
+ const geolocation={watchPosition(){return 1;},clearWatch(){},getCurrentPosition(ok,fail){if(++count===1)fail({code:1});else ok({coords:{latitude:34.7,longitude:-92.2,accuracy:20},timestamp:Date.now()});}};
+ const api=mountDeviceLocation({viewer,button,geolocation});await api.recenter();assert.equal(button.dataset.locationError,'1');await api.recenter();assert.equal(button.dataset.locationState,'available');assert.equal(button.dataset.locationError,undefined);api.destroy();
+});
+test('older overlapping request cannot overwrite a newer fresh fix',async()=>{
+ const pending=[];let moves=0;
+ const viewer={entities:{add:x=>x,remove(){}},scene:{requestRender(){}},camera:{flyTo(){moves++;}}};
+ const geolocation={watchPosition(){return 1;},clearWatch(){},getCurrentPosition(ok,fail){pending.push({ok,fail});}};
+ const api=mountDeviceLocation({viewer,geolocation});const old=api.recenter(), latest=api.recenter();
+ pending[1].ok({coords:{latitude:34.7,longitude:-92.2,accuracy:20},timestamp:Date.now()});await latest;
+ pending[0].fail({code:3});await old;assert.equal(api.getPoint().lat,34.7);assert.equal(moves,1);api.destroy();
+});

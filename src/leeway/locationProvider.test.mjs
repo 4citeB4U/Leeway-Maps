@@ -5,6 +5,12 @@ test('web keeps actual browser provider and never calls native or IP service',()
  const browser={}; assert.equal(createLocationProvider({native:false,browser,loadNative:()=>assert.fail()}),browser);
  assert.equal(createLocationProvider({native:false,browser:null}),null);
 });
+test('a failed native module load does not poison the next explicit retry',async()=>{
+ let loads=0;
+ const provider=createLocationProvider({native:true,loadNative:async()=>{if(++loads===1)throw Error('temporary load failure');return {getCurrentPosition:async()=>({timestamp:123,coords:{}})};}});
+ await assert.rejects(new Promise((ok,fail)=>provider.getCurrentPosition(ok,fail)));
+ const fix=await new Promise((ok,fail)=>provider.getCurrentPosition(ok,fail));assert.equal(fix.timestamp,123);assert.equal(loads,2);
+});
 test('native provider preserves position and separates failure reason',async()=>{
  const fix={timestamp:Date.now(),coords:{latitude:34,longitude:-92,accuracy:12}};
  const provider=createLocationProvider({native:true,loadNative:async()=>({getCurrentPosition:async options=>{assert.equal(options.maximumAge,0);return fix;}})});

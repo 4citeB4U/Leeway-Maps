@@ -9,7 +9,7 @@ export function validDeviceFix(position, now = Date.now()) {
 
 /** Device consent remains browser-owned. Fixes live only in memory. */
 export function mountDeviceLocation({viewer,button,onChange=()=>{},notify=()=>{},geolocation=getLocationProvider()}) {
-  let fix=null,marker=null,watch=null,destroyed=false;
+  let fix=null,marker=null,watch=null,destroyed=false,requestEpoch=0;
   function accept(position) {
     const next=validDeviceFix(position);if(!next||destroyed)return false;
     fix=next;
@@ -27,18 +27,20 @@ export function mountDeviceLocation({viewer,button,onChange=()=>{},notify=()=>{}
   }
   if(geolocation)watch=geolocation.watchPosition(accept,failure,{enableHighAccuracy:true,maximumAge:10000,timeout:20000});
   async function recenter() {
+    if(destroyed)return;
+    const epoch=++requestEpoch;
     if(!geolocation){notify('This browser does not provide device location.');return;}
     // Every explicit press asks the device again. Never reuse the map center or
     // an earlier browser/IP-derived fix as an exact current position.
     {
       notify('Finding your device location…');
-      try{const position=await new Promise((resolve,reject)=>geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,maximumAge:0,timeout:20000}));if(!accept(position)){failure({code:2});notify('The device returned an outdated or invalid location. Please retry.');return;}}
-      catch(error){failure(error);notify(locationError(error).message);return;}
+      try{const position=await new Promise((resolve,reject)=>geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,maximumAge:0,timeout:20000}));if(destroyed||epoch!==requestEpoch)return;if(!accept(position)){failure({code:2});notify('The device returned an outdated or invalid location. Please retry.');return;}}
+      catch(error){if(destroyed||epoch!==requestEpoch)return;failure(error);notify(locationError(error).message);return;}
     }
     if(!fix)return;
     if(fix.accuracy>10000){notify(`The device only returned an approximate location (within ${Math.round(fix.accuracy/1000)} km). Enable precise location in your device and browser settings, then retry. The map has not been moved.`);return;}
     viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(fix.lon,fix.lat,Math.max(500,fix.accuracy*5)),orientation:{heading:0,pitch:-Math.PI/2,roll:0},duration:1});
     notify(`Your device location · accuracy about ${Math.round(fix.accuracy)} m`);
   }
-  return {recenter,getPoint:()=>fix && Date.now()-fix.at<120000 ? fix : null,destroy(){destroyed=true;if(watch!==null)geolocation.clearWatch(watch);if(marker)viewer.entities.remove(marker);}};
+  return {recenter,getPoint:()=>fix && Date.now()-fix.at<120000 ? fix : null,destroy(){destroyed=true;requestEpoch++;if(watch!==null)geolocation.clearWatch(watch);if(marker)viewer.entities.remove(marker);}};
 }
