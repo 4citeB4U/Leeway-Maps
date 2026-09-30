@@ -183,6 +183,83 @@ export const LOUISIANA_511_ANCHORS = [
   { lat: 30.2241, lon: -92.0198 }, // Lafayette
 ];
 
+export const CONNECTICUT_511_CAMERAS_URL =
+  'https://ctroads.org/api/v2/get/cameras';
+export const CONNECTICUT_511_IMAGE_ORIGIN = 'https://ctroads.org/map/Cctv/';
+export const DEFAULT_CONNECTICUT_511_MAX_SOURCES = 1000;
+export const CONNECTICUT_511_ANCHORS = [
+  { lat: 41.7658, lon: -72.6734 },
+  { lat: 41.3083, lon: -72.9279 },
+];
+
+export const FLORIDA_511_CAMERAS_URL =
+  'https://fl511.com/api/v2/get/cameras';
+export const FLORIDA_511_IMAGE_ORIGIN = 'https://fl511.com/map/Cctv/';
+export const DEFAULT_FLORIDA_511_MAX_SOURCES = 1000;
+export const FLORIDA_511_ANCHORS = [
+  { lat: 25.7617, lon: -80.1918 },
+  { lat: 28.5383, lon: -81.3792 },
+  { lat: 27.9506, lon: -82.4572 },
+  { lat: 30.3322, lon: -81.6557 },
+];
+
+export const NEVADA_511_CAMERAS_URL =
+  'https://www.nvroads.com/api/v2/get/cameras';
+export const NEVADA_511_IMAGE_ORIGIN = 'https://www.nvroads.com/map/Cctv/';
+export const DEFAULT_NEVADA_511_MAX_SOURCES = 1000;
+export const NEVADA_511_ANCHORS = [
+  { lat: 36.1699, lon: -115.1398 },
+  { lat: 39.5296, lon: -119.8138 },
+];
+
+export const NORTH_CAROLINA_511_CAMERAS_URL =
+  'https://www.drivenc.gov/api/v2/get/cameras';
+export const NORTH_CAROLINA_511_IMAGE_ORIGIN =
+  'https://www.drivenc.gov/map/Cctv/';
+export const DEFAULT_NORTH_CAROLINA_511_MAX_SOURCES = 1000;
+export const NORTH_CAROLINA_511_ANCHORS = [
+  { lat: 35.2271, lon: -80.8431 },
+  { lat: 35.7796, lon: -78.6382 },
+  { lat: 36.0726, lon: -79.792 },
+  { lat: 35.5951, lon: -82.5515 },
+];
+
+export const PENNSYLVANIA_511_CAMERAS_URL =
+  'https://www.511pa.com/api/v2/get/cameras';
+export const PENNSYLVANIA_511_IMAGE_ORIGIN =
+  'https://www.511pa.com/map/Cctv/';
+export const DEFAULT_PENNSYLVANIA_511_MAX_SOURCES = 1000;
+export const PENNSYLVANIA_511_ANCHORS = [
+  { lat: 39.9526, lon: -75.1652 },
+  { lat: 40.4406, lon: -79.9959 },
+  { lat: 40.2732, lon: -76.8867 },
+];
+
+export const UTAH_511_CAMERAS_URL =
+  'https://www.udottraffic.utah.gov/api/v2/get/cameras';
+export const UTAH_511_IMAGE_ORIGIN =
+  'https://www.udottraffic.utah.gov/map/Cctv/';
+export const DEFAULT_UTAH_511_MAX_SOURCES = 1000;
+export const UTAH_511_ANCHORS = [
+  { lat: 40.7608, lon: -111.891 },
+  { lat: 40.2338, lon: -111.6585 },
+  { lat: 37.0965, lon: -113.5684 },
+];
+
+export const NEW_ENGLAND_511_CAMERAS_URL =
+  'https://newengland511.org/api/v2/get/cameras';
+export const NEW_ENGLAND_511_IMAGE_ORIGIN =
+  'https://newengland511.org/map/Cctv/';
+export const DEFAULT_NEW_ENGLAND_511_MAX_SOURCES = 1500;
+export const NEW_ENGLAND_511_ANCHORS = [
+  { lat: 43.6591, lon: -70.2568 }, // Portland, ME
+  { lat: 44.3106, lon: -69.7795 }, // Augusta, ME
+  { lat: 43.2081, lon: -71.5376 }, // Concord, NH
+  { lat: 42.9956, lon: -71.4548 }, // Manchester, NH
+  { lat: 44.2601, lon: -72.5754 }, // Montpelier, VT
+  { lat: 44.4759, lon: -73.2121 }, // Burlington, VT
+];
+
 /** New York 511 statewide keyed camera API. */
 export const NEWYORK_511_CAMERAS_URL = 'https://511ny.org/api/v2/get/cameras';
 export const NEWYORK_511_IMAGE_ORIGIN = 'https://511ny.org/map/Cctv/';
