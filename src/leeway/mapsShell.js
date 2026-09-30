@@ -13,6 +13,8 @@ import { mountFuelLedger } from './fuelLedger.js';
 import { mapIcon } from './mapIcons.js';
 import { mountExperiencePreferences } from './experiencePreferences.js';
 import { openNearestCctv } from './cctvExperience.js';
+import { mountFeatureCenter } from './featureCenter.js';
+import { featureCatalogForEdition } from './productFeatureCatalog.js';
 
 function ensureStyles(documentRef) {
   if (documentRef.getElementById('leeway-enterprise-shell-styles')) return;
@@ -159,6 +161,7 @@ function icon(name) {
       freight: '▰',
       three: '◆',
       locate: '⌾',
+      features: '◎',
     }[name] || '•'
   );
 }
@@ -238,7 +241,7 @@ export function mountMapsShell(
         <button class="lws-chip" data-action="route">Directions</button>
         <button class="lws-chip hide-sm" data-action="layers">▱ Layers⌄</button>
         ${isBusiness ? '<button class="lws-chip hide-sm" data-action="workspace">Sales & CRM</button>' : ''}
-        <button class="lws-chip" data-action="roadside">Road stops</button>${isBusiness ? '<button class="lws-chip" data-action="workspace-menu">Business</button>' : ''}<button class="lws-chip hide-sm" data-action="map-only">Hide controls</button>
+        <button class="lws-chip" data-action="roadside">Road stops</button>${isBusiness ? '<button class="lws-chip" data-action="workspace-menu">Business</button>' : ''}<button class="lws-chip" data-action="capabilities">Capabilities</button><button class="lws-chip hide-sm" data-action="map-only">Hide controls</button>
         <div class="lws-avatar">AL</div><div class="lws-agent-status">Agent Lee · Copilot<br>Open to connect</div>
       </div>
     </header>
@@ -259,6 +262,7 @@ export function mountMapsShell(
         : [
             ['map', 'Map'],
             ['transit', 'Transit'],
+            ['features', 'Features'],
             ['intel', 'Intelligence'],
             ['ai', 'AI'],
           ]
