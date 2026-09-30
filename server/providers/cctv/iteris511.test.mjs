@@ -2,7 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   keyed511CatalogUrl,
+  loadAlaska511Sources,
+  loadArizona511Sources,
   loadGeorgia511Sources,
+  loadIdaho511Sources,
+  loadLouisiana511Sources,
   loadNewYork511Sources,
 } from './iteris511.js';
 import {
@@ -144,4 +148,97 @@ test('Georgia 511 rejects coordinates outside Georgia bounds', async () => {
       ]),
   });
   assert.deepEqual(rows, []);
+});
+
+test('verified Travel-IQ 511 adapters are key-gated and pin official frame origins', async () => {
+  const cases = [
+    {
+      load: loadAlaska511Sources,
+      env: { ALASKA_511_API_KEY: 'ak-proof' },
+      apiOrigin: 'https://511.alaska.gov',
+      frameOrigin: 'https://511.alaska.gov/map/Cctv/',
+      id: 'ak511-7001',
+      lat: 61.2181,
+      lon: -149.9003,
+    },
+    {
+      load: loadArizona511Sources,
+      env: { ARIZONA_511_API_KEY: 'az-proof' },
+      apiOrigin: 'https://az511.com',
+      frameOrigin: 'https://az511.com/map/Cctv/',
+      id: 'az511-7001',
+      lat: 33.4484,
+      lon: -112.074,
+    },
+    {
+      load: loadIdaho511Sources,
+      env: { IDAHO_511_API_KEY: 'id-proof' },
+      apiOrigin: 'https://511.idaho.gov',
+      frameOrigin: 'https://511.idaho.gov/map/Cctv/',
+      id: 'id511-7001',
+      lat: 43.615,
+      lon: -116.2023,
+    },
+    {
+      load: loadLouisiana511Sources,
+      env: { LOUISIANA_511_API_KEY: 'la-proof' },
+      apiOrigin: 'https://511la.org',
+      frameOrigin: 'https://511la.org/map/Cctv/',
+      id: 'la511-7001',
+      lat: 30.4515,
+      lon: -91.1871,
+    },
+  ];
+
+  for (const entry of cases) {
+    let requestUrl = '';
+    const rows = await entry.load({
+      env: entry.env,
+      fetchImpl: async (url) => {
+        requestUrl = String(url);
+        return Response.json([
+          {
+            Id: 70,
+            Roadway: 'I-TEST',
+            Direction: 'Northbound',
+            Latitude: entry.lat,
+            Longitude: entry.lon,
+            Location: 'Official proof camera',
+            Views: [
+              {
+                Id: 7001,
+                Status: 'Enabled',
+                Url: 'https://untrusted.invalid/ignored',
+              },
+            ],
+          },
+        ]);
+      },
+    });
+    assert.equal(new URL(requestUrl).origin, entry.apiOrigin);
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].id, entry.id);
+    assert.equal(rows[0].snapshotUrl, entry.frameOrigin + '7001');
+    assert.doesNotMatch(JSON.stringify(rows), /-proof|untrusted\.invalid/);
+  }
+});
+
+test('new verified 511 adapters make no network request before keys are supplied', async () => {
+  for (const load of [
+    loadAlaska511Sources,
+    loadArizona511Sources,
+    loadIdaho511Sources,
+    loadLouisiana511Sources,
+  ]) {
+    let calls = 0;
+    const rows = await load({
+      env: {},
+      fetchImpl: async () => {
+        calls += 1;
+        throw new Error('must not fetch without a key');
+      },
+    });
+    assert.deepEqual(rows, []);
+    assert.equal(calls, 0);
+  }
 });
