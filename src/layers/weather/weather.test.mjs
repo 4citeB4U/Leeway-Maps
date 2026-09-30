@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createWeatherRendering } from './rendering.js';
+import { createWeatherShell } from './shellRendering.js';
 import { createWeatherLayer } from './index.js';
 import { createWeatherClock } from './clock.js';
 import * as Cesium from 'cesium';
@@ -172,6 +173,9 @@ function renderingHarness(options = {}) {
     Rectangle: Cesium.Rectangle,
   };
   const rendering = createWeatherRendering({
+    // Preserve high-resolution integration coverage; production defaults are
+    // covered separately by the shell's bounded-memory regression.
+    createShell: (options) => createWeatherShell({...options, maxTextureWidth:4096, cacheBytes:128*1024*1024}),
     viewer,
     cesium,
     fetchImpl: async () => mockResponse(),

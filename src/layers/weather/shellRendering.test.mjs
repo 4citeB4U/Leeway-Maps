@@ -73,6 +73,9 @@ function harness({ product = 'radar', camera, ...options } = {}) {
   const decoded = [];
   let host = { collection: null, kind: 'tileset' };
   const shell = createWeatherShell({
+    // Existing high-resolution fixtures also test the explicit opt-in path.
+    maxTextureWidth: 4096,
+    cacheBytes: 128 * 1024 * 1024,
     viewer: { scene, camera },
     cesium,
     product,
@@ -128,7 +131,7 @@ test('shell heights stack every product with lightning highest', () => {
     radar: 6_200,
     lightning: 6_600,
   });
-  assert.equal(WEATHER_SHELL_CACHE_BYTES, 128 * 1024 * 1024);
+  assert.equal(WEATHER_SHELL_CACHE_BYTES, 32 * 1024 * 1024);
 });
 
 test('surface builds a flat raised rectangle drawn in primitive order without depth writes', () => {
@@ -1501,4 +1504,20 @@ test('global infrared keeps one full-extent image; detail images halve for small
     enabled: true,
   });
   small.shell.clear();
+});
+
+test('production weather shells cap decoded images at 2048 and retain real timeline frames within 32 MiB', async () => {
+  for (const product of ['radar','lightning','clouds-regional']) {
+    const h=harness({product,maxTextureWidth:undefined,cacheBytes:undefined,
+      decodeImage:async()=>({width:2048,height:1024,close(){}})});
+    try {
+      assert.equal(await show(h,times[0]),true);
+      assert.equal(h.material().uniforms.image.width,2048);
+      assert.equal(await h.shell.prefetch(snapshot(product),times[1]),true);
+      assert.equal(await show(h,times[1]),true);
+      assert.equal(h.shell.getDiagnostics().time,times[1]);
+      assert.ok(h.shell.getDiagnostics().cache.bytes<=32*1024*1024);
+      assert.ok(h.fetches.every(row=>row.url.includes('2048x1024')));
+    } finally {h.shell.clear();}
+  }
 });

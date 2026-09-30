@@ -11,10 +11,10 @@ export const WEATHER_SHELL_HEIGHTS = Object.freeze({
   lightning: 6_600,
 });
 // Decoded canvases per renderer, full-extent and detail images alike: the shown
-// frame and the warmed next frame, each full-extent and detail (four 4096×2048
+// frame and the warmed next frame, each full-extent and detail (four 2048×1024
 // canvases); nothing older survives them. Cesium holds the shown canvases
 // through the material uniforms in any case.
-export const WEATHER_SHELL_CACHE_BYTES = 128 * 1024 * 1024;
+export const WEATHER_SHELL_CACHE_BYTES = 32 * 1024 * 1024;
 const MAX_IMAGE_BYTES = 16 * 1024 * 1024;
 const MATERIAL_TYPE = 'WeatherFrame';
 // Renders after an image swap: one queues the upload, one uploads and draws, one spare.
@@ -315,8 +315,9 @@ export function createShellSurface({
   };
 }
 
-function fitTexture(cesium, { width, height }) {
-  const limit = cesium.ContextLimits?.maximumTextureSize;
+function fitTexture(cesium, { width, height }, maxTextureWidth) {
+  const deviceLimit = cesium.ContextLimits?.maximumTextureSize;
+  const limit = Math.min(deviceLimit > 0 ? deviceLimit : Infinity, maxTextureWidth);
   // Halve, down to 1024 px wide, on devices with a smaller texture limit.
   while (limit > 0 && width > limit && width > 1024) {
     width /= 2;
@@ -404,12 +405,13 @@ export function createWeatherShell({
   decodeImage,
   createCanvas = () => document.createElement('canvas'),
   cacheBytes = WEATHER_SHELL_CACHE_BYTES,
+  maxTextureWidth = 2048,
 }) {
   if (!Object.hasOwn(WEATHER_IMAGE_SIZES, product))
     throw new TypeError('Unknown weather product');
   const scene = viewer.scene;
-  const size = fitTexture(cesium, WEATHER_IMAGE_SIZES[product]);
-  const detailSize = fitTexture(cesium, WEATHER_DETAIL_SIZE);
+  const size = fitTexture(cesium, WEATHER_IMAGE_SIZES[product], maxTextureWidth);
+  const detailSize = fitTexture(cesium, WEATHER_DETAIL_SIZE, maxTextureWidth);
   const infrared = product === 'clouds' || product === 'clouds-regional';
   // Global infrared contrast depends on the requested extent, so a window would
   // not match the image around it; the globe host also shows one mosaic.
