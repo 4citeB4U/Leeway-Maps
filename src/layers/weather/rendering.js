@@ -4,8 +4,9 @@ import { imageryHostStatus } from './imageryHost.js';
 import { createRasterTileProvider } from './rasterTiles.js';
 import { createWeatherShell } from './shellRendering.js';
 import { readResponseBytesCapped } from '../../sources/httpBody.js';
+import { usePublicWeather } from './publicWms.js';
 import {
-  acquireInfraredMosaic,
+  acquireWeatherImage,
   processInfraredImage,
 } from './infraredImage.js';
 // Bounded display detail for the hourly, approximately 3 km global product.
@@ -17,6 +18,7 @@ const MAX_PREFETCH_TILES = 8;
 /** Globe imagery: own at most a displayed and a staging frame. Use native Cesium
  * tile scheduling, projection and texture disposal; the application clock is never touched. */
 function createGlobeRendering({
+  rasterGlobe,
   viewer,
   cesium,
   getHost,
@@ -51,16 +53,18 @@ function createGlobeRendering({
     prefetchedKey = null;
   }
 
-  async function mosaic(time, mode, signal, onFetched) {
+  async function mosaic(product, time, mode, signal, onFetched) {
     signal.throwIfAborted();
-    const key = `${time}|${mode}`;
+    const key = `${product}|${time}|${mode}`;
     const texture = mosaics.get(key);
     if (texture) {
       mosaics.delete(key);
       mosaics.set(key, texture);
       return { texture, decodeMs: 0, cached: true };
     }
-    const result = await acquireInfraredMosaic(time, {
+    const result = await acquireWeatherImage(product, time, {
+      size: {width: 2048, height: 1024},
+      maxBytes: 16 * 1024 * 1024,
       signal,
       mode,
       createCanvas,
@@ -73,7 +77,7 @@ function createGlobeRendering({
     signal.throwIfAborted();
     mosaics.delete(key);
     mosaics.set(key, result.texture);
-    while (mosaics.size > MAX_MOSAICS)
+    while (mosaics.size > (rasterGlobe ? 2 : MAX_MOSAICS))
       mosaics.delete(mosaics.keys().next().value);
     return { ...result, cached: false };
   }
@@ -193,16 +197,16 @@ function createGlobeRendering({
           !snapshot.times.includes(time)
         )
           return false;
-        const global = snapshot.product === 'clouds';
+        const global = snapshot.product === 'clouds' || rasterGlobe;
         const urls = global ? [] : prefetchTiles(snapshot, time);
-        const key = global ? `${time}|${infrared}` : urls.join('|');
+        const key = global ? `${snapshot.product}|${time}|${infrared}` : urls.join('|');
         if (prefetchJob?.key === key || prefetchedKey === key) return false;
         cancelPrefetch();
         job = { key, controller: new AbortController() };
         prefetchJob = job;
         const { signal } = job.controller;
         job.timeout = setTimeout(() => job.controller.abort(), timeoutMs);
-        if (global) await mosaic(time, infrared, signal);
+        if (global) await mosaic(snapshot.product, time, infrared, signal);
         else
           await Promise.all(
             urls.map(async (url) => {
@@ -241,7 +245,7 @@ function createGlobeRendering({
       lastError = null;
       const { west, south, east, north } = snapshot.bounds;
       const rectangle = cesium.Rectangle.fromDegrees(west, south, east, north);
-      const global = snapshot.product === 'clouds';
+      const global = snapshot.product === 'clouds' || rasterGlobe;
       const frame = {
         snapshot,
         time,
@@ -390,7 +394,7 @@ function createGlobeRendering({
             .then((image) => {
               // Cesium decodes tiles as ImageBitmaps already flipped, since WebGL
               // ignores UNPACK_FLIP_Y for them; a canvas upload flips again.
-              if (!frame.closed && snapshot.product === 'clouds-regional')
+              if (!global && !frame.closed && snapshot.product === 'clouds-regional')
                 image = processInfraredImage(image, infrared, createCanvas, {
                   flipY:
                     typeof ImageBitmap !== 'undefined' &&
@@ -460,7 +464,7 @@ function createGlobeRendering({
         onChange();
       };
       if (global) {
-        void mosaic(time, infrared, frame.controller.signal, () => {
+        void mosaic(snapshot.product, time, infrared, frame.controller.signal, () => {
           frame.mosaic.fetched = true;
         })
           .then(({ texture, decodeMs, cached }) => {
@@ -531,6 +535,9 @@ function createGlobeRendering({
 /** Globe hosts keep draped imagery; 3D Tiles hosts get a raised shell per product.
  * A host switch tears one renderer down and restages the last frame on the other. */
 export function createWeatherRendering({
+  // Public WMS has no proxy cache: bound it to one decoded official frame,
+  // then crop local raster tiles instead of asking NOAA for every globe tile.
+  rasterGlobe = usePublicWeather(),
   viewer,
   cesium,
   getHost = () => ({ collection: viewer.imageryLayers, kind: 'globe' }),
@@ -543,6 +550,7 @@ export function createWeatherRendering({
   createShell = createWeatherShell,
 }) {
   const shared = {
+    rasterGlobe,
     viewer,
     cesium,
     getHost,

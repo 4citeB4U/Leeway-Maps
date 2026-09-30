@@ -2257,3 +2257,31 @@ for (const product of ['radar', 'clouds-regional', 'lightning']) {
     assert.equal(h.viewer.camera.moveEnd.size, 0);
   });
 }
+
+for (const product of ['radar','clouds-regional','lightning']) {
+ test(`public ${product} uses one bounded image per observation and local raster tiles`,async()=>{
+  const urls=[];
+  const h=renderingHarness({rasterGlobe:true,fetchImpl:async url=>{urls.push(url);return mockResponse();}});
+  try {
+   const data={...snapshot,product};
+   const first=h.rendering.setFrame(data,times[0]);await flush();
+   assert.equal(urls.length,1);
+   assert.match(urls[0],/weather\/image/);
+   assert.match(urls[0],/size=2048x1024/);
+   assert.equal(h.providers[0].options,undefined,'no UrlTemplate network tile provider');
+   const provider=h.layers[0].imageryProvider;
+   assert.equal(provider.maximumLevel,3);
+   assert.deepEqual(provider.rectangle,Cesium.Rectangle.fromDegrees(-130,20,-60,55));
+   for(let i=0;i<12;i++)await provider.requestImage(i%2,0,0);
+   assert.equal(urls.length,1,'cropping more map tiles makes no network calls');
+   h.settle();assert.equal(await first,true);
+   assert.equal(await h.rendering.prefetch(data,times[1]),true);
+   assert.equal(urls.length,2);
+   const next=h.rendering.setFrame(data,times[1]);await flush();h.settle();assert.equal(await next,true);
+   assert.equal(urls.length,2,'timeline uses prefetched official observation');
+   assert.equal(h.rendering.getDiagnostics().time,times[1]);
+   assert.equal(await h.rendering.prefetch(data,times[2]),true);
+   assert.equal(h.rendering.getDiagnostics().cache.mosaics,2);
+  } finally {h.rendering.clear();}
+ });
+}
