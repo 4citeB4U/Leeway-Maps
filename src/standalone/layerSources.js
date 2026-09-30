@@ -5,7 +5,7 @@ import {
 } from '../sources/live/standalone.js';
 import { createCctvSource } from '../layers/cctv/source.js';
 import { createRadioSource } from '../layers/radio/source.js';
-import { createLeeWayTransitSource } from '../sources/leewayTransit.js';
+import { createTransitSource } from '../layers/transit/source.js';
 import { createTrafficSource } from '../layers/traffic/source.js';
 import { createBikeshareSource } from '../layers/bikeshare/source.js';
 import { createInstallationSource } from '../layers/installations/source.js';
@@ -32,7 +32,7 @@ export function createStandaloneLayerSources() {
     cctv: createCctvSource(),
     radio: createRadioSource(),
     traffic: createTrafficSource(),
-    transit: createLeeWayTransitSource(),
+    transit: createTransitSource(),
     bikeshare: createBikeshareSource(),
     installations: createInstallationSource(),
     satellites: createSatelliteSource(),

@@ -1,4 +1,4 @@
-const LAYERS = ['transit-routes','transit-stops','transit','flights','traffic','weather-radar','weather-alerts','cctv'];
+const LAYERS = ['transit-routes','transit-stops','transit-vehicles','transit','flights','traffic','weather-radar','weather-alerts','cctv'];
 export async function mountPersonalTravelPanel(application) {
   const manager=application.getComponents().data.dataManager;
   const root=document.createElement('aside'); root.id='leeway-transit-world';
