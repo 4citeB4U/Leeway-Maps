@@ -493,7 +493,7 @@ export function mountMapsShell(
             return `<button class="lws-layer-row ${enabled ? 'on' : ''}" data-shell-layer="${row.id}">
               <span>${row.name || row.id}<small class="lws-layer-id">${row.id}</small></span>
               <span class="lws-layer-state">${enabled ? 'ON' : 'OFF'}</span>
-            </button>`;
+            </button>${enabled && ['weather-alerts', 'traffic-incidents'].includes(row.id) ? `<button class="lws-layer-row" data-alert-list="${row.id}">Read ${row.id === 'weather-alerts' ? 'weather alerts' : 'traffic incidents'}</button>` : ''}`;
           })
           .join('');
         return `<div class="lws-layer-group">${category}</div>${body}`;
@@ -915,6 +915,13 @@ export function mountMapsShell(
     const action = event.target.closest('[data-action]')?.dataset.action;
     const dock = event.target.closest('[data-dock]')?.dataset.dock;
     const layerButton = event.target.closest('[data-shell-layer]');
+
+    const alertButton = event.target.closest('[data-alert-list]');
+    if (alertButton) {
+      dataManager.layers.get(alertButton.dataset.alertList)?.module?.setParams?.({ list: true });
+      toggleLayerMenu(false);
+      return;
+    }
 
     if (layerButton) {
       await toggleLayer(layerButton.dataset.shellLayer);

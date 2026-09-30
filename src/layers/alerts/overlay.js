@@ -34,7 +34,7 @@ export function createAlertOverlay({
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-label', name);
     panel.style.cssText =
-      'position:absolute;right:18px;top:90px;max-height:65vh;overflow:auto;width:min(420px,85vw);padding:16px;background:#111d2e;color:white;z-index:1200;border:1px solid #80bfff;border-radius:10px;font:14px/1.5 sans-serif;white-space:pre-wrap';
+      'position:absolute;right:18px;top:90px;max-height:65vh;overflow:auto;width:min(420px,85vw);padding:16px;background:#111d2e;color:white;z-index:10050;border:1px solid #80bfff;border-radius:10px;font:14px/1.5 sans-serif;white-space:pre-wrap';
     const button = documentRef.createElement('button');
     button.textContent = 'Close';
     button.onclick = close;

@@ -530,7 +530,7 @@ export function cctvProxy({
             status: 'ok',
             sourceKind: 'snapshot',
             label: source?.provider || 'Configured source',
-            message: 'Upstream snapshot active',
+            message: 'Snapshot image received; scene not verified',
           });
           res.writeHead(200, {
             'Content-Type': upstreamImage.contentType,

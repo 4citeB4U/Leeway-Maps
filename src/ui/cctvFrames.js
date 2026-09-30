@@ -1,3 +1,5 @@
+import { inspectCameraScene } from './cctvSceneQuality.js';
+
 export function _clearCctvFrame() {
   this._cctvFrameRequestToken += 1;
   if (this._cctvFramePreloader) {
@@ -15,6 +17,7 @@ export function _clearCctvFrame() {
     this._cctvFrame.dataset.nativeWidth = '';
     this._cctvFrame.dataset.nativeHeight = '';
     this._cctvFrame.dataset.quality = '';
+    this._cctvFrame.dataset.sceneQuality = '';
   }
   this._cctvFrameWrap?.classList.remove('loading', 'has-frame');
   if (this._cctvFrameMessage) {
@@ -34,6 +37,7 @@ export function _queueCctvFrame(src, cameraId, cameraChanged) {
     this._cctvFrame.dataset.nativeWidth = '';
     this._cctvFrame.dataset.nativeHeight = '';
     this._cctvFrame.dataset.quality = '';
+    this._cctvFrame.dataset.sceneQuality = '';
     this._cctvFrameWrap?.classList.remove('has-frame');
   }
 
@@ -56,11 +60,13 @@ export function _queueCctvFrame(src, cameraId, cameraChanged) {
   );
 
   const preloader = new Image();
+  preloader.crossOrigin = 'anonymous';
   this._cctvFramePreloader = preloader;
   preloader.onload = () =>
     this._settleCctvFrame(token, src, true, {
       width: Number(preloader.naturalWidth) || 0,
       height: Number(preloader.naturalHeight) || 0,
+      sceneQuality: inspectCameraScene(preloader),
     });
   preloader.onerror = () => this._settleCctvFrame(token, src, false);
   preloader.src = src;
@@ -111,6 +117,7 @@ export function _settleCctvFrame(token, src, ok, dimensions = {}) {
   const height = Number(dimensions.height) || 0;
   this._cctvFrame.dataset.nativeWidth = String(width || '');
   this._cctvFrame.dataset.nativeHeight = String(height || '');
+  this._cctvFrame.dataset.sceneQuality = dimensions.sceneQuality || 'unknown';
   const pixels = width * height;
   this._cctvFrame.dataset.quality =
     pixels >= 700_000 ? 'hd' : pixels >= 300_000 ? 'standard' : 'low';
@@ -118,8 +125,11 @@ export function _settleCctvFrame(token, src, ok, dimensions = {}) {
   this._cctvFrame.classList.add('active');
   this._cctvFrameWrap?.classList.add('has-frame');
   if (this._cctvFrameMessage) {
-    this._cctvFrameMessage.hidden = true;
-    this._cctvFrameMessage.textContent = '';
+    const dark = this._cctvFrame.dataset.sceneQuality === 'dark-or-blank';
+    this._cctvFrameMessage.hidden = !dark;
+    this._cctvFrameMessage.textContent = dark
+      ? 'Image received, but the scene appears dark or blank. Camera activity is not verified.'
+      : '';
   }
   if (typeof this._cctvFrame.dispatchEvent === 'function')
     this._cctvFrame.dispatchEvent(
@@ -162,6 +172,11 @@ export function _syncCctvSourceBadge(activeCamera, enabled) {
   const width = Number(this._cctvFrame?.dataset.nativeWidth) || 0;
   const height = Number(this._cctvFrame?.dataset.nativeHeight) || 0;
   const resolution = width && height ? ` · ${width}×${height}` : '';
+  if (this._cctvFrame?.dataset.sceneQuality === 'dark-or-blank') {
+    this._cctvSourceBadge.textContent = `IMAGE RECEIVED · DARK/BLANK${resolution}`;
+    this._cctvSourceBadge.dataset.frameState = 'warning';
+    return;
+  }
   const quality = this._cctvFrame?.dataset.quality
     ? ` · ${String(this._cctvFrame.dataset.quality).toUpperCase()}`
     : '';

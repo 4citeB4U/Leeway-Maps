@@ -109,6 +109,34 @@ test('working frames expose native resolution and quality without inventing HD',
   assert.match(controls._cctvSourceBadge.textContent, /352×240 · LOW$/);
 });
 
+test('decoded dark imagery stays visible with an honest warning and no false offline event', (t) => {
+  const { controls } = fixture(t);
+  controls._cctvSourceBadge = element();
+  controls._cctvState = {
+    enabled: true,
+    activeCamera: { sourceKind: 'snapshot', sourceStatus: 'ok' },
+  };
+  let unavailable = 0;
+  controls._cctvFrame.addEventListener(
+    'leeway:cctv-frame-unavailable',
+    () => unavailable++,
+  );
+  controls._queueCctvFrame('dark.jpg', 'dark', true);
+  controls._settleCctvFrame(controls._cctvFrameRequestToken, 'dark.jpg', true, {
+    width: 720,
+    height: 480,
+    sceneQuality: 'dark-or-blank',
+  });
+  assert.equal(controls._cctvFrame.src, 'dark.jpg');
+  assert.equal(controls._cctvFrameMessage.hidden, false);
+  assert.match(
+    controls._cctvFrameMessage.textContent,
+    /activity is not verified/,
+  );
+  assert.match(controls._cctvSourceBadge.textContent, /DARK\/BLANK/);
+  assert.equal(unavailable, 0);
+});
+
 test('a late image completion cannot replace a newer camera preview', (t) => {
   const { controls, requests } = fixture(t);
   controls._queueCctvFrame('first.jpg', 'a', true);
