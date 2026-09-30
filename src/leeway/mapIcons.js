@@ -8,6 +8,8 @@ const paths = {
   weather:
     '<path d="M7 16a5 5 0 1 1 9-5h1a4 4 0 0 1 0 8H7M8 21l-1 2m6-2-1 2m6-2-1 2M4 3v2M1 7h2m5-6L7 3"/>',
   map: '<path d="m2 5 7-3 6 3 7-3v17l-7 3-6-3-7 3V5Zm7-3v17m6-14v17"/>',
+  cockpit:
+    '<circle cx="12" cy="13" r="8"/><circle cx="12" cy="13" r="2"/><path d="M4 13h6m4 0h6M12 5v6m0 4v6M6.5 8.5 10.5 12m7-3.5L13.5 12"/>',
   satellite:
     '<path d="m9 10 5-5 5 5-5 5-5-5ZM2 7l4-4 4 4-4 4-4-4Zm12 12 4-4 4 4-4 4-4-4ZM4 15a5 5 0 0 1 5 5m-7-2a2 2 0 0 1 2 2m4-5 3-3"/>',
   report: '<path d="m12 3 10 18H2L12 3Zm0 6v5m0 3v1"/>',

@@ -64,6 +64,70 @@ const US_JURISDICTIONS = Object.freeze([
 ]);
 
 const SEEDED_SOURCES = Object.freeze({
+  AK: [
+    {
+      operator: 'Alaska Department of Transportation & Public Facilities',
+      system: 'Alaska 511',
+      accessMethod: 'documented_api',
+      integrationStatus: 'key-required',
+      mediaStatus: 'connector-built-key-blocked',
+      authRequired: true,
+      requiredCredential: 'ALASKA_511_API_KEY',
+      evidenceState: 'VERIFIED',
+      sourceUrl: 'https://511.alaska.gov/developers/doc',
+      documentationUrl: 'https://511.alaska.gov/help/endpoint/cameras',
+      notes:
+        'Statewide v2 camera adapter implemented from official API documentation; developer key is the remaining activation dependency.',
+    },
+  ],
+  AZ: [
+    {
+      operator: 'Arizona Department of Transportation',
+      system: 'AZ 511',
+      accessMethod: 'documented_api',
+      integrationStatus: 'key-required',
+      mediaStatus: 'connector-built-key-blocked',
+      authRequired: true,
+      requiredCredential: 'ARIZONA_511_API_KEY',
+      evidenceState: 'VERIFIED',
+      sourceUrl: 'https://www.az511.gov/developers/doc',
+      documentationUrl: 'https://az511.com/help/endpoint/cameras',
+      notes:
+        'Statewide v2 camera adapter implemented from official API documentation; developer key is the remaining activation dependency.',
+    },
+  ],
+  ID: [
+    {
+      operator: 'Idaho Transportation Department',
+      system: 'Idaho 511',
+      accessMethod: 'documented_api',
+      integrationStatus: 'key-required',
+      mediaStatus: 'connector-built-key-blocked',
+      authRequired: true,
+      requiredCredential: 'IDAHO_511_API_KEY',
+      evidenceState: 'VERIFIED',
+      sourceUrl: 'https://511.idaho.gov/developers/doc',
+      documentationUrl: 'https://511.idaho.gov/help/endpoint/cameras',
+      notes:
+        'Statewide v2 camera adapter implemented from official API documentation; developer key is the remaining activation dependency.',
+    },
+  ],
+  LA: [
+    {
+      operator: 'Louisiana Department of Transportation and Development',
+      system: '511LA',
+      accessMethod: 'documented_api',
+      integrationStatus: 'key-required',
+      mediaStatus: 'connector-built-key-blocked',
+      authRequired: true,
+      requiredCredential: 'LOUISIANA_511_API_KEY',
+      evidenceState: 'VERIFIED',
+      sourceUrl: 'https://511la.org/developers/doc',
+      documentationUrl: 'https://511la.org/help/endpoint/cameras',
+      notes:
+        'Statewide v2 camera adapter implemented from official API documentation; developer key is the remaining activation dependency.',
+    },
+  ],
   CA: [
     {
       operator: 'California Department of Transportation',
@@ -112,6 +176,7 @@ const SEEDED_SOURCES = Object.freeze({
       integrationStatus: 'key-required',
       mediaStatus: 'connector-built-key-blocked',
       authRequired: true,
+      requiredCredential: 'GEORGIA_511_API_KEY',
       evidenceState: 'VERIFIED',
       sourceUrl: 'https://511ga.org/developers/doc',
       documentationUrl: 'https://511ga.org/help/endpoint/cameras',
@@ -155,6 +220,7 @@ const SEEDED_SOURCES = Object.freeze({
       integrationStatus: 'key-required',
       mediaStatus: 'connector-built-key-blocked',
       authRequired: true,
+      requiredCredential: 'NEWYORK_511_API_KEY',
       evidenceState: 'VERIFIED',
       sourceUrl: 'https://511ny.org/developers/help',
       documentationUrl: 'https://511ny.org/help/endpoint/cameras',
@@ -222,6 +288,7 @@ const SEEDED_SOURCES = Object.freeze({
       integrationStatus: 'key-required',
       mediaStatus: 'connector-built-key-blocked',
       authRequired: true,
+      requiredCredential: 'WISCONSIN_511_API_KEY',
       evidenceState: 'VERIFIED',
       sourceUrl: 'https://511wi.gov/developers/doc',
       documentationUrl: 'https://511wi.gov/help/endpoint/cameras',

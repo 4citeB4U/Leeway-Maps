@@ -23,7 +23,21 @@ import {
   loadCalgarySourcesFromOpenData,
   loadDelDOTSourcesFromOpenData,
 } from './sources.js';
-import { loadGeorgia511Sources, loadNewYork511Sources } from './iteris511.js';
+import {
+  loadAlaska511Sources,
+  loadArizona511Sources,
+  loadConnecticut511Sources,
+  loadFlorida511Sources,
+  loadGeorgia511Sources,
+  loadIdaho511Sources,
+  loadLouisiana511Sources,
+  loadNevada511Sources,
+  loadNewEngland511Sources,
+  loadNewYork511Sources,
+  loadNorthCarolina511Sources,
+  loadPennsylvania511Sources,
+  loadUtah511Sources,
+} from './iteris511.js';
 
 /** Env kill switch: unset or anything but "0" means enabled. */
 const envEnabled = (name) => String(process.env[name] || '1').trim() !== '0';
@@ -34,6 +48,17 @@ const CAMERA_PACK_IDS = [
   [/^tfl-/, 'tfl'],
   [/^il-gateway-/, 'illinois-gateway'],
   [/^wi511-/, 'wisconsin-511'],
+  [/^ak511-/, 'alaska-511'],
+  [/^az511-/, 'arizona-511'],
+  [/^id511-/, 'idaho-511'],
+  [/^la511-/, 'louisiana-511'],
+  [/^ct511-/, 'connecticut-511'],
+  [/^fl511-/, 'florida-511'],
+  [/^nv511-/, 'nevada-511'],
+  [/^nc511-/, 'north-carolina-511'],
+  [/^pa511-/, 'pennsylvania-511'],
+  [/^ut511-/, 'utah-511'],
+  [/^ne511-/, 'new-england-511'],
   [/^ny511-/, 'new-york-511'],
   [/^ga511-/, 'georgia-511'],
   [/^nyc-dot-/, 'nyc-dot'],
@@ -78,6 +103,61 @@ const LIVE_PACKS = [
     name: 'wisconsin-511',
     enabled: () => envEnabled('CCTV_WISCONSIN_511_ENABLED'),
     load: loadWisconsin511SourcesFromOpenData,
+  },
+  {
+    name: 'alaska-511',
+    enabled: () => envEnabled('CCTV_ALASKA_511_ENABLED'),
+    load: loadAlaska511Sources,
+  },
+  {
+    name: 'arizona-511',
+    enabled: () => envEnabled('CCTV_ARIZONA_511_ENABLED'),
+    load: loadArizona511Sources,
+  },
+  {
+    name: 'idaho-511',
+    enabled: () => envEnabled('CCTV_IDAHO_511_ENABLED'),
+    load: loadIdaho511Sources,
+  },
+  {
+    name: 'louisiana-511',
+    enabled: () => envEnabled('CCTV_LOUISIANA_511_ENABLED'),
+    load: loadLouisiana511Sources,
+  },
+  {
+    name: 'connecticut-511',
+    enabled: () => envEnabled('CCTV_CONNECTICUT_511_ENABLED'),
+    load: loadConnecticut511Sources,
+  },
+  {
+    name: 'florida-511',
+    enabled: () => envEnabled('CCTV_FLORIDA_511_ENABLED'),
+    load: loadFlorida511Sources,
+  },
+  {
+    name: 'nevada-511',
+    enabled: () => envEnabled('CCTV_NEVADA_511_ENABLED'),
+    load: loadNevada511Sources,
+  },
+  {
+    name: 'north-carolina-511',
+    enabled: () => envEnabled('CCTV_NORTH_CAROLINA_511_ENABLED'),
+    load: loadNorthCarolina511Sources,
+  },
+  {
+    name: 'pennsylvania-511',
+    enabled: () => envEnabled('CCTV_PENNSYLVANIA_511_ENABLED'),
+    load: loadPennsylvania511Sources,
+  },
+  {
+    name: 'utah-511',
+    enabled: () => envEnabled('CCTV_UTAH_511_ENABLED'),
+    load: loadUtah511Sources,
+  },
+  {
+    name: 'new-england-511',
+    enabled: () => envEnabled('CCTV_NEW_ENGLAND_511_ENABLED'),
+    load: loadNewEngland511Sources,
   },
   {
     name: 'new-york-511',

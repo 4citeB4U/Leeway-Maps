@@ -32,14 +32,57 @@ function ensureStyles(documentRef) {
     .lnc-state.research-required { color:#a9b9c1; }
     .lnc-source { margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,.06); font-size:9px; line-height:1.45; }
     .lnc-source strong { color:#dffcff; } .lnc-source small { display:block; opacity:.62; margin-top:2px; }
+    .lnc-row-actions { display:flex; justify-content:flex-end; margin-top:8px; }
+    .lnc-action { border:1px solid rgba(71,225,242,.30); border-radius:8px; padding:7px 9px;
+      background:rgba(71,225,242,.08); color:#dffcff; font:700 9px/1 system-ui,sans-serif; letter-spacing:.06em; cursor:pointer; }
+    .lnc-action:hover { background:rgba(71,225,242,.16); }
+    .lnc-action:disabled { opacity:.45; cursor:wait; }
     .lnc-empty { padding:20px; text-align:center; opacity:.6; }
   `;
   documentRef.head.appendChild(style);
 }
 
+export function nationalCameraJurisdictionAction(row = {}) {
+  const sources = Array.isArray(row.sources) ? row.sources : [];
+  const canViewCameras = sources.some(
+    (source) => source?.integrationStatus === 'integrated',
+  );
+  if (canViewCameras)
+    return {
+      label: 'VIEW CAMERAS',
+      canViewCameras: true,
+      requiredCredential: null,
+    };
+
+  const credentialSource = sources.find(
+    (source) =>
+      source?.integrationStatus === 'key-required' &&
+      String(source?.requiredCredential || '').trim(),
+  );
+  if (credentialSource)
+    return {
+      label: 'API KEY REQUIRED',
+      canViewCameras: false,
+      requiredCredential: String(credentialSource.requiredCredential).trim(),
+    };
+
+  if (sources.length)
+    return {
+      label: 'LOCATE SOURCE',
+      canViewCameras: false,
+      requiredCredential: null,
+    };
+  return {
+    label: 'LOCATE',
+    canViewCameras: false,
+    requiredCredential: null,
+  };
+}
+
 export function mountNationalCameraCatalog({
   host = document.body,
   notify = () => {},
+  onJurisdictionSelect = null,
 } = {}) {
   ensureStyles(document);
   const root = document.createElement('section');
@@ -127,6 +170,11 @@ export function mountNationalCameraCatalog({
       `,
           )
           .join('');
+        const action = nationalCameraJurisdictionAction(row);
+        const actionControl =
+          typeof onJurisdictionSelect === 'function'
+            ? `<div class="lnc-row-actions"><button type="button" class="lnc-action" data-jurisdiction="${escapeHtml(row.code)}">${escapeHtml(action.label)}</button></div>`
+            : '';
         return `
         <article class="lnc-row">
           <div class="lnc-row-head">
@@ -135,6 +183,7 @@ export function mountNationalCameraCatalog({
             <span class="lnc-state ${escapeHtml(state)}">${escapeHtml(state.toUpperCase())}</span>
           </div>
           ${sources || '<div class="lnc-source"><small>Official source research not yet completed. No feed is implied.</small></div>'}
+          ${actionControl}
         </article>
       `;
       })
@@ -167,6 +216,28 @@ export function mountNationalCameraCatalog({
   }
 
   search.addEventListener('input', render);
+  list.addEventListener('click', async (event) => {
+    const button = event.target?.closest?.('[data-jurisdiction]');
+    if (!button || typeof onJurisdictionSelect !== 'function') return;
+    const code = String(button.dataset.jurisdiction || '').trim();
+    const row = (payload?.jurisdictions || []).find(
+      (candidate) => candidate.code === code,
+    );
+    if (!row) return;
+
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    status.textContent = 'LOCATING';
+    try {
+      await onJurisdictionSelect(row, nationalCameraJurisdictionAction(row));
+    } catch (error) {
+      notify(error?.message || `Could not open ${row.name}`);
+    } finally {
+      button.disabled = false;
+      button.removeAttribute('aria-busy');
+      status.textContent = `${payload?.summary?.jurisdictionCount || 0} JURISDICTIONS`;
+    }
+  });
   root
     .querySelector('[data-refresh]')
     .addEventListener('click', () => void refresh());
