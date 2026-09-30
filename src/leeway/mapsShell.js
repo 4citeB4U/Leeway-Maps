@@ -12,6 +12,7 @@ import { mountOfflineTrip } from './offlineTrip.js';
 import { mountFuelLedger } from './fuelLedger.js';
 import { mapIcon } from './mapIcons.js';
 import { mountExperiencePreferences } from './experiencePreferences.js';
+import { openNearestCctv } from './cctvExperience.js';
 
 function ensureStyles(documentRef) {
   if (documentRef.getElementById('leeway-enterprise-shell-styles')) return;
@@ -281,7 +282,7 @@ export function mountMapsShell(
       ${[
         ['layers', 'Layers'],
         ['traffic', 'Traffic'],
-        ['flights', 'Flights'],
+        ['cctv', 'CCTV'],
         ['weather', 'Weather'],
       ]
         .map(
@@ -302,7 +303,9 @@ export function mountMapsShell(
             ['three', '3D'],
           ]
         : [
+            ['cockpit', 'Travel'],
             ['transit', 'Transit'],
+            ['flights', 'Flights'],
             ['three', '3D'],
           ]
       )
@@ -316,7 +319,7 @@ export function mountMapsShell(
     <div class="lws-location-badge" data-location-badge><strong>WORLD</strong><span>Geographic identification loading…</span></div>
     <aside class="lws-context-inspector" data-context-inspector></aside>
     <div class="lws-right-tabs" aria-label="Right-side information panels">
-      <button class="lws-right-tab" data-action="right-ops" type="button">OPS</button>
+      <button class="lws-right-tab" data-action="right-ops" type="button">TRAVEL</button>
       <button class="lws-right-tab" data-action="right-cctv" type="button">CCTV</button>
       <button class="lws-right-tab" data-action="right-weather" type="button">WEATHER</button>
       <button class="lws-right-tab" data-action="right-national" type="button">NATION</button>
@@ -861,21 +864,30 @@ export function mountMapsShell(
       nationalCatalog.close();
       if (!action?.canViewCameras) {
         setRightPanel(null, { toggle: false });
-        say(
-          `${name} located · this registry does not claim an integrated public camera feed yet`,
-        );
+        if (action?.requiredCredential) {
+          say(
+            `${name} camera connector is ready · add ${action.requiredCredential} to activate it`,
+          );
+        } else {
+          say(
+            `${name} located · no verified integrated camera feed is registered yet`,
+          );
+        }
         return true;
       }
 
-      if (!dataManager?.layers?.has('cctv')) {
-        say(`${name} located · CCTV layer unavailable in this build`);
+      setRightPanel('cctv', { toggle: false });
+      const opened = await openNearestCctv(dataManager, {
+        origin: 'user',
+        durationSec: 1.4,
+      });
+      if (!opened.ok) {
+        say(`${name} camera catalog opened · ${opened.reason}`);
         return true;
       }
-      if (!dataManager.isEnabled?.('cctv')) {
-        await dataManager.setEnabled('cctv', true, { origin: 'user' });
-      }
-      setRightPanel('cctv', { toggle: false });
-      say(`${name} cameras enabled · select a camera marker to open its feed`);
+      say(
+        `${name} CCTV · ${opened.camera?.name || opened.cameraId} · ${opened.camera?.provider || 'official provider'}`,
+      );
       return true;
     },
   });
@@ -1153,6 +1165,29 @@ export function mountMapsShell(
     }
     if (dock === 'traffic') {
       await toggleLayer('traffic');
+      return;
+    }
+    if (dock === 'cctv') {
+      nationalCatalog.close();
+      setRightPanel('cctv', { toggle: false });
+      say('Loading nearest public traffic camera…');
+      const opened = await openNearestCctv(dataManager, {
+        origin: 'user',
+        durationSec: 1.4,
+      });
+      if (opened.ok) {
+        say(
+          `CCTV · ${opened.camera?.name || opened.cameraId} · ${opened.camera?.provider || 'official provider'}`,
+        );
+      } else {
+        say(`CCTV unavailable in this view · ${opened.reason}`);
+      }
+      return;
+    }
+    if (dock === 'cockpit') {
+      nationalCatalog.close();
+      setRightPanel('ops', { toggle: false });
+      say('Travel cockpit opened');
       return;
     }
     if (dock === 'flights') {
