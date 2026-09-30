@@ -1131,6 +1131,11 @@ export function mountMapsShell(
         say('Rail operating view ready for rail provider binding');
         return;
       }
+      if (id === 'features') {
+        workspace.close();
+        featureCenter.open();
+        return;
+      }
       if (id === 'intel') {
         workspace.close();
         toggleLayerMenu(true);
@@ -1161,6 +1166,10 @@ export function mountMapsShell(
     }
     if (action === 'roadside') {
       roadside.toggle();
+      return;
+    }
+    if (action === 'capabilities') {
+      featureCenter.toggle();
       return;
     }
     if (action === 'peer-comms') {
@@ -1480,6 +1489,7 @@ export function mountMapsShell(
       peerComms.destroy();
       routing.destroy();
       roadside.destroy();
+      featureCenter.destroy();
       nationalCatalog.destroy();
       workspace.destroy();
       shell.remove();
