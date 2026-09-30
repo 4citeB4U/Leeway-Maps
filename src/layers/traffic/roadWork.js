@@ -2,7 +2,15 @@
 export function sampleTrafficHeight(scene, cartographic, cache) {
   const key = `${cartographic.longitude},${cartographic.latitude}`;
   if (cache instanceof Map && cache.has(key)) return cache.get(key);
-  const height = scene.sampleHeight(cartographic);
+  // A visible globe has CPU-resident terrain heights. scene.sampleHeight instead
+  // renders a pick pass and reads GPU depth synchronously for every road, including
+  // unrelated imagery/primitives. Never issue that pass for a globe-hosted map.
+  // An unloaded terrain tile is a miss; the caller retains its ellipsoid fallback.
+  const height = scene.globe?.show === true
+    ? scene.globe.getHeight?.(cartographic)
+    : scene.sampleHeightSupported === false
+      ? undefined
+      : scene.sampleHeight?.(cartographic);
   if (cache instanceof Map && Number.isFinite(height)) cache.set(key, height);
   return height;
 }

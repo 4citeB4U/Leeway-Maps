@@ -277,7 +277,7 @@ export function createTiming({ state: layerState, services, parts, source }) {
 
       let baseHeight = 0;
       const firstCoord = coords[0];
-      if (layerState._viewer?.scene?.sampleHeightSupported && firstCoord) {
+      if (layerState._viewer?.scene && firstCoord) {
         /* TRACE_ONLY_BEGIN */
         _trafficTimingSampleHeightCalls += 1;
         _trafficTimingSampledCells.add(

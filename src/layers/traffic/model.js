@@ -51,7 +51,7 @@ export function createModel({ state: layerState, services, parts, source }) {
       // Sample terrain height once at the road start to avoid per-vertex cost
       let baseHeight = 0;
       const firstCoord = coords[0];
-      if (layerState._viewer?.scene?.sampleHeightSupported && firstCoord) {
+      if (layerState._viewer?.scene && firstCoord) {
         const carto = Cesium.Cartographic.fromDegrees(
           firstCoord[0],
           firstCoord[1],
