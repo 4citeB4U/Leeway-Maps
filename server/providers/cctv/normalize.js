@@ -501,6 +501,7 @@ export function normalizeSourceItem(item) {
     url: typeof item.url === 'string' ? item.url : '',
     snapshotUrl: typeof item.snapshotUrl === 'string' ? item.snapshotUrl : '',
     license: String(item.license || item.licenseNote || ''),
+    mediaLimitation: String(item.mediaLimitation || ''),
     // Per-camera attribution for feeds a partner supplies inside a pack
     // (DriveBC: TransLink, city cameras). Shown beside the provider.
     credit: String(item.credit || '').trim(),

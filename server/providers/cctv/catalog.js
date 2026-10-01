@@ -1,3 +1,7 @@
+import { loadMinnesotaFeaturedSources } from './minnesota.js';
+import { loadIowaSourcesFromOpenData, loadMissouriSourcesFromOpenData } from './midwestArcgis.js';
+import { selectRegionalCameras } from './regionalCatalog.js';
+import { loadOklahomaSources } from './oklahoma.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { DEFAULT_CCTV_SOURCE_FILE, CCTV_SOURCE_CACHE_MS } from './constants.js';
@@ -43,6 +47,10 @@ import {
 const envEnabled = (name) => String(process.env[name] || '1').trim() !== '0';
 
 const CAMERA_PACK_IDS = [
+  [/^mn-featured-/, 'minnesota-featured'],
+  [/^ia-dot-/, 'iowa'],
+  [/^mo-dot-/, 'missouri'],
+  [/^oktraffic-/, 'oklahoma'],
   [/^\d+$/, 'austin'],
   [/^ca-d\d+-/, 'caltrans'],
   [/^tfl-/, 'tfl'],
@@ -83,6 +91,10 @@ const CAMERA_PACK_IDS = [
  * kill switch.
  */
 const LIVE_PACKS = [
+  { name: 'minnesota-featured', enabled: () => envEnabled('CCTV_MINNESOTA_FEATURED_ENABLED'), load: loadMinnesotaFeaturedSources },
+  { name: 'iowa', enabled: () => envEnabled('CCTV_IOWA_ENABLED'), load: loadIowaSourcesFromOpenData },
+  { name: 'missouri', enabled: () => envEnabled('CCTV_MISSOURI_ENABLED'), load: loadMissouriSourcesFromOpenData },
+  { name: 'oklahoma', enabled: () => envEnabled('CCTV_OKLAHOMA_ENABLED'), load: loadOklahomaSources },
   { name: 'austin', enabled: () => true, load: loadAustinSourcesFromOpenData },
   {
     name: 'caltrans',
@@ -289,6 +301,7 @@ export function createCctvCatalog({
   const lookupInflight = new Map();
   /** @type {Array<object>} Cached merged + normalized CCTV source list. */
   let _cctvSourceCache = [];
+  let allSourceInventory = [];
   /** @type {number} Epoch-ms when the source cache was last refreshed. */
   let _cctvSourceCacheAt = 0;
   /** @type {Promise<Array<object>>|null} In-flight refresh, shared by concurrent
@@ -411,6 +424,7 @@ export function createCctvCatalog({
     ];
     const maxCount = resolveCatalogCap(process.env.CCTV_MAX_SOURCES);
     const allocation = allocateSourceCap(packs, maxCount);
+    allSourceInventory = allocateSourceCap(packs, Number.MAX_SAFE_INTEGER).sources;
     // Shipped ground heights (src/data/local_data/cctv_ground_heights/, produced by
     // scripts/precompute-cctv-heights.mjs) ride along on the served source so
     // the client can place a camera and its monitor plane with zero sampling.
@@ -433,6 +447,13 @@ export function createCctvCatalog({
     return _cctvSourceCache;
   }
 
+  getCctvSources.query = async (scope) => {
+    const globalSources = await getCctvSources();
+    if (!scope) return { sources: globalSources };
+    const result = selectRegionalCameras(allSourceInventory, scope);
+    result.sources = joinGroundHeights(result.sources, loadGroundHeights(sourceRoot));
+    return result;
+  };
   getCctvSources.status = () => packHealth.map((entry) => ({ ...entry }));
   // Frame requests can land on a different serverless instance than /sources.
   // Rehydrate that one official provider, not the entire world catalog, and

@@ -1,3 +1,4 @@
+import { cameraSourceAccess } from './cameraCoverageStatus.js';
 function ensureStyles(documentRef) {
   if (documentRef.getElementById('leeway-national-camera-catalog-styles'))
     return;
@@ -32,6 +33,7 @@ function ensureStyles(documentRef) {
     .lnc-state.research-required { color:#a9b9c1; }
     .lnc-source { margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,.06); font-size:9px; line-height:1.45; }
     .lnc-source strong { color:#dffcff; } .lnc-source small { display:block; opacity:.62; margin-top:2px; }
+    .lnc-source a { color:#75effb; text-decoration:underline; display:inline-block; margin-top:5px; }
     .lnc-row-actions { display:flex; justify-content:flex-end; margin-top:8px; }
     .lnc-action { border:1px solid rgba(71,225,242,.30); border-radius:8px; padding:7px 9px;
       background:rgba(71,225,242,.08); color:#dffcff; font:700 9px/1 system-ui,sans-serif; letter-spacing:.06em; cursor:pointer; }
@@ -98,6 +100,7 @@ export function mountNationalCameraCatalog({
       <input data-search aria-label="Filter jurisdictions" placeholder="Filter state, territory, operator, system..." />
       <button type="button" data-refresh>REFRESH</button>
     </div>
+    <p class="lnc-source" style="padding:0 12px">Networks have different coverage and access rules. An empty map does not establish that a town has no cameras. Connected does not mean every camera is online.</p>
     <div class="lnc-summary" data-summary></div>
     <div class="lnc-list" data-list><div class="lnc-empty">Loading national catalog…</div></div>
   `;
@@ -160,15 +163,18 @@ export function mountNationalCameraCatalog({
       .map((row) => {
         const state = row.integrated ? 'integrated' : row.researchStatus;
         const sources = (row.sources || [])
-          .map(
-            (source) => `
+          .map((source) => {
+            const access = cameraSourceAccess(source);
+            return `
         <div class="lnc-source">
           <strong>${escapeHtml(source.system || source.operator)}</strong>
           · ${escapeHtml(source.integrationStatus || 'unknown')}
+          <small>${escapeHtml(access.message)}</small>
+          ${access.links.map(link => `<a href="${escapeHtml(link.href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link.label)}</a>`).join(' &middot; ')}
           <small>${escapeHtml(source.operator || '')}${source.notes ? ' · ' + escapeHtml(source.notes) : ''}</small>
         </div>
-      `,
-          )
+      `;
+          })
           .join('');
         const action = nationalCameraJurisdictionAction(row);
         const actionControl =

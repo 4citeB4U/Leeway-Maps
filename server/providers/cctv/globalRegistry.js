@@ -3,6 +3,10 @@ import { nationalTrafficCameraJurisdictions } from './nationalRegistry.js';
 // Implemented adapters, not a promise of continuous feed availability or
 // worldwide coverage. Every region below has a loader in catalog.js.
 const NETWORKS = [
+  ['minnesota-featured', 'USA', 'US-MN', 'Minnesota 511 featured cameras (partial coverage)', 'open', 'https://511mn.org/'],
+  ['iowa', 'USA', 'US-IA', 'Iowa DOT', 'open', 'https://www.511ia.org/'],
+  ['missouri', 'USA', 'US-MO', 'Missouri DOT', 'open', 'https://traveler.modot.org/'],
+  ['oklahoma', 'USA', 'US-OK', 'Oklahoma DOT / OKTraffic', 'open', 'https://oktraffic.org/'],
   [
     'austin',
     'USA',

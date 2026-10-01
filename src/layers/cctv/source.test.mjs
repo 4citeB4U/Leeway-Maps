@@ -148,3 +148,29 @@ test('camera construction is inert and destruction cancels a pending catalog and
   assert.equal(a.getStats().count, 0);
   assert.equal(b.getStats().count, 0);
 });
+
+test('regional request encodes center, caps budgets and preserves caller cancellation', async () => {
+  let captured;
+  const source = createCctvSource({
+    fetchImpl: async (path, options) => {
+      captured = { path, options };
+      return new Response(JSON.stringify({ sources: [] }));
+    },
+  });
+  const controller = new AbortController();
+  await source.getCatalog({
+    lat: 43,
+    lon: -88,
+    radiusKm: 2000,
+    limit: 9000,
+    includeId: 'selected/camera &1',
+    signal: controller.signal,
+  });
+  const url = new URL(captured.path, 'https://example.com');
+  assert.equal(url.searchParams.get('lat'), '43');
+  assert.equal(url.searchParams.get('lon'), '-88');
+  assert.equal(url.searchParams.get('radiusKm'), '1000');
+  assert.equal(url.searchParams.get('limit'), '4000');
+  assert.equal(url.searchParams.get('includeId'), 'selected/camera &1');
+  assert.equal(captured.options.signal, controller.signal);
+});

@@ -1,3 +1,4 @@
+import { emptyCameraCoverageText } from '../../leeway/cameraCoverageStatus.js';
 import { CCTV_AMBIENT_CARD_MAX } from '../../data/cctvLod.js';
 import { ACTIVE_FRAME_REFRESH_MS, IDLE_FRAME_REFRESH_MS } from './policy.js';
 import { staticFrameRefreshMs } from '../../data/cctvLod.js';
@@ -19,9 +20,11 @@ export function createPresentation({
   function buildSummaryText() {
     const active = parts.selection.getActiveRecord();
     if (!active) {
-      return layerState._records.length
-        ? `${layerState._records.length} CAMERAS STANDING BY · NO CAMERA SELECTED · CLICK A CAMERA TO ACTIVATE`
-        : 'No cameras available in catalog.';
+      return emptyCameraCoverageText({
+        totalCount: layerState._records.length,
+        scopedCount: parts.navigation.scopedRecordsNearViewer().length,
+        error: layerState._lastError,
+      });
     }
 
     const area = parts.model.sectorAreaKm2(
@@ -170,6 +173,7 @@ export function createPresentation({
       autoHopSec: layerState._autoHopSec,
       count: scopedRecords.length,
       totalCount: layerState._count,
+      inventoryScope: layerState._inventoryScope || null,
       scopeRadiusKm: parts.navigation.scopeRadiusKm(),
       lastUpdate: layerState._lastUpdate,
       error: layerState._lastError,

@@ -1,3 +1,4 @@
+import { createInventory } from './inventory.js';
 import { createCalibration } from './calibration.js';
 import { createTesting } from './testing.js';
 import { createProjection } from './projection.js';
@@ -46,6 +47,7 @@ export function createCctvLayer({ services, source }) {
   parts.navigation = createNavigation(context);
   parts.presentation = createPresentation(context);
   parts.lifecycle = createLifecycle(context);
+  parts.inventory = createInventory(context);
   parts.health = createHealth(context);
   parts.controls = createControls(context);
   parts.ingestion = createIngestion(context);

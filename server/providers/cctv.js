@@ -1,3 +1,4 @@
+import { parseCameraScope } from './cctv/regionalCatalog.js';
 import { createCctvCatalog } from './cctv/catalog.js';
 import { createCctvFrameCache } from './cctv/frameCache.js';
 import { globalTrafficCameraCoverage } from './cctv/globalRegistry.js';
@@ -81,13 +82,13 @@ export function cctvProxy({
         ? 'stateless-streams-and-snapshots'
         : 'streams-and-snapshots',
       mediaCapabilities: cameraMediaCapabilities(source),
-      mediaLimitation: cameraMediaCapabilities(source).locationOnly
+      mediaLimitation: source?.mediaLimitation || (cameraMediaCapabilities(source).locationOnly
         ? 'Camera location only; provider publishes no public image or video URL.'
         : !cameraMediaCapabilities(source).video
           ? 'Provider supplies refreshed still images, not continuous video.'
           : source?.sourceKind === 'tfl-open-data'
             ? 'Provider supplies periodically refreshed video clips, not a continuous live stream.'
-            : '',
+            : ''),
       mediaUrl: isVideoFeedType(feedType)
         ? `/api/cctv/media/${encodeURIComponent(cameraId)}`
         : null,
@@ -151,8 +152,11 @@ export function cctvProxy({
           return;
         }
         if (url.pathname === '/sources') {
-          const sources = await getCctvSources();
+          const region = parseCameraScope(url.searchParams);
+          const result = await getCctvSources.query(region);
+          const sources = result.sources;
           const body = {
+            ...(result.scope ? { scope: result.scope } : {}),
             sources: sources.map((source) => ({
               id: source.id,
               name: source.name,
@@ -170,13 +174,13 @@ export function cctvProxy({
               groundElevationM: source.groundElevationM,
               feedType: normalizeFeedType(source.feedType),
               mediaCapabilities: cameraMediaCapabilities(source),
-              mediaLimitation: cameraMediaCapabilities(source).locationOnly
+              mediaLimitation: source?.mediaLimitation || (cameraMediaCapabilities(source).locationOnly
                 ? 'Camera location only; provider publishes no public image or video URL.'
                 : !cameraMediaCapabilities(source).video
                   ? 'Provider supplies refreshed still images, not continuous video.'
                   : source?.sourceKind === 'tfl-open-data'
                     ? 'Provider supplies periodically refreshed video clips, not a continuous live stream.'
-                    : '',
+                    : ''),
               sourceKind:
                 source.sourceKind || (source.url ? 'configured' : 'fallback'),
               poseSource: source.poseSource,
@@ -637,8 +641,8 @@ export function cctvProxy({
         );
       } catch (error) {
         console.error('[CCTV Proxy]', error?.message || String(error));
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'CCTV proxy error' }));
+        res.writeHead(error?.statusCode === 400 ? 400 : 500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: error?.statusCode === 400 ? error.message : 'CCTV proxy error' }));
       }
     });
   };

@@ -64,6 +64,119 @@ const US_JURISDICTIONS = Object.freeze([
 ]);
 
 const SEEDED_SOURCES = Object.freeze({
+  MN: [{operator:'Minnesota Department of Transportation',system:'Minnesota 511 featured cameras (partial coverage)',accessMethod:'official_public_feed',integrationStatus:'integrated',mediaStatus:'integrated',authRequired:false,evidenceState:'VERIFIED',sourceUrl:'https://511mn.org/',notes:'Limited featured-dashboard subset of snapshot views. Full statewide inventory is not connected; no claim of every Minnesota camera.'}],
+KS: [
+  {
+    "operator": "Kansas Department of Transportation",
+    "system": "KanDrive",
+    "sourceUrl": "https://kandrive.gov/",
+    "documentationUrl": "https://www.ksdot.gov/travel/travel-conditions/kandrive",
+    "notes": "Public camera viewer identified; reusable catalog and media integration are still being verified.",
+    "accessMethod": "official_public_map",
+    "integrationStatus": "adapter-required",
+    "mediaStatus": "official-public",
+    "authRequired": null,
+    "evidenceState": "VERIFIED"
+  }
+],
+NE: [
+  {
+    "operator": "Nebraska Department of Transportation",
+    "system": "Nebraska 511",
+    "sourceUrl": "https://511.nebraska.gov/",
+    "documentationUrl": "https://dot.nebraska.gov/travel/",
+    "notes": "Public highway camera viewer identified; a reusable catalog and media contract is not connected yet.",
+    "accessMethod": "official_public_map",
+    "integrationStatus": "adapter-required",
+    "mediaStatus": "official-public",
+    "authRequired": null,
+    "evidenceState": "VERIFIED"
+  }
+],
+MI: [
+  {
+    "operator": "Michigan Department of Transportation",
+    "system": "Mi Drive / RIDE",
+    "sourceUrl": "https://www.michigan.gov/mdot/travel/safety/efforts/its/its-data",
+    "documentationUrl": "https://www.michigan.gov/mdot/business/open-data",
+    "notes": "RIDE requires an account; reusable CCTV integration is not yet verified. Public viewing and API access are separate.",
+    "accessMethod": "official_public_map",
+    "integrationStatus": "adapter-required",
+    "mediaStatus": "official-public",
+    "authRequired": true,
+    "evidenceState": "VERIFIED"
+  }
+],
+IN: [
+  {
+    "operator": "Indiana Department of Transportation",
+    "system": "TrafficWise",
+    "sourceUrl": "https://511in.org/",
+    "documentationUrl": "https://www.in.gov/indot/contact-indot/indot-mobile-app/",
+    "notes": "Official public traffic-camera viewer; reusable anonymous feed contract is not yet connected.",
+    "accessMethod": "official_public_map",
+    "integrationStatus": "adapter-required",
+    "mediaStatus": "official-public",
+    "authRequired": null,
+    "evidenceState": "VERIFIED"
+  }
+],
+OH: [
+  {
+    "operator": "Ohio Department of Transportation",
+    "system": "OHGO",
+    "sourceUrl": "https://publicapi.ohgo.com/",
+    "documentationUrl": "https://publicapi.ohgo.com/docs/registration",
+    "notes": "Official camera API requires registration and a key. Camera adapter and credentials still required.",
+    "accessMethod": "documented_api",
+    "integrationStatus": "adapter-required",
+    "mediaStatus": "official-public",
+    "authRequired": true,
+    "evidenceState": "VERIFIED"
+  }
+],
+  OK: [
+  {
+    "operator": "Oklahoma Department of Transportation / Oklahoma Turnpike Authority",
+    "system": "OKTraffic",
+    "accessMethod": "official_public_feed",
+    "integrationStatus": "integrated",
+    "mediaStatus": "integrated",
+    "authRequired": false,
+    "evidenceState": "VERIFIED",
+    "sourceUrl": "https://oktraffic.org/",
+    "notes": "Public Web cameras only; withheld and out-of-service views excluded. Official delayed HLS streams; counts and availability change. No coverage of every town is asserted."
+  }
+],
+  AL: [
+  {
+    "operator": "Alabama Department of Transportation",
+    "system": "ALGO Traffic",
+    "accessMethod": "official_public_map",
+    "integrationStatus": "permission-required",
+    "mediaStatus": "official-site-only",
+    "authRequired": null,
+    "evidenceState": "VERIFIED",
+    "sourceUrl": "https://www.algotraffic.com/cameras",
+    "documentationUrl": "https://www.algotraffic.com/cameras",
+    "notes": "Official public camera viewer. ALDOT prohibits unauthorized transmission and commercial use of camera material; embedding requires ALDOT permission. Open the official viewer while permission is unresolved."
+  }
+],
+  AR: [
+  {
+    "operator": "Arkansas Department of Transportation",
+    "system": "IDrive Arkansas Traveler Information",
+    "linkLabel": "Traveler information",
+    "accessMethod": "official_public_map",
+    "integrationStatus": "permission-required",
+    "mediaStatus": "official-site-only",
+    "authRequired": null,
+    "evidenceState": "VERIFIED",
+    "sourceUrl": "https://www.idrivearkansas.com/",
+    "documentationUrl": "https://site.idrivearkansas.com/index.php/policies/camera-terms-of-use",
+    "notes": "ARDOT prohibits embedding camera images and direct camera links in third-party apps. The official traveler-information homepage is provided; no footage is relayed."
+  }
+],
   AK: [
     {
       operator: 'Alaska Department of Transportation & Public Facilities',
@@ -184,20 +297,8 @@ const SEEDED_SOURCES = Object.freeze({
         'Statewide adapter implemented; a configured developer key and live verification are required.',
     },
   ],
-  IA: [
-    {
-      operator: 'Iowa Department of Transportation',
-      system: 'Iowa 511',
-      accessMethod: 'official_public_map',
-      integrationStatus: 'research-required',
-      mediaStatus: 'official-public',
-      authRequired: null,
-      evidenceState: 'VERIFIED',
-      sourceUrl: 'https://www.511ia.org/',
-      notes:
-        'Official traveler information includes traffic camera images and streaming video.',
-    },
-  ],
+  IA: [{ operator: 'Iowa Department of Transportation', system: 'Iowa DOT public cameras', accessMethod: 'official_open_data', integrationStatus: 'integrated', mediaStatus: 'integrated', authRequired: false, evidenceState: 'VERIFIED', sourceUrl: 'https://www.511ia.org/', documentationUrl: 'https://data.iowadot.gov/datasets/c4063f200a7b4da5826e2ac86c677cf5_0/explore', notes: 'Official inventory and refreshed JPEG views connected. Video links were not verified usable; these are labeled snapshots.' }],
+  MO: [{ operator: 'Missouri Department of Transportation', system: 'MoDOT Traveler Information', accessMethod: 'official_public_feed', integrationStatus: 'integrated', mediaStatus: 'integrated', authRequired: false, evidenceState: 'VERIFIED', sourceUrl: 'https://traveler.modot.org/', notes: 'Official enabled HLS cameras connected. Error-marked streams and indirect player URLs are excluded; this is not all Missouri cameras.' }],
   IL: [
     {
       operator: 'Illinois Department of Transportation / Travel Midwest',

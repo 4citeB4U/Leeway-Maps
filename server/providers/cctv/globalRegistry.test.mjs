@@ -8,7 +8,7 @@ test('coverage separates implemented international adapters from inventory and l
     { name: 'fintraffic', status: 'ready', count: 300, updatedAt: 123 },
   ]);
   assert.equal(result.countryCount, 7);
-  assert.equal(result.networks.length, 30);
+  assert.equal(result.networks.length, 34);
   assert.equal(result.usJurisdictions.length, 56);
   const finland = result.networks.find((x) => x.countryIso === 'FIN');
   assert.equal(finland.inventoryCount, 300);

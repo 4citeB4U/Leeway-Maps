@@ -42,7 +42,7 @@ test('seeded sources preserve verified authority and integration state', () => {
 });
 
 test('unresearched jurisdictions remain explicit instead of guessed', () => {
-  const alabama = nationalTrafficCameraJurisdiction('AL');
+  const alabama = nationalTrafficCameraJurisdiction('AS');
   assert.equal(alabama.researchStatus, 'research-required');
   assert.equal(alabama.sourceCount, 0);
   assert.deepEqual(alabama.sources, []);
@@ -62,4 +62,8 @@ test('verified shared 511 states are connector-built and blocked only on named k
     assert.equal(row.sources[0].requiredCredential, requiredCredential);
     assert.equal(row.sources[0].evidenceState, 'VERIFIED');
   }
+});
+
+test('restricted official viewers stay accessible without claiming embedded footage', () => {
+ for(const code of ['AL','AR']) { const row=nationalTrafficCameraJurisdiction(code); assert.equal(row.integrated,false); assert.equal(row.sources[0].integrationStatus,'permission-required'); assert.equal(row.sources[0].mediaStatus,'official-site-only'); assert.match(row.sources[0].sourceUrl,/^https:\/\//); }
 });

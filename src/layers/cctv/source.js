@@ -56,8 +56,25 @@ export function createCctvSource({
     return payload;
   }
   return {
-    getCatalog(options) {
-      return read('/api/cctv/sources', 'sources', options);
+    getCatalog(options = {}) {
+      const params = new URLSearchParams();
+      if (
+        Number.isFinite(options.lat) &&
+        Number.isFinite(options.lon) &&
+        Number.isFinite(options.radiusKm)
+      ) {
+        params.set('lat', options.lat);
+        params.set('lon', options.lon);
+        params.set('radiusKm', Math.max(1, Math.min(1000, options.radiusKm)));
+      }
+      if (options.limit !== undefined)
+        params.set('limit', Math.max(1, Math.min(4000, options.limit || 4000)));
+      if (options.includeId) params.set('includeId', options.includeId);
+      return read(
+        '/api/cctv/sources' + (params.size ? '?' + params : ''),
+        'sources',
+        options,
+      );
     },
     getHealth(options) {
       return read('/api/cctv/health', 'cameras', options);
