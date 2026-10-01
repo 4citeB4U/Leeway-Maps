@@ -200,7 +200,7 @@ export function createCatalog({ state: layerState, services, parts, source }) {
         credit: String(source.credit || ''),
         code: String(source.code || ''),
         frameRefreshMs: parts.model.safeNumber(source.frameRefreshMs, NaN),
-        ageMinutes: parts.model.safeNumber(source.ageMinutes, NaN),
+        ageMinutes: source.ageMinutes == null || source.ageMinutes === '' ? NaN : parts.model.safeNumber(source.ageMinutes, NaN),
         warningAge: Boolean(source.warningAge),
         catalogStatus: source.catalogStatus || '',
         mediaLimitation: source.mediaLimitation || '',

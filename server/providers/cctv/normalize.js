@@ -514,7 +514,7 @@ export function normalizeSourceItem(item) {
     frameRefreshMs: Number.isFinite(Number(item.frameRefreshMs))
       ? Number(item.frameRefreshMs)
       : undefined,
-    ageMinutes: Number.isFinite(Number(item.ageMinutes))
+    ageMinutes: item.ageMinutes !== null && item.ageMinutes !== undefined && item.ageMinutes !== '' && Number.isFinite(Number(item.ageMinutes))
       ? Number(item.ageMinutes)
       : null,
     warningAge: Boolean(item.warningAge),
