@@ -146,3 +146,28 @@ test('location-only, snapshot and video capabilities remain distinct', () => {
     { video: true, snapshot: false, locationOnly: false },
   );
 });
+
+test('fresh Wowza sessions retain segment identity across independent cold instances', async () => {
+ const root='https://stream.oktraffic.org/delay-stream/4deafaaa230522fe.stream/playlist.m3u8';
+ let session=0; const requested=[];
+ const fetchImpl=async url=>{
+  if(url===root)return new Response(`#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=300000\nchunklist_w${++session}.m3u8\n`);
+  if(url.endsWith('.m3u8'))return new Response(`#EXTM3U\n#EXT-X-MEDIA-SEQUENCE:5584\n#EXTINF:10,\nmedia_w${session}_5584.ts\n`);
+  requested.push(url);return new Response(new Uint8Array([71,64,0]));
+ };
+ const playlist=await createStatelessHls({fetchImpl}).playlist('oktraffic-1103130967',root);
+ const path=playlist.split('\n').find(line=>line.startsWith('/api/'));
+ const resource=new URL(path,'https://map.example').searchParams.get('resource');
+ const bytes=await createStatelessHls({fetchImpl}).segment(root,resource);
+ assert.deepEqual(bytes,Buffer.from([71,64,0]));
+ assert.ok(requested[0].endsWith('media_w2_5584.ts'));
+ await assert.rejects(createStatelessHls({fetchImpl}).segment(root.replace('4deafaaa230522fe','7cad80872f04fe24'),resource),{statusCode:410});
+});
+
+test('provider discontinuity epochs distinguish reused sequence numbers',async()=>{
+ const root='https://official.example/live.m3u8';let epoch=2;
+ const fetchImpl=async()=>new Response(`#EXTM3U\n#EXT-X-DISCONTINUITY-SEQUENCE:${epoch}\n#EXT-X-MEDIA-SEQUENCE:1\n#EXTINF:10,\nsegment.ts\n`);
+ const text=await createStatelessHls({fetchImpl}).playlist('camera',root);
+ const id=new URL(text.split('\n').find(x=>x.startsWith('/api/')),'https://map.example').searchParams.get('resource');
+ epoch=3;await assert.rejects(createStatelessHls({fetchImpl}).segment(root,id),{statusCode:410});
+});

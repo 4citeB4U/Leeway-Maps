@@ -6,8 +6,11 @@ import {
   sameOriginHlsUrl,
 } from './stream.js';
 
-const resourceId = (segment) =>
-  createHash('sha256').update(`${segment.seq}\n${segment.uri}`).digest('hex');
+// Some official encoders issue a fresh session path for every playlist fetch.
+// Bind public IDs to the registered root and media sequence, then resolve the
+// current provider URI on each request. Never accept a client-supplied URI.
+const resourceId = (root, segment) =>
+  createHash('sha256').update(`${root}\n${segment.discontinuitySequence ?? 0}\n${segment.seq}`).digest('hex');
 
 /** Every request derives resources from the registered camera's current playlist.
  * Public resource IDs are identifiers, not credentials. No URL comes from a client,
@@ -46,6 +49,14 @@ export function createStatelessHls({ fetchImpl = fetch } = {}) {
     }
     const segments = parseHlsMedia(text, base.href, 1000);
     if (!segments.length) throw new Error('No current HLS segments');
+    const discontinuityHeader = /^#EXT-X-DISCONTINUITY-SEQUENCE:(\d+)\s*$/m.exec(text);
+    if (discontinuityHeader) {
+      let discontinuitySequence = Number(discontinuityHeader[1]);
+      for (const segment of segments) {
+        if (segment.discontinuity) discontinuitySequence++;
+        segment.discontinuitySequence = discontinuitySequence;
+      }
+    }
     return { text, segments };
   }
   return {
@@ -62,7 +73,7 @@ export function createStatelessHls({ fetchImpl = fetch } = {}) {
         }
         const segment = segments[index++];
         if (!segment) throw new Error('Invalid HLS playlist');
-        return `/api/cctv/media/${encodeURIComponent(cameraId)}?resource=${resourceId(segment)}`;
+        return `/api/cctv/media/${encodeURIComponent(cameraId)}?resource=${resourceId(root, segment)}`;
       });
       return lines.join('\n');
     },
@@ -72,7 +83,7 @@ export function createStatelessHls({ fetchImpl = fetch } = {}) {
           statusCode: 400,
         });
       const { segments } = await inventory(root, signal);
-      const segment = segments.find((entry) => resourceId(entry) === id);
+      const segment = segments.find((entry) => resourceId(root, entry) === id);
       if (!segment)
         throw Object.assign(
           new Error('HLS segment expired; refresh the playlist'),
