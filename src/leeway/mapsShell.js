@@ -168,6 +168,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   document.body.dataset.leewayEdition = 'personal';
 
   const components = application.getComponents();
+  const styleManager = components.controls?.styleManager;
   const viewer = components.scene?.viewer;
   const dataManager = components.data?.dataManager;
   const mapStackController = components.scene?.mapStackController;
