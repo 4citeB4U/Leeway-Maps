@@ -1,3 +1,4 @@
+import { createRouteCamera } from './routeCamera.js';
 import {getLocationProvider} from './locationProvider.js';
 import * as Cesium from 'cesium';
 import {
@@ -36,7 +37,9 @@ export function mountRoutePlanner({
   container,
   client = createRouteClient(),
   onStatus = () => {},
+  navigate,
 }) {
+  const routeCamera = createRouteCamera(viewer, navigate);
   const root = document.createElement('section');
   root.className = 'lw-route-planner';
   root.innerHTML = `<div class="lrp-heading"><h2>Directions</h2><button type="button" data-do="close" aria-label="Close route planner">×</button></div><div class="lrp-travel-modes" role="group" aria-label="Travel mode"><button type="button" data-mode="car" aria-pressed="true">Drive</button><button type="button" data-mode="foot" aria-pressed="false">Walk</button><button type="button" data-mode="bike" aria-pressed="false">Cycle</button></div><p>Choose From and To. Recent addresses appear as you type; press Enter or Search for other places.</p><div data-stops></div>
@@ -267,7 +270,7 @@ export function mountRoutePlanner({
       const point = currentLocationPoint(position);
       stops[0] = { text: point.label, point };
       renderStops();
-      viewer.camera.flyTo({
+      routeCamera.point({
         destination: Cesium.Cartesian3.fromDegrees(point.lon, point.lat, 2500),
         duration: 1,
       });
@@ -594,7 +597,7 @@ export function mountRoutePlanner({
         }),
       ),
     );
-    void viewer.flyTo(entities, { duration: 1 });
+    void routeCamera.route(entities);
     viewer.scene.requestRender?.();
   }
   async function plan(

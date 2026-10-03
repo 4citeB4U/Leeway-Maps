@@ -7,11 +7,11 @@ const script = readFileSync(new URL('../../public/sw.js', import.meta.url), 'utf
 function worker({ online = false, status = 200 } = {}) {
   const handlers = {}, writes = [], precached = [], deleted = [];
   const fallback = { savedTripViewer: true };
-  const scope = 'https://example.test/LEEWAY-LOGISTICS-/';
+  const scope = 'https://example.test/Leeway-Maps/';
   const caches = {
     open: async () => ({ addAll: async (urls) => precached.push(...urls), put: async (...args) => writes.push(args) }),
     match: async (request) => String(request?.url || request) === `${scope}offline.html` ? fallback : undefined,
-    keys: async () => ['leeway-logistics-offline-v4', 'another-app-cache'],
+    keys: async () => ['leeway-maps-offline-v2', 'leeway-logistics-offline-v4', 'another-app-cache'],
     delete: async (key) => deleted.push(key),
   };
   vm.runInNewContext(script, {
@@ -39,7 +39,7 @@ test('install precaches the complete standalone saved-trip viewer and upgrade on
   for (const file of ['offline.html', 'offlineTripCore.js', 'offlineTripPage.js', 'icon-192.png'])
     assert.ok(w.precached.includes(`${w.scope}${file}`));
   await w.lifecycle('activate');
-  assert.deepEqual(w.deleted, ['leeway-logistics-offline-v4']);
+  assert.deepEqual(w.deleted, ['leeway-maps-offline-v2']);
 });
 
 test('offline root, explicit index and shared-address launches open saved trip rather than an incomplete globe shell', async () => {

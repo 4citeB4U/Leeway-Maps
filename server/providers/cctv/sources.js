@@ -594,7 +594,7 @@ export async function loadWisconsin511SourcesFromOpenData() {
       console.warn('[CCTV] Wisconsin 511 camera download failed:', resp.status);
       return [];
     }
-    const rows = await resp.json();
+    const rows = await readResponseJsonCapped(resp, 8 * 1024 * 1024);
     if (!Array.isArray(rows)) return [];
     const cameras = [];
     for (const row of rows) {
@@ -603,11 +603,9 @@ export async function loadWisconsin511SourcesFromOpenData() {
       if (!isPlausibleLatLon(lat, lon)) continue;
       if (lat < 42.45 || lat > 47.35 || lon < -92.95 || lon > -86.2) continue;
       const views = Array.isArray(row?.Views) ? row.Views : [];
-      const view =
-        views.find(
-          (item) => String(item?.Status || '').toLowerCase() === 'enabled',
-        ) || views[0];
-      if (!view) continue;
+      for (const view of views.filter(
+        (item) => String(item?.Status || '').trim().toLowerCase() === 'enabled',
+      )) {
       const stable = String(view.Id ?? row.Id ?? '').trim();
       if (!stable) continue;
       const snapshotUrl = String(view.Url || '').trim();
@@ -617,12 +615,19 @@ export async function loadWisconsin511SourcesFromOpenData() {
         const parsed = new URL(videoUrl);
         videoOk =
           parsed.hostname === WISCONSIN_511_VIDEO_HOST &&
+          !parsed.username && !parsed.password && !parsed.port &&
           /^https:$/.test(parsed.protocol) &&
           /\.m3u8(?:$|\?)/i.test(parsed.pathname + parsed.search);
       } catch {
         videoOk = false;
       }
-      const snapshotOk = snapshotUrl.startsWith(WISCONSIN_511_IMAGE_ORIGIN);
+      let snapshotOk = false;
+      try {
+        const parsed = new URL(snapshotUrl);
+        const official = new URL(WISCONSIN_511_IMAGE_ORIGIN);
+        snapshotOk = parsed.origin === official.origin && !parsed.username && !parsed.password &&
+          parsed.pathname.startsWith(official.pathname) && !parsed.hash;
+      } catch { /* no valid public snapshot */ }
       if (!snapshotOk && !videoOk) continue;
       if (!videoOk) videoUrl = '';
       const cameraId = `wi511-${stable.replace(/[^A-Za-z0-9_.-]+/g, '-').toLowerCase()}`;
@@ -657,6 +662,7 @@ export async function loadWisconsin511SourcesFromOpenData() {
         code: String(row.Roadway || row.SourceId || stable).trim(),
         frameRefreshMs: snapshotOk ? 15 * 1000 : undefined,
       });
+      }
     }
     const unique = Array.from(
       new Map(cameras.map((camera) => [camera.id, camera])).values(),
@@ -678,10 +684,7 @@ export async function loadWisconsin511SourcesFromOpenData() {
     );
     return prioritized;
   } catch (error) {
-    console.warn(
-      '[CCTV] Wisconsin 511 camera download error:',
-      error?.message || error,
-    );
+    console.warn('[CCTV] Wisconsin 511 camera download error');
     return [];
   }
 }

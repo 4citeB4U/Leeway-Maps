@@ -555,7 +555,10 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     return false;
   }
 
-  const routing = mountRoutePlanner({ viewer, container: routePlanner });
+  const routing = mountRoutePlanner({ viewer, container: routePlanner, navigate: fly => {
+    styleManager.controlCockpit?.('exit');
+    return styleManager.runImmediateLocationNavigation(fly);
+  } });
   const offlineTrip = mountOfflineTrip({ planner: routing });
   const preferences = mountExperiencePreferences();
   const driveMode = mountDriveMode({
@@ -908,14 +911,16 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       const safeAltitude = Number.isFinite(requestedAltitude)
         ? Math.max(1000, requestedAltitude)
         : 6000;
-      await viewer.camera.flyTo({
+      styleManager.controlCockpit?.('exit');
+      const moved = styleManager.runImmediateLocationNavigation(() => { viewer.camera.flyTo({
         destination: Cesium.Cartesian3.fromDegrees(
           point.lon,
           point.lat,
           safeAltitude,
         ),
         duration: 1.2,
-      });
+      }); return true; });
+      if (moved === false) throw new Error('Camera navigation blocked');
       say(
         `Showing ${point.label}${matches.length > 1 ? ' · use Directions to select an exact address' : ''}`,
       );
@@ -1295,7 +1300,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     }
   });
 
-  const deviceLocation = mountDeviceLocation({viewer,button:shell.querySelector('[data-dock="locate"]'),notify:say,onChange:()=>{queueMicrotask(()=>{mapReports.refresh();void updateLocationBadge();});}});
+  const deviceLocation = mountDeviceLocation({viewer,button:shell.querySelector('[data-dock="locate"]'),notify:say,navigate:fly=>{styleManager.controlCockpit?.('exit');return styleManager.runImmediateLocationNavigation(fly);},onChange:()=>{queueMicrotask(()=>{mapReports.refresh();void updateLocationBadge();});}});
   const mapReports = mountMapReports({
     shell, viewer, dataManager, getPoint: () => deviceLocation.getPoint() || viewCenterPoint(),
     onWeather: () => setRightPanel('weather', { toggle: false }),

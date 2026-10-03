@@ -7,6 +7,7 @@ class Node {
     const classes = new Set(); this.classList = {contains:key=>classes.has(key),add:key=>classes.add(key),remove:key=>classes.delete(key)}; }
   setAttribute(key,value) { this.attributes[key] = value; }
   getAttribute(key) { return this.attributes[key]; }
+  prepend(node) { this.insertBefore(node,this.children[0]); }
   append(...nodes) { for (const node of nodes) this.appendChild(node); }
   appendChild(node) { node.remove(); this.children.push(node);node.parentNode=this;return node; }
   insertBefore(node,next) { node.remove();const index=this.children.indexOf(next);this.children.splice(index<0?this.children.length:index,0,node);node.parentNode=this; }
@@ -48,4 +49,13 @@ test('tab keyboard navigation and escape preserve normal map shell',()=>{
  assert.equal(prevented,true);assert.equal(tabs[1].getAttribute('aria-selected'),'true');assert.equal(tabs[1].focused,true);
  settings.root.onkeydown({key:'Escape',target:tabs[1],stopPropagation(){}});assert.equal(settings.root.hidden,true);
  assert.equal(h.dock.children[0].focused,true);settings.destroy();
+});
+
+test('rendering quality provides an explicit full-resolution opt out',()=>{
+ const h=setup(), events=[];h.doc.dispatchEvent=event=>events.push(event);
+ const settings=mountMapToolsPanel({shell:h.shell,documentRef:h.doc});
+ const label=h.panels['control-panel'].parentNode.children[0],select=label.children[0];
+ assert.equal(select.getAttribute('aria-label'),'Rendering quality');
+ assert.deepEqual(select.children.map(option=>option.value),['auto','full']);
+ select.value='full';select.onchange();assert.equal(events[0].type,'leeway:render-quality');assert.deepEqual(events[0].detail,{mode:'full'});settings.destroy();
 });

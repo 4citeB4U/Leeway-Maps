@@ -317,16 +317,15 @@ OH: [
     {
       operator: 'New York State 511',
       system: '511NY',
-      accessMethod: 'documented_api',
-      integrationStatus: 'key-required',
-      mediaStatus: 'connector-built-key-blocked',
-      authRequired: true,
-      requiredCredential: 'NEWYORK_511_API_KEY',
+      accessMethod: 'official_public_feed',
+      integrationStatus: 'integrated',
+      mediaStatus: 'integrated',
+      authRequired: false,
       evidenceState: 'VERIFIED',
-      sourceUrl: 'https://511ny.org/developers/help',
-      documentationUrl: 'https://511ny.org/help/endpoint/cameras',
+      sourceUrl: 'https://511ny.org/',
+      documentationUrl: 'https://api-511x-nysdot.carsprogram.org/cameras/map-features',
       notes:
-        'Statewide adapter implemented; developer key required; published throttling applies. This does not imply statewide live coverage.',
+        'Current official public map feed verified October 2026; no key required. Legacy v2 endpoint now returns HTML. Availability varies per public camera; this does not imply universal statewide coverage.',
     },
     {
       operator: 'New York City Department of Transportation',

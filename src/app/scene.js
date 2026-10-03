@@ -1,3 +1,4 @@
+import { installRenderBudget } from './renderBudget.js';
 import { createApplicationOperations } from './operations.js';
 import * as Cesium from 'cesium';
 import {
@@ -58,6 +59,7 @@ export async function createApplicationScene({
     if (!viewer.isDestroyed()) viewer.destroy();
   });
   defer(installTrackpadPinchZoom(viewer));
+  defer(installRenderBudget(viewer));
   registerDataCredits(viewer, credits);
   configureCreditKeyboardAccess(document);
   loaderStatus.textContent =

@@ -15,7 +15,7 @@ import {
   transitModeResolved,
 } from './transitFeeds.js';
 
-test('every registered feed is keyless, https, licensed, and uniquely identified', () => {
+test('every registered feed has a credential-free HTTPS registry URL, license and unique identity', () => {
   const ids = new Set();
   for (const feed of TRANSIT_FEED_REGISTRY) {
     assert.match(

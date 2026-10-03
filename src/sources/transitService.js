@@ -51,19 +51,37 @@ export async function fetchTransitFeed(
   signal,
   fetchImpl = fetch,
   validators = null,
+  env = process.env,
 ) {
+  const keyed = feed.id === 'sf-bay-regional';
   let current = feed.url;
+  if (keyed) {
+    const key = String(env.SF_BAY_511_API_KEY || '').trim();
+    if (!key) throw new Error('Bay Area transit credential unavailable');
+    const endpoint = new URL('https://api.511.org/Transit/VehiclePositions?agency=RG');
+    endpoint.searchParams.set('api_key', key);
+    current = endpoint.href;
+  }
   for (let hop = 0; hop <= TRANSIT_MAX_REDIRECTS; hop += 1) {
-    const response = await fetchImpl(current, {
-      signal,
-      headers: transitUpstreamHeaders(feed, validators),
-      redirect: 'manual',
-    });
+    let response;
+    try {
+      response = await fetchImpl(current, {
+        signal, headers: transitUpstreamHeaders(feed, validators), redirect: 'manual',
+      });
+    } catch (error) {
+      // Fetch errors can contain request URLs. Never allow credential URLs into logs.
+      if (keyed) throw new Error('Bay Area transit upstream request failed');
+      throw error;
+    }
+    if (keyed && isTransitRedirectStatus(response?.status)) {
+      try { await response.body?.cancel(); } catch {}
+      throw new Error('Bay Area transit upstream redirect rejected');
+    }
     // Only a real redirect is followed. A 304 is the successful answer to our
     // own conditional request and has no Location; sending it round this loop
     // fails a feed that is simply unchanged.
     if (!isTransitRedirectStatus(response?.status)) {
-      return { response, finalUrl: current };
+      return { response, finalUrl: keyed ? feed.url : current };
     }
     const decision = transitRedirectDecision(
       feed.url,
@@ -108,7 +126,7 @@ export async function fetchTransitFeed(
  * @param {{fetchImpl?: typeof fetch}} [options]
  * @returns {{handle: (request: Request) => Promise<Response>, close: () => void}}
  */
-export function createTransitService({ fetchImpl = fetch } = {}) {
+export function createTransitService({ fetchImpl = fetch, env = process.env } = {}) {
   const network = createTransitNetworkService({ fetchImpl });
   /** @type {Map<string, {at:number, body:string, host:string}>} feedId → snapshot */
   const cache = new Map();
@@ -137,7 +155,7 @@ export function createTransitService({ fetchImpl = fetch } = {}) {
   function noteFailure(feedId, reason, now) {
     const previous = cooldown.get(feedId);
     const failures = (previous?.failures || 0) + 1;
-    const wait = nextTransitBackoffMs(failures);
+    const wait = Math.max(nextTransitBackoffMs(failures), feedId === 'sf-bay-regional' ? 125000 : 0);
     cooldown.set(feedId, { failures, nextAttemptAt: now + wait, reason });
     return wait;
   }
@@ -158,6 +176,7 @@ export function createTransitService({ fetchImpl = fetch } = {}) {
         previous
           ? { etag: previous.etag, lastModified: previous.lastModified }
           : null,
+        env,
       );
       if (closed) throw new Error('Transit provider closed');
       if (!isAcceptableTransitUpstreamUrl(finalUrl)) {
@@ -268,13 +287,23 @@ export function createTransitService({ fetchImpl = fetch } = {}) {
         { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
       );
     }
+    if (feed.id === 'sf-bay-regional' && !String(env.SF_BAY_511_API_KEY || '').trim()) {
+      return reply(503, JSON.stringify({ error: 'Bay Area transit requires a configured provider credential', feedId: feed.id }),
+        { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'Retry-After': '125' });
+    }
     const cached = cache.get(feed.id);
-    const state = transitCacheState(cached, now);
+    const cacheTtl = Math.max(TRANSIT_PROXY_TTL_MS, feed.upstreamTtlMs || 0);
+    const state = cached && now - cached.at < cacheTtl ? 'fresh' : transitCacheState(cached, now);
+    const feedHeaders = (...args) => {
+      const headers = transitResponseHeaders(...args);
+      if (feed.upstreamTtlMs && args[0] !== 'STALE-ERROR') headers['Cache-Control'] = `public, max-age=${Math.floor(cacheTtl / 1000)}, s-maxage=${Math.floor(cacheTtl / 1000)}`;
+      return headers;
+    };
     if (state === 'fresh') {
       return reply(
         200,
         cached.body,
-        transitResponseHeaders('HIT', cached.host, cached.contactedAt),
+        feedHeaders('HIT', cached.host, cached.contactedAt),
       );
     }
 
@@ -288,7 +317,7 @@ export function createTransitService({ fetchImpl = fetch } = {}) {
         return reply(
           200,
           cached.body,
-          transitResponseHeaders(
+          feedHeaders(
             'STALE-ERROR',
             cached.host,
             cached.contactedAt,
@@ -331,13 +360,14 @@ export function createTransitService({ fetchImpl = fetch } = {}) {
       return reply(
         200,
         fresh.body,
-        transitResponseHeaders(
+        feedHeaders(
           request.shared ? 'INFLIGHT' : 'MISS',
           fresh.host,
           fresh.contactedAt,
         ),
       );
     } catch (error) {
+      const safeErrorMessage = feed.id === 'sf-bay-regional' ? 'Bay Area transit upstream unavailable' : error?.message || String(error);
       const differential = error instanceof TransitFeedShapeError;
       // A shape fault condemns what we already hold. The cached copy was
       // decoded under the assumption this feed is a full snapshot, and that
@@ -347,11 +377,11 @@ export function createTransitService({ fetchImpl = fetch } = {}) {
       if (!request.shared) {
         const wait = noteFailure(
           feed.id,
-          error?.message || String(error),
+          safeErrorMessage,
           Date.now(),
         );
         console.warn(
-          `[transit-proxy] ${feed.id} unavailable: ${error?.message || error} — next attempt in ${Math.round(wait / 1000)}s`,
+          `[transit-proxy] ${feed.id} unavailable: ${safeErrorMessage} — next attempt in ${Math.round(wait / 1000)}s`,
         );
       }
       // A differential feed is a shape fault, not an outage: serving the old
@@ -363,7 +393,7 @@ export function createTransitService({ fetchImpl = fetch } = {}) {
         return reply(
           200,
           cached.body,
-          transitResponseHeaders(
+          feedHeaders(
             'STALE-ERROR',
             cached.host,
             cached.contactedAt,

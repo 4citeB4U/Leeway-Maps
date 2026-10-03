@@ -27,6 +27,7 @@ import {
   loadCalgarySourcesFromOpenData,
   loadDelDOTSourcesFromOpenData,
 } from './sources.js';
+import { loadNewYorkSources } from './newyorkPublic.js';
 import {
   loadAlaska511Sources,
   loadArizona511Sources,
@@ -37,7 +38,6 @@ import {
   loadLouisiana511Sources,
   loadNevada511Sources,
   loadNewEngland511Sources,
-  loadNewYork511Sources,
   loadNorthCarolina511Sources,
   loadPennsylvania511Sources,
   loadUtah511Sources,
@@ -174,7 +174,7 @@ const LIVE_PACKS = [
   {
     name: 'new-york-511',
     enabled: () => envEnabled('CCTV_NEWYORK_511_ENABLED'),
-    load: loadNewYork511Sources,
+    load: loadNewYorkSources,
   },
   {
     name: 'georgia-511',

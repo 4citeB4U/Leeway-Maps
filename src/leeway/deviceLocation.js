@@ -8,7 +8,7 @@ export function validDeviceFix(position, now = Date.now()) {
 }
 
 /** Device consent remains browser-owned. Fixes live only in memory. */
-export function mountDeviceLocation({viewer,button,onChange=()=>{},notify=()=>{},geolocation=getLocationProvider()}) {
+export function mountDeviceLocation({viewer,button,onChange=()=>{},notify=()=>{},geolocation=getLocationProvider(),navigate=(fly)=>fly()}) {
   let fix=null,marker=null,watch=null,destroyed=false,requestEpoch=0;
   function accept(position) {
     const next=validDeviceFix(position);if(!next||destroyed)return false;
@@ -39,7 +39,8 @@ export function mountDeviceLocation({viewer,button,onChange=()=>{},notify=()=>{}
     }
     if(!fix)return;
     if(fix.accuracy>10000){notify(`The device only returned an approximate location (within ${Math.round(fix.accuracy/1000)} km). Enable precise location in your device and browser settings, then retry. The map has not been moved.`);return;}
-    viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(fix.lon,fix.lat,Math.max(500,fix.accuracy*5)),orientation:{heading:0,pitch:-Math.PI/2,roll:0},duration:1});
+    const moved = await navigate(() => { viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(fix.lon,fix.lat,Math.max(500,fix.accuracy*5)),orientation:{heading:0,pitch:-Math.PI/2,roll:0},duration:1}); return true; });
+    if (moved === false) { notify('Location is available, but another camera view prevented recentering.'); return false; }
     notify(`Your device location · accuracy about ${Math.round(fix.accuracy)} m`);
   }
   return {recenter,getPoint:()=>fix && Date.now()-fix.at<120000 ? fix : null,destroy(){destroyed=true;requestEpoch++;if(watch!==null)geolocation.clearWatch(watch);if(marker)viewer.entities.remove(marker);}};

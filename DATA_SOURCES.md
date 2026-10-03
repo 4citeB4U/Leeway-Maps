@@ -351,3 +351,8 @@ The required Google Maps / Cesium credit renders on the on-globe credit line (`#
 | **MTA LIRR / Metro-North** | New York commuter rail GPS through LeeWay server cache; no subway GPS or bus coverage | [MTA feed terms](https://www.mta.info/developers/terms-and-conditions): server redistribution, no direct browser feed access, no accuracy guarantee, explicit lag warning after one minute | Data obtained from MTA and redistributed by LeeWay; text attribution, no endorsement |
 
 Enable Transit near New York for camera-selected LIRR/Metro-North feeds, or Regional transit vehicles for keyless nearby rail GPS. The latter omits fixes older than one minute. Official feeds: https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/lirr%2Fgtfs-lirr and https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/mnr%2Fgtfs-mnr . Subway stop-relative records are never converted into measured GPS.
+
+
+### Bay Area regional transit
+
+`sf-bay-regional` uses official 511.org GTFS-Realtime VehiclePositions (agency RG). Server-only `SF_BAY_511_API_KEY` is required. See [configuration, source and quota notes](docs/SF-BAY-TRANSIT.md). Data provided by [511.org](https://511.org); [2026 agreement](https://511.org/sites/default/files/2026-04/511_Data_Agreement_Final_2026.pdf). This adds reported positions, not timetable or arrival support.

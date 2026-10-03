@@ -383,7 +383,7 @@ export function transitFeedCredit(feed) {
     : escape(feed.license);
   return {
     key: `transit-${feed.id}`,
-    html: `Transit (${escape(feed.attribution)}): ${license}`,
+    html: `Transit (${feed.attributionUrl === 'https://511.org' ? `<a href="https://511.org" target="_blank" rel="noopener">${escape(feed.attribution)}</a>` : escape(feed.attribution)}): ${license}`,
   };
 }
 

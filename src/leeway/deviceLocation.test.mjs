@@ -26,3 +26,14 @@ test('older overlapping request cannot overwrite a newer fresh fix',async()=>{
  pending[1].ok({coords:{latitude:34.7,longitude:-92.2,accuracy:20},timestamp:Date.now()});await latest;
  pending[0].fail({code:3});await old;assert.equal(api.getPoint().lat,34.7);assert.equal(moves,1);api.destroy();
 });
+
+test('device recenter uses navigation ownership facade before camera flight',async()=>{
+ const order=[];const viewer={entities:{add:x=>x,remove(){}},scene:{requestRender(){}},camera:{flyTo(){order.push('fly');}}};
+ const geolocation={watchPosition(){return 1;},clearWatch(){},getCurrentPosition(ok){ok({coords:{latitude:43,longitude:-87,accuracy:80},timestamp:Date.now()});}};
+ const api=mountDeviceLocation({viewer,geolocation,navigate:fly=>{order.push('release');return fly();}});await api.recenter();assert.deepEqual(order,['release','fly']);api.destroy();
+});
+test('refused navigation never flies or reports successful recenter',async()=>{
+ const messages=[];const viewer={entities:{add:x=>x,remove(){}},scene:{requestRender(){}},camera:{flyTo(){throw Error('must not fly');}}};
+ const geolocation={watchPosition(){return 1;},clearWatch(){},getCurrentPosition(ok){ok({coords:{latitude:43,longitude:-87,accuracy:80},timestamp:Date.now()});}};
+ const api=mountDeviceLocation({viewer,geolocation,navigate:()=>false,notify:x=>messages.push(x)});assert.equal(await api.recenter(),false);assert.match(messages.at(-1),/prevented recentering/);api.destroy();
+});

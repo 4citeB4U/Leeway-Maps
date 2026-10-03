@@ -68,6 +68,11 @@ export function createNavigation({
     return local;
   }
 
+  const hasMedia = (record) => {
+    const caps = record.camera.mediaCapabilities;
+    return !caps || (!caps.locationOnly && (caps.video || caps.snapshot));
+  };
+
   function nearestCameraIdToViewer() {
     const center = viewCenterLatLon();
     if (!center || !layerState._records.length) return null;
@@ -75,6 +80,7 @@ export function createNavigation({
 
     let best = null;
     for (const record of layerState._records) {
+      if (!hasMedia(record)) continue;
       const distKm = parts.model.haversineKm(
         lat,
         lon,
@@ -173,14 +179,16 @@ export function createNavigation({
       }
     }
 
+    const candidates = scopedRecordsNearViewer().filter(hasMedia);
+    if (!candidates.length) return;
     const nextIdx = cctvCycleIndex(
-      layerState._records.findIndex(
+      candidates.findIndex(
         (record) => record.camera.id === layerState._activeCameraId,
       ),
       1,
-      layerState._records.length,
+      candidates.length,
     );
-    parts.selection.setActiveCamera(layerState._records[nextIdx].camera.id);
+    parts.selection.setActiveCamera(candidates[nextIdx].camera.id);
     layerState._lastHopAt = nowMs;
   }
 

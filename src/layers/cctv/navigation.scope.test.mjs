@@ -57,3 +57,14 @@ test('an available local camera remains eligible for an explicit nearest selecti
   assert.deepEqual(navigation.scopedRecordsNearViewer(), [record]);
   assert.equal(navigation.nearestCameraIdToViewer(), 'london');
 });
+
+test('nearest and automatic hops skip location-only entries without removing explicit inventory',()=>{
+ const location={camera:{id:'ddot',lat:38.9,lon:-77,mediaCapabilities:{locationOnly:true,video:false,snapshot:false}}};
+ const video={camera:{id:'public-video',lat:38.95,lon:-77,mediaCapabilities:{locationOnly:false,video:true,snapshot:false}}};
+ const selected=[];const state={_records:[location,video],_autoHop:true,_enabled:true,_autoHopSec:1,_lastHopAt:0,_activeCameraId:'ddot',_lastViewContext:'same',_viewer:{scene:{canvas:{}},camera:{pickEllipsoid:()=>null,positionCartographic:{latitude:38.9*Math.PI/180,longitude:-77*Math.PI/180,height:1000}}}};
+ const nav=createNavigation({state,services:{},parts:{model:{haversineKm:(_lat,_lon,lat)=>lat===38.9?0:5,currentViewContext:()=> 'same'},selection:{setActiveCamera:id=>selected.push(id)}}});
+ assert.equal(nav.nearestCameraIdToViewer(),'public-video');
+ assert.equal(nav.scopedRecordsNearViewer().length,2);
+ nav.maybeAutoHop(2000);assert.deepEqual(selected,['public-video']);
+ state._records=[location];assert.equal(nav.nearestCameraIdToViewer(),null);
+});

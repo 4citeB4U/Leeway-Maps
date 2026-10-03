@@ -32,7 +32,9 @@ test('seeded sources preserve verified authority and integration state', () => {
   const georgia = nationalTrafficCameraJurisdiction('GA');
   assert.equal(georgia.sources[0].integrationStatus, 'key-required');
   assert.equal(georgia.sources[0].mediaStatus, 'connector-built-key-blocked');
-  assert.equal(newYork.sources[0].mediaStatus, 'connector-built-key-blocked');
+  assert.equal(newYork.sources[0].mediaStatus, 'integrated');
+  assert.equal(newYork.sources[0].authRequired, false);
+  assert.equal(newYork.sources[0].requiredCredential, undefined);
   assert.ok(newYork.sources.some((source) => source.system === '511NY'));
   assert.ok(
     newYork.sources.some((source) => source.integrationStatus === 'integrated'),

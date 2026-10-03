@@ -36,6 +36,15 @@ export function mountMapToolsPanel({ shell, documentRef = document } = {}) {
     tabs.appendChild(tab); host.appendChild(slot); records.push(record);
     tab.onclick = () => select(key);
   }
+  const qualityLabel = doc.createElement('label');
+  qualityLabel.textContent = 'Rendering quality ';
+  const quality = doc.createElement('select');
+  quality.setAttribute('aria-label', 'Rendering quality');
+  for (const [value, text] of [['auto', 'Adaptive — smoother navigation'], ['full', 'Full resolution']]) {
+    const option = doc.createElement('option'); option.value = value; option.textContent = text; quality.appendChild(option);
+  }
+  quality.onchange = () => doc.dispatchEvent(new CustomEvent('leeway:render-quality', { detail: { mode: quality.value } }));
+  qualityLabel.appendChild(quality); records[0].slot.prepend(qualityLabel);
   const display = doc.getElementById('pp-toggles');
   const displayRecord = display ? { panel: display, parent: display.parentNode, next: display.nextSibling,
     collapsed: display.classList.contains('collapsed'), toggleSelector: '[data-collapse-target="pp-toggles"]' } : null;

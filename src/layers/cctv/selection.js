@@ -14,9 +14,8 @@ export function createSelection({
   const { resolvePickId } = services.picking;
 
   /**
-   * Returns the camera record for the currently active camera. A stale ID falls
-   * back to the first record, but an intentional null remains an honest
-   * deselected state.
+   * Returns the selected camera, or no selection if that ID left the catalog.
+   * A catalog refresh must never silently substitute its first record.
    * @returns {Object|null} Active camera record, or null when none is active.
    */
 
@@ -25,12 +24,8 @@ export function createSelection({
     if (layerState._recordById.has(layerState._activeCameraId)) {
       return layerState._recordById.get(layerState._activeCameraId);
     }
-    // Sync _activeCameraId when falling back to first record to prevent ID mismatch
-    const fallback = layerState._records[0] || null;
-    if (fallback && fallback.camera?.id) {
-      layerState._activeCameraId = fallback.camera.id;
-    }
-    return fallback;
+    layerState._activeCameraId = null;
+    return null;
   }
 
   /**

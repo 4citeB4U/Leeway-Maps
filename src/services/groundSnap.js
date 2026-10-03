@@ -12,10 +12,10 @@
  * pick render, so it is NEVER called per frame. Each grounded modeled plane gets
  * ONE successful sample, cached per icao; the cache stops answering directly when
  * the plane moves >MOVE_INVALIDATE_M from the sampled spot (taxiing). Misses (tiles
- * still streaming, OSM fallback with no tileset skin, sample outside loaded
- * geometry) are a retry-later signal with per-icao exponential backoff. A
+ * still streaming or sample outside loaded geometry) are a retry-later signal with per-icao exponential backoff. A
  * per-window budget stops a freshly modeled airport cluster from firing dozens of
- * pick renders in one fleet tick.
+ * pick renders in one fleet tick. Visible globe hosts instead read loaded terrain
+ * heights directly, without GPU picking or contaminating photoreal floor cells.
  *
  * What a caller gets while a sample is outstanding depends on whether this
  * contact has ever HAD one, and the difference is the difference between two
@@ -176,6 +176,10 @@ export function createGroundSnap({ groundFloor }) {
    *  pair is still the fresh answer or has been demoted to a bounded last-known
    *  (`held`), and the retry backoff a miss earned. */
   const entries = new Map();
+  let lastScene = null;
+  let lastGlobe = null;
+  let lastTerrainProvider = null;
+  let globeSurface = false;
   let windowStartMs = 0;
   let windowCount = 0;
   const scratchCarto = new Cesium.Cartographic();
@@ -253,6 +257,7 @@ export function createGroundSnap({ groundFloor }) {
    * @returns {number|null}
    */
   function freshMeasuredFloorAt(surfacePos) {
+    if (globeSurface) return null;
     const carto = Cesium.Cartographic.fromCartesian(
       surfacePos,
       Cesium.Ellipsoid.WGS84,
@@ -284,6 +289,20 @@ export function createGroundSnap({ groundFloor }) {
    * @returns {number|null}
    */
   function heightFor(viewer, icao, pos, getExclusions) {
+    const scene = viewer?.scene;
+    const useGlobe = scene?.globe?.show === true;
+    const terrainProvider = scene?.globe?.terrainProvider;
+    // Ground evidence belongs to the rendered surface, not just the aircraft ID.
+    // Do not carry a photoreal roof height onto terrain after a map-stack switch.
+    if (scene !== lastScene || scene?.globe !== lastGlobe ||
+        useGlobe !== globeSurface || terrainProvider !== lastTerrainProvider) {
+      entries.clear();
+      windowCount = 0;
+      lastScene = scene;
+      lastGlobe = scene?.globe;
+      lastTerrainProvider = terrainProvider;
+      globeSurface = useGlobe;
+    }
     const surfacePos = Cesium.Ellipsoid.WGS84.scaleToGeodeticSurface(
       pos,
       scratchSurfacePos,
@@ -314,7 +333,7 @@ export function createGroundSnap({ groundFloor }) {
       windowStartMs = now;
       windowCount = 0;
     }
-    if (windowCount >= SAMPLE_BUDGET_PER_WINDOW)
+    if (!useGlobe && windowCount >= SAMPLE_BUDGET_PER_WINDOW)
       return heldSnapM(entry, surfacePos);
     const misses = entry ? entry.misses : 0;
     const miss = () => {
@@ -335,8 +354,8 @@ export function createGroundSnap({ groundFloor }) {
       entries.set(icao, next);
       return heldSnapM(next, surfacePos);
     };
-    if (!_tilesReady(viewer)) return miss();
-    windowCount += 1;
+    if (!useGlobe && !_tilesReady(viewer)) return miss();
+    if (!useGlobe) windowCount += 1;
     let sampled;
     try {
       const carto = Cesium.Cartographic.fromCartesian(
@@ -345,17 +364,19 @@ export function createGroundSnap({ groundFloor }) {
         scratchCarto,
       );
       // sampleHeight throws when unsupported (no depth textures) — that's a miss.
-      sampled = viewer.scene.sampleHeight(
-        carto,
-        getExclusions ? getExclusions() : undefined,
-      );
+      // getHeight reads the resident terrain mesh without an offscreen GPU
+      // render/readback. A missing terrain tile remains a miss, never a made-up
+      // zero or a fallback GPU pick. Hidden-globe photoreal hosts keep sampling.
+      sampled = useGlobe
+        ? scene.globe.getHeight?.(carto)
+        : scene.sampleHeight(carto, getExclusions ? getExclusions() : undefined);
     } catch {
       sampled = undefined;
     }
     // Same sanity floor as cctv.js's sampleGroundHeight: a hit far below the
     // ellipsoid is pick garbage, not ground.
     if (!Number.isFinite(sampled) || sampled < -150) return miss();
-    if (meshFloorPreferred()) {
+    if (!useGlobe && meshFloorPreferred()) {
       reportValidatedMeshFloorCell(
         Cesium.Math.toDegrees(scratchCarto.latitude),
         Cesium.Math.toDegrees(scratchCarto.longitude),

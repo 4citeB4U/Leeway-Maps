@@ -1,6 +1,6 @@
 /**
  * @module transitFeeds
- * @description Registry of keyless, openly licensed GTFS-Realtime
+ * @description Registry of attributed GTFS-Realtime
  * VehiclePositions feeds the Transit layer can show.
  *
  * Every entry here is a URL the SERVER fetches — the browser only ever asks
@@ -9,8 +9,8 @@
  * a DATA_SOURCES.md row with its license, and a credit in dataCredits.js.
  *
  * Admission rules for a feed:
- *  - No key, token, or registration required (identify-yourself headers are
- *    fine — Entur asks for `ET-Client-Name`, OVapi for a User-Agent).
+ *  - Keyless feeds or an explicit server-only credential adapter. Never put
+ *    credentials in this shared registry or its public catalog.
  *  - An open license that permits display with attribution.
  *  - Real coordinates in VehiclePosition.position — NYCT subway, for example,
  *    publishes stop-relative positions only and is deliberately absent.
@@ -127,6 +127,18 @@ function metroTransitRouteMode(routeId) {
  * }>>}
  */
 export const TRANSIT_FEED_REGISTRY = Object.freeze([
+  Object.freeze({
+    id: 'sf-bay-regional', name: 'Bay Area regional transit',
+    operator: 'Metropolitan Transportation Commission', region: 'San Francisco Bay Area, CA',
+    center: Object.freeze({ lat: 37.77, lon: -122.25 }), loadRadiusKm: 120,
+    url: 'https://api.511.org/Transit/VehiclePositions?agency=RG',
+    defaultEnabled: true, defaultMode: 'unknown', requiresApiKey: true,
+    upstreamTtlMs: 125000,
+    license: '511 Data Disseminator Agreement',
+    licenseUrl: 'https://511.org/sites/default/files/2026-04/511_Data_Agreement_Final_2026.pdf',
+    attribution: 'data provided by 511.org', attributionUrl: 'https://511.org',
+    terms: Object.freeze({ quote: null, note: 'Registered disseminators may display data with nearby source acknowledgment and link. Token stays server-side. Default quota 60 requests per hour per token. Do not use supplier logos or imply endorsement.' }),
+  }),
   ...[
     ['mta-lirr', 'Long Island Rail Road', 'lirr%2Fgtfs-lirr', 40.79, -73.25, 115],
     ['mta-mnr', 'Metro-North Railroad', 'mnr%2Fgtfs-mnr', 41.05, -73.75, 140],
@@ -413,6 +425,8 @@ export function publicTransitCatalog() {
     license: feed.license,
     licenseUrl: feed.licenseUrl,
     attribution: feed.attribution,
+    attributionUrl: feed.attributionUrl || null,
+    requiresApiKey: feed.requiresApiKey === true,
     historyRetention: feed.historyRetention === true,
   }));
 }

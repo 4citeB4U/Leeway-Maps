@@ -82,9 +82,8 @@ const NETWORKS = [
     'USA',
     'US-NY',
     '511NY',
-    'key-required',
-    'https://511ny.org/help/endpoint/cameras',
-    'NEWYORK_511_API_KEY',
+    'open',
+    'https://511ny.org/',
   ],
   [
     'georgia-511',
