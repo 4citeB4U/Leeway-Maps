@@ -90,6 +90,11 @@
 
 .cctv-panel-inner > * { min-width: 0; max-width: 100%; }
 
+/* The inner card owns scrolling; decorative glow must not create a second bar. */
+body.leeway-enterprise-shell #leeway-world-shell .lws-context-inspector #cctv-panel {
+  overflow: hidden;
+}
+
 .cctv-calibration-block {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 9px;
