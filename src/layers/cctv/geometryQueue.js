@@ -8,6 +8,15 @@ import {
   GEO_LOAD_BATCH_DELAY_MS,
 } from './policy.js';
 
+export const CCTV_GEOMETRY_BUDGET = 64;
+export function boundedGeometryRecords(records, active, distanceTo, inView = () => true) {
+  const unique = [...new Set(records)];
+  const media = record => !record.camera.mediaCapabilities?.locationOnly;
+  const candidates = unique.filter(record => record !== active && media(record) && inView(record));
+  candidates.sort((a, b) => distanceTo(a) - distanceTo(b));
+  return [...(active && media(active) ? [active] : []), ...candidates].slice(0, CCTV_GEOMETRY_BUDGET);
+}
+
 export function createGeometryQueue({
   state: layerState,
   services,
@@ -268,11 +277,31 @@ export function createGeometryQueue({
    * @param {Object[]} records - Camera records needing geometry refresh.
    */
 
+  function selectGeometryRecords(records) {
+    const active = parts.selection.getActiveRecord();
+    const center = parts.navigation?.viewCenterLatLon?.();
+    const carto = layerState._viewer?.camera?.positionCartographic;
+    const lat = center?.lat ?? (carto ? Cesium.Math.toDegrees(carto.latitude) : active?.camera.lat ?? 0);
+    const lon = center?.lon ?? (carto ? Cesium.Math.toDegrees(carto.longitude) : active?.camera.lon ?? 0);
+    const scene = layerState._viewer?.scene;
+    const canvas = scene?.canvas;
+    const inView = record => {
+      if (!scene?.cartesianToCanvasCoordinates || !canvas?.clientWidth) return true;
+      try {
+        const screen = scene.cartesianToCanvasCoordinates(record.position);
+        return !!screen && screen.x >= 0 && screen.y >= 0 && screen.x <= canvas.clientWidth && screen.y <= canvas.clientHeight;
+      } catch { return false; }
+    };
+    return boundedGeometryRecords(records, active,
+      record => parts.model.haversineKm(lat, lon, record.camera.lat, record.camera.lon), inView);
+  }
+
   function enqueueGeometryRefresh(records) {
-    for (const record of records) {
-      if (!layerState._geoQueue.includes(record)) {
-        layerState._geoQueue.push(record);
-      }
+    layerState._geoQueue = selectGeometryRecords([...layerState._geoQueue, ...records]);
+    if (layerState._geoLoading) layerState._geoLoadTotal = layerState._geoLoadDone + layerState._geoQueue.length;
+    if (!layerState._geoQueue.length && !layerState._geoQueueTimer) {
+      layerState._geoLoading = false;
+      layerState._geoLoadDone = layerState._geoLoadTotal;
     }
     if (!layerState._geoQueueTimer && layerState._geoQueue.length) {
       layerState._geoProgressNotifier = createGeometryProgressNotifier(
@@ -295,28 +324,7 @@ export function createGeometryQueue({
     // latch so update() can complete any records this drain leaves unresolved.
     layerState._tilesReadyReenqueued = false;
     if (!layerState._records.length) return;
-    const active = parts.selection.getActiveRecord();
-    const carto = layerState._viewer?.camera?.positionCartographic;
-    const refLat = carto
-      ? Cesium.Math.toDegrees(carto.latitude)
-      : (active?.camera.lat ?? 0);
-    const refLon = carto
-      ? Cesium.Math.toDegrees(carto.longitude)
-      : (active?.camera.lon ?? 0);
-    const pending = layerState._records
-      .filter((record) => record !== active)
-      .map((record) => ({
-        record,
-        distKm: parts.model.haversineKm(
-          refLat,
-          refLon,
-          record.camera.lat,
-          record.camera.lon,
-        ),
-      }))
-      .sort((a, b) => a.distKm - b.distKm)
-      .map((entry) => entry.record);
-    layerState._geoQueue = active ? [active, ...pending] : pending;
+    layerState._geoQueue = selectGeometryRecords(layerState._records);
     layerState._geoLoadTotal = layerState._geoQueue.length;
     layerState._geoLoadDone = 0;
     layerState._geoLoading = true;
@@ -334,6 +342,7 @@ export function createGeometryQueue({
     prioritizeActiveCctvGeometryRecord,
     processGeometryBatch,
     enqueueGeometryRefresh,
+    selectGeometryRecords,
     startGeometryLoadQueue,
   };
 }

@@ -278,6 +278,9 @@ export function createLifecycle({
           parts.inventory.schedule();
           parts.rendering.refreshHorizonCulling();
           parts.cards.refreshAmbientCards();
+          if (layerState._enabled) parts.geometryQueue.enqueueGeometryRefresh(
+            layerState._records.filter(record => !parts.ground.isGroundResolved(record)),
+          );
           // The enterprise selector is viewport-scoped: a settled pan/zoom
           // republishes UI state so Milwaukee stays Milwaukee, New York stays
           // New York, etc., instead of retaining the prior city's catalog.
