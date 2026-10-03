@@ -10,15 +10,24 @@ export function mountExperiencePreferences() {
   const root = document.createElement('section');
   root.className = 'lw-preferences';
   root.hidden = true;
-  root.setAttribute('aria-label', 'Language and music');
-  root.innerHTML = `<header><h2>Language and music</h2><button type="button" data-close>Close</button></header>
+  root.setAttribute('aria-label', 'Settings and map atlas');
+  root.innerHTML = `<header><h2>Settings</h2><button type="button" data-close>Close</button></header>
     <h3>Welcome to LeeWay</h3><label>Which language do you prefer?<select aria-label="Preferred language">${languageOptions()}</select></label>
     <button type="button" data-apply>Apply language</button>
     <p data-coverage></p>
     <h3>Music</h3><label>Choose music from this device<input type="file" accept="audio/*" data-music /></label>
     <audio controls preload="metadata" hidden aria-label="Music player"></audio><p data-track translate="no"></p>
     <nav aria-label="Music apps"><a href="https://open.spotify.com/" target="_blank" rel="noopener">Spotify ↗</a><a href="https://music.youtube.com/" target="_blank" rel="noopener">YouTube Music ↗</a><a href="https://music.apple.com/" target="_blank" rel="noopener">Apple Music ↗</a></nav>
-    <p data-music-note></p>`;
+    <p data-music-note></p>
+    <h3>Map atlas</h3>
+    <p class="lw-atlas-intro">Use this atlas to understand map controls, multimodal layers, icons, and the difference between live, scheduled, mapped, and simulated information.</p>
+    <div class="lw-atlas-grid">
+      <details><summary>Map & navigation</summary><div class="lw-atlas-body"><b>▦ Map</b> main spatial view · <b>▤ Transit</b> public transportation · <b>▥ Rail</b> rail/transit context · <b>▥ Intelligence</b> world layers · <b>⚙ Settings</b> preferences and atlas · <b>✦ Agent Lee</b> map copilot. Directions and Road stops remain trip-planning tools rather than live layers.</div></details>
+      <details><summary>Public transit</summary><div class="lw-atlas-body">Transit uses independent <b>Routes</b>, <b>Stops & departures</b>, and <b>Reported vehicles</b>. Route lines show the published or mapped service geometry. Stops show scheduled/estimated departures only when an authoritative source supplies them. Vehicle markers are source-reported GPS positions; a vehicle position alone is not an arrival prediction.</div></details>
+      <details><summary>Rail, air & marine</summary><div class="lw-atlas-body"><b>Rail</b> uses published transit network data and supported real-time rail feeds. <b>Air</b> shows public aircraft position data plus source-authorized enrichment. <b>Marine</b> shows reported AIS vessels. Gate, terminal, exact departure/arrival, and vessel-port schedule claims require an explicit authoritative source and are not inferred from motion.</div></details>
+      <details><summary>Layer & truth states</summary><div class="lw-atlas-body"><span class="lw-truth live">LIVE</span> source-reported now · <span class="lw-truth scheduled">SCHEDULED</span> published timetable · <span class="lw-truth mapped">MAPPED</span> geometry/context only · <span class="lw-truth simulated">SIMULATED</span> training/replay · <span class="lw-truth stale">STALE</span> old observation · <span class="lw-truth unavailable">UNAVAILABLE</span> no usable source/key/coverage. The map must not convert one state into another silently.</div></details>
+      <details><summary>Interaction states</summary><div class="lw-atlas-body"><b>Default</b> icon/line · <b>Hover</b> quick context · <b>Selected</b> highlighted object · <b>Expanded</b> richer card · <b>Tracked</b> follow a moving subject · <b>Linked panel</b> complete context and actions. Viewport changes should automatically discover the providers relevant to the area being viewed.</div></details>
+    </div>`;
   document.body.append(root);
   const language = root.querySelector('select'),
     audio = root.querySelector('audio');
