@@ -276,7 +276,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       <button class="lws-dock-btn" data-action="view-satellite">${mapIcon('satellite')}<span>Satellite</span></button>
       <button class="lws-dock-btn" data-action="report-hazard">${mapIcon('report')}<span>Report</span></button>
       <button class="lws-ai" data-action="ai" aria-label="Talk to Agent Lee">${mapIcon('mic')}<strong>Agent Lee</strong></button>
-      <button class="lws-dock-btn" data-action="preferences">${mapIcon('settings')}<span>Language and music</span></button>
+      <button class="lws-dock-btn" data-action="preferences">${mapIcon('settings')}<span>Settings</span></button>
       ${[
             ['travel', 'Travel'],
             ['transit', 'Transit'],
