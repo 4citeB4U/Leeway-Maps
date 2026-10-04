@@ -85,3 +85,29 @@ test('nonmatching live subjects do not overwrite a planned leg', () => {
   assert.equal(next.length, 2);
   assert.equal(next[0].reference, 'AAL1');
 });
+
+
+test('live position without ETA preserves scheduled timing truth', () => {
+  const legs = [{
+    key:'planned:transit:MCTS80',
+    kind:'transit',
+    reference:'MCTS80',
+    truth:'SCHEDULED',
+    arrivalMs:5000,
+    departureMs:1000,
+  }];
+  const next = bindLiveEvidenceToPlannedLeg(legs, {
+    key:'transit-vehicles:x',
+    kind:'vehicles',
+    reference:'MCTS80',
+    aliases:['MCTS80'],
+    truth:'LIVE',
+    arrivalMs:null,
+    departureMs:null,
+    point:{lat:43,lon:-88},
+  });
+  assert.equal(next.length, 1);
+  assert.equal(next[0].arrivalMs, 5000);
+  assert.equal(next[0].truth, 'SCHEDULED');
+  assert.equal(next[0].positionTruth, 'LIVE');
+});
