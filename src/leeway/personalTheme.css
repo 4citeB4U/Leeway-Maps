@@ -861,3 +861,223 @@ body[data-leeway-edition="personal"].leeway-enterprise-shell
     top:154px!important;max-height:calc(100dvh - 230px)!important;
   }
 }
+
+
+/* Single-rail Personal Maps composition — reference: clean consumer map with one center mic. */
+body[data-leeway-edition="personal"] #leeway-world-shell {
+  --lm-night:#061622;
+  --lm-night-soft:rgba(7,31,44,.90);
+  --lm-cyan:#55e7ff;
+  --lm-green-bright:#39f58a;
+  --lm-yellow-bright:#ffd84d;
+  --lm-red-bright:#ff645f;
+}
+
+/* Dark glass header like the approved clean reference while preserving the real logo. */
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-top{
+  background:linear-gradient(180deg,rgba(4,26,39,.96),rgba(5,22,34,.91))!important;
+  border:1px solid rgba(83,217,237,.46)!important;
+  border-top:0!important;
+  color:#f5fdff!important;
+  box-shadow:0 8px 28px rgba(0,0,0,.24)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-brand-copy strong{
+  color:#f7ffff!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-brand-copy span{
+  color:#b6cbd2!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-search input{
+  background:rgba(3,18,28,.86)!important;
+  border:1.5px solid rgba(69,210,232,.72)!important;
+  color:#f4ffff!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.03),0 0 18px rgba(37,196,221,.09)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-search input::placeholder{
+  color:#c6d8de!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-search-icon{color:#d6f7ff!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-search-locate{
+  background:rgba(11,49,61,.9)!important;color:#8ff7ff!important;border:1px solid rgba(96,229,246,.42)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-pill{
+  background:rgba(7,31,44,.82)!important;color:#f4ffff!important;
+  border:1px solid rgba(104,190,205,.62)!important;
+}
+
+/* One left-side operations rail. */
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail{
+  top:92px!important;bottom:16px!important;left:10px!important;width:94px!important;
+  background:linear-gradient(180deg,rgba(5,34,48,.94),rgba(3,23,34,.94))!important;
+  border:1px solid rgba(82,216,236,.56)!important;border-radius:22px!important;
+  box-shadow:0 16px 42px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.06)!important;
+  backdrop-filter:blur(18px)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail .lws-nav{
+  min-height:60px!important;padding:7px 4px!important;border-radius:15px!important;
+  border:1px solid rgba(105,186,199,.27)!important;background:rgba(7,42,55,.36)!important;
+  color:#f1fbfd!important;font-size:11px!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail .lws-nav:hover{
+  border-color:rgba(94,234,250,.78)!important;background:rgba(18,78,91,.62)!important;
+  box-shadow:0 0 18px rgba(58,221,239,.15)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail .lws-nav.active{
+  background:linear-gradient(145deg,rgba(37,218,116,.32),rgba(7,88,54,.62))!important;
+  border-color:var(--lm-green-bright)!important;color:#fff!important;
+  box-shadow:0 0 20px rgba(42,231,125,.22)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail .lws-nav .lw-icon{
+  color:#d7fbff!important;filter:drop-shadow(0 0 6px rgba(91,228,245,.25))!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail [data-dock="traffic"] .lw-icon{color:var(--lm-red-bright)!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail [data-dock="weather"] .lw-icon{color:var(--lm-yellow-bright)!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail [data-dock="cctv"] .lw-icon{color:#83e9ff!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail [data-action="cockpit"] .lw-icon{color:#77cfff!important}
+
+/* The right-side button rail is retired. */
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-context-actions,
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-right-tabs{
+  display:none!important;
+}
+
+/* Bottom contains only the Agent Lee flip control. */
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-agent-dock{
+  left:50%!important;right:auto!important;bottom:18px!important;transform:translateX(-50%)!important;
+  width:auto!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:0!important;
+  display:block!important;padding:0!important;background:transparent!important;border:0!important;
+  box-shadow:none!important;overflow:visible!important;backdrop-filter:none!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-agent-flip{
+  position:relative!important;width:112px!important;height:112px!important;
+  perspective:1100px!important;transform-style:preserve-3d!important;
+  transition:width .24s ease,height .24s ease,transform .42s cubic-bezier(.2,.7,.2,1)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-agent-flip.open{
+  width:min(430px,calc(100vw - 30px))!important;height:min(520px,calc(100dvh - 150px))!important;
+  transform:rotateY(180deg)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-agent-mic{
+  position:absolute!important;inset:0!important;width:112px!important;height:112px!important;min-height:112px!important;
+  margin:0!important;border-radius:50%!important;
+  border:3px solid #eafff3!important;outline:2px solid var(--lm-green-bright)!important;
+  background:radial-gradient(circle at 38% 30%,#29ffc0,#10a767 52%,#063c2a 100%)!important;
+  box-shadow:0 0 0 8px rgba(34,255,152,.10),0 0 35px rgba(34,255,152,.52),inset 0 3px 8px rgba(255,255,255,.22)!important;
+  color:#fff!important;backface-visibility:hidden!important;z-index:2!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-agent-mic .lw-icon{
+  width:46px!important;height:46px!important;color:#fff!important;filter:drop-shadow(0 0 8px rgba(255,255,255,.4))!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-agent-mic strong{
+  font-size:11px!important;color:#fff!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-agent-card-slot{
+  position:absolute!important;inset:0!important;backface-visibility:hidden!important;
+  transform:rotateY(180deg)!important;pointer-events:none!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-agent-flip.open .lm-agent-card-slot{
+  pointer-events:auto!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-agent-card-slot #leeway-agent-lee{
+  position:absolute!important;inset:0!important;left:0!important;right:auto!important;top:0!important;bottom:auto!important;
+  width:100%!important;height:100%!important;max-height:none!important;margin:0!important;
+  border:1px solid rgba(94,229,245,.58)!important;border-radius:20px!important;
+  background:rgba(2,15,23,.96)!important;box-shadow:0 18px 70px rgba(0,0,0,.48)!important;
+  overflow:auto!important;
+}
+
+/* Left-side drawer owns information/control cards. Right side is reserved for viewports. */
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-left-drawer{
+  top:92px!important;left:114px!important;right:auto!important;bottom:20px!important;
+  width:min(390px,calc(100vw - 138px))!important;max-height:calc(100dvh - 112px)!important;
+  z-index:9790!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-left-drawer.open{
+  display:block!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-left-drawer :is(#cctv-panel,#weather-panel){
+  position:relative!important;inset:auto!important;width:100%!important;max-height:calc(100dvh - 112px)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-left-drawer .cctv-panel-inner,
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-left-drawer .weather-panel-inner{
+  color:#edfaff!important;background:rgba(3,20,30,.96)!important;
+  border:1px solid rgba(92,219,238,.48)!important;border-radius:18px!important;
+  box-shadow:0 18px 48px rgba(0,0,0,.38)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-left-drawer :is(.panel-title,h2,h3,strong){
+  color:#f4ffff!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-left-drawer :is(p,span,label,small,#cctv-meta,#cctv-summary){
+  color:#cfe2e8!important;opacity:1!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-left-drawer :is(button,select,input){
+  border-color:rgba(99,197,214,.52)!important;background:#0a2937!important;color:#f4ffff!important;
+}
+
+/* CCTV media lives in its own floating right-side monitor; controls stay left. */
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-cctv-viewport{
+  pointer-events:auto;position:fixed;z-index:9820;top:104px;right:18px;
+  width:min(390px,34vw);min-width:250px;min-height:190px;max-width:72vw;max-height:70vh;
+  resize:both;overflow:hidden;border:1.5px solid rgba(94,220,242,.74);border-radius:18px;
+  background:rgba(2,15,24,.92);box-shadow:0 18px 52px rgba(0,0,0,.42);
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-cctv-viewport[hidden]{display:none!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-cctv-viewport>header{
+  display:flex;align-items:center;gap:8px;height:40px;padding:7px 10px;
+  color:#f1fcff;background:rgba(3,25,36,.96);cursor:move;border-bottom:1px solid rgba(96,214,233,.28);
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-cctv-viewport>header strong{
+  flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-cctv-viewport>header button{
+  width:28px;height:28px;border-radius:9px;border:1px solid rgba(112,218,234,.45);
+  background:#0b2a38;color:#fff;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-live-dot{
+  width:9px;height:9px;border-radius:50%;background:#ff4e57;box-shadow:0 0 10px #ff4e57;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-cctv-frame-slot{
+  height:calc(100% - 40px);min-height:150px;background:#02080c;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-cctv-frame-slot #cctv-frame-wrap{
+  width:100%!important;height:100%!important;min-height:150px!important;margin:0!important;border:0!important;border-radius:0!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-cctv-frame-slot :is(#cctv-frame,#cctv-video){
+  width:100%!important;height:100%!important;object-fit:cover!important;
+}
+
+/* Compact More sheet also follows dark-glass presentation. */
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-sheet{
+  background:rgba(3,24,34,.96)!important;color:#f3ffff!important;border:1px solid rgba(81,212,232,.6)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-sheet .lws-layer-row{
+  color:#e9f8fb!important;background:rgba(8,42,55,.55)!important;border-color:rgba(91,168,182,.2)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-sheet .lws-layer-id,
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-sheet-help{color:#b9d0d6!important}
+
+/* Phone: rail collapses to a small launcher; the map remains the dominant center. */
+@media (max-width:820px){
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail{
+    width:58px!important;top:126px!important;bottom:auto!important;max-height:calc(100dvh - 220px)!important;
+    overflow-y:auto!important;padding:5px!important;border-radius:18px!important;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail .lws-nav{
+    min-height:50px!important;font-size:0!important;gap:0!important;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail .lws-nav .lw-icon{
+    width:24px!important;height:24px!important;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-left-drawer{
+    top:126px!important;left:72px!important;width:calc(100vw - 80px)!important;bottom:92px!important;max-height:calc(100dvh - 218px)!important;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-cctv-viewport{
+    top:130px;right:8px;width:min(310px,calc(100vw - 86px));max-width:calc(100vw - 86px);max-height:38vh;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-agent-flip{width:86px!important;height:86px!important}
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-agent-mic{width:86px!important;height:86px!important;min-height:86px!important}
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-agent-flip.open{
+    width:calc(100vw - 20px)!important;height:min(62vh,520px)!important;
+  }
+}
