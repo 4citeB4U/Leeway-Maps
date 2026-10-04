@@ -1,3 +1,5 @@
+import { transitFeedsInRange } from '../data/transitFeeds.js';
+
 const MODE_ROWS = [
   ['bus', 'Bus'],
   ['tram', 'Tram / light rail'],
@@ -10,6 +12,7 @@ export function mountPersonalTransitControls({
   shell,
   dataManager,
   enableTransitSuite,
+  getPoint = () => null,
   notify = () => {},
   documentRef = document,
 } = {}) {
@@ -27,6 +30,10 @@ export function mountPersonalTransitControls({
       <label><input type="checkbox" data-layer="transit-vehicles"> Regional live fallback</label>
     </div>
     <div class="lm-transit-section">
+      <h3>Available public systems</h3>
+      <div data-systems>Finding nearby registered services…</div>
+    </div>
+    <div class="lm-transit-section">
       <h3>Route types</h3>
       ${MODE_ROWS.map(([id,label]) => `<label><input type="checkbox" data-mode="${id}" checked> ${label}</label>`).join('')}
     </div>
@@ -34,8 +41,19 @@ export function mountPersonalTransitControls({
   `;
   shell.append(root);
   const status = root.querySelector('[data-status]');
+  const systems = root.querySelector('[data-systems]');
 
   function sync() {
+    const point = getPoint?.();
+    const feeds =
+      point && Number.isFinite(point.lat) && Number.isFinite(point.lon)
+        ? transitFeedsInRange(point.lat, point.lon)
+        : [];
+    systems.textContent = feeds.length
+      ? feeds
+          .map((feed) => `${feed.name} · ${feed.region}`)
+          .join('\n')
+      : 'No directly registered live operator feed covers this map center. Mapped routes/stops may still be available.';
     for (const input of root.querySelectorAll('[data-layer]')) {
       input.checked = Boolean(dataManager.isEnabled?.(input.dataset.layer));
     }
