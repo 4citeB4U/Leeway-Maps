@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  bindLiveEvidenceToPlannedLeg,
   connectionChange,
   connectionEvidenceReady,
   routePlannerLeg,
@@ -49,4 +50,38 @@ test('connection changes notify only on state or material margin changes', () =>
     { state: 'GOOD', slackMs: 30 * 60_000 },
     { state: 'WATCH', slackMs: 14 * 60_000 },
   ).meaningful, true);
+});
+
+
+test('planned leg binds only on exact normalized identity', () => {
+  const legs = [{
+    key: 'planned:flight:DAL1234',
+    kind: 'flight',
+    reference: 'DAL 1234',
+    label: 'Delta 1234',
+    truth: 'SCHEDULED',
+    departureMs: 100,
+  }];
+  const bound = bindLiveEvidenceToPlannedLeg(legs, {
+    key: 'flights:abc123',
+    kind: 'flight',
+    reference: 'DAL1234',
+    aliases: ['DAL1234'],
+    label: 'DAL1234',
+    truth: 'LIVE',
+    departureMs: 110,
+  });
+  assert.equal(bound.length, 1);
+  assert.equal(bound[0].key, 'planned:flight:DAL1234');
+  assert.equal(bound[0].truth, 'LIVE');
+  assert.equal(bound[0].scheduledDepartureMs, 100);
+});
+
+test('nonmatching live subjects do not overwrite a planned leg', () => {
+  const legs = [{ key:'planned:flight:AAL1', kind:'flight', reference:'AAL1', truth:'SCHEDULED' }];
+  const next = bindLiveEvidenceToPlannedLeg(legs, {
+    key:'flights:x', kind:'flight', reference:'DAL2', aliases:['DAL2'], truth:'LIVE'
+  });
+  assert.equal(next.length, 2);
+  assert.equal(next[0].reference, 'AAL1');
 });
