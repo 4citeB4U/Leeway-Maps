@@ -1,5 +1,6 @@
 import * as Cesium from 'cesium';
 import { createOsmImagery } from '../maps/imagery.js';
+import { getSelectedEntityContext } from '../data/contextStore.js';
 
 export function cockpitPoseFromTrackedInfo(info) {
   if (
@@ -42,6 +43,7 @@ export function mountPersonalCockpitViewport({
   shell,
   styleManager,
   catalog,
+  dataManager,
   documentRef = document,
   notify = () => {},
 } = {}) {
@@ -71,10 +73,28 @@ export function mountPersonalCockpitViewport({
   const readout = root.querySelector('[data-cockpit-readout]');
   const channel = root.querySelector('[data-cockpit-channel]');
 
-  function trackedInfo() {
-    const target = styleManager?.getAircraftTrackingTarget?.();
+  function selectedAircraftTarget() {
+    const tracked = styleManager?.getAircraftTrackingTarget?.();
+    if (tracked?.id) return tracked;
+    const selected = getSelectedEntityContext({ dataManager });
+    if (
+      selected?.id &&
+      ['flights', 'military', 'local-adsb'].includes(selected.layerId)
+    )
+      return { layerId: selected.layerId, id: selected.id };
+    return null;
+  }
+
+  function trackedInfo({ attachSelection = false } = {}) {
+    const target = selectedAircraftTarget();
     if (!target?.id) return null;
-    return catalog?.get?.(target.layerId)?.getTrackedInfo?.() || null;
+    const layer = catalog?.get?.(target.layerId);
+    let info = layer?.getTrackedInfo?.() || null;
+    if (!info && attachSelection && typeof layer?.trackById === 'function') {
+      layer.trackById(target.id, { origin: 'personal-cockpit' });
+      info = layer.getTrackedInfo?.() || null;
+    }
+    return info;
   }
 
   function ensureViewer() {
@@ -107,7 +127,7 @@ export function mountPersonalCockpitViewport({
 
   function update() {
     if (destroyed || root.hidden) return;
-    const info = trackedInfo();
+    const info = trackedInfo({ attachSelection: true });
     const pose = cockpitPoseFromTrackedInfo(info);
     if (!pose) {
       channel.textContent = 'Cockpit';
@@ -139,7 +159,7 @@ export function mountPersonalCockpitViewport({
     root.hidden = false;
     update();
     if (!timer) timer = setInterval(update, 500);
-    const info = trackedInfo();
+    const info = trackedInfo({ attachSelection: true });
     if (!info) {
       notify('Cockpit is ready. Select an aircraft and this view will attach to it.');
       return { ok: true, waitingForAircraft: true };
