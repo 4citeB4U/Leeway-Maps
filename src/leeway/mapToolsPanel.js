@@ -1,11 +1,19 @@
 /** Rehome existing shared map controls; never switch the application presentation. */
-export function mountMapToolsPanel({ shell, documentRef = document } = {}) {
+export function mountMapToolsPanel({
+  shell,
+  documentRef = document,
+  addLauncher = true,
+} = {}) {
   const doc = documentRef;
-  const launcher = doc.createElement('button');
-  launcher.type = 'button'; launcher.className = 'lws-dock-btn';
-  launcher.textContent = 'Map settings'; launcher.setAttribute('aria-expanded', 'false');
-  launcher.setAttribute('aria-controls', 'leeway-map-tools');
-  shell.querySelector('.lws-dock')?.appendChild(launcher);
+  const launcher = addLauncher ? doc.createElement('button') : null;
+  if (launcher) {
+    launcher.type = 'button';
+    launcher.className = 'lws-dock-btn';
+    launcher.textContent = 'Map display';
+    launcher.setAttribute('aria-expanded', 'false');
+    launcher.setAttribute('aria-controls', 'leeway-map-tools');
+    shell.querySelector('.lws-dock')?.appendChild(launcher);
+  }
   const host = doc.createElement('section');
   host.id = 'leeway-map-tools'; host.hidden = true;
   host.setAttribute('aria-label', 'Map settings');
@@ -83,16 +91,28 @@ export function mountMapToolsPanel({ shell, documentRef = document } = {}) {
       display.querySelector(displayRecord.toggleSelector)?.click(); display.classList.remove('collapsed');
     }
   }
-  function close() { host.hidden = true; launcher.setAttribute('aria-expanded', 'false'); }
+  function close() {
+    host.hidden = true;
+    launcher?.setAttribute('aria-expanded', 'false');
+  }
   function open(key = active) {
     if (destroyed) return;
-    select(key); host.hidden = false; launcher.setAttribute('aria-expanded', 'true');
+    select(key);
+    host.hidden = false;
+    launcher?.setAttribute('aria-expanded', 'true');
     records.find(row => row.key === active)?.tab.focus();
   }
-  launcher.onclick = () => host.hidden ? open() : close();
-  closeButton.onclick = () => { close(); launcher.focus(); };
+  if (launcher) launcher.onclick = () => (host.hidden ? open() : close());
+  closeButton.onclick = () => {
+    close();
+    launcher?.focus?.();
+  };
   host.onkeydown = event => {
-    if (event.key === 'Escape') { event.stopPropagation(); close(); launcher.focus(); }
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      close();
+      launcher?.focus?.();
+    }
     if (event.target?.getAttribute('role') !== 'tab') return;
     const index = records.findIndex(row => row.key === active);
     const next = event.key === 'ArrowRight' ? (index + 1) % records.length
@@ -111,7 +131,7 @@ export function mountMapToolsPanel({ shell, documentRef = document } = {}) {
           row.panel.querySelector(row.toggleSelector)?.click(); row.panel.classList.add('collapsed');
         }
       }
-      host.remove(); launcher.remove(); style.remove();
+      host.remove(); launcher?.remove(); style.remove();
     },
   };
 }
