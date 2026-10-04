@@ -8,6 +8,7 @@ import { mountRoutePlanner } from './routePlanner.js';
 import { createRouteClient } from './routePlannerCore.js';
 import './mapFirst.css';
 import './personalTheme.css';
+import './mobileReadability.css';
 import { mountRoadsidePlaces } from './roadsidePlaces.js';
 import { mountDriveMode } from './driveMode.js';
 import { mountFuelAdvisor } from './fuelAdvisor.js';
