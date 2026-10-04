@@ -257,10 +257,13 @@ export function mountJourneyContinuityMonitor({
         leg.arrivalMs ? 'arrival ' + new Date(leg.arrivalMs).toLocaleString() : '',
         leg.departureMs ? 'departure ' + new Date(leg.departureMs).toLocaleString() : '',
       ].filter(Boolean).join(' · ');
+      const truthText = leg.positionTruth && leg.positionTruth !== leg.truth
+        ? String(leg.truth) + ' timing · ' + String(leg.positionTruth) + ' position'
+        : String(leg.truth);
       row.innerHTML =
         '<strong>' + (index + 1) + '. ' + String(leg.label) + '</strong>' +
         '<small>' + String(leg.kind) + (times ? ' · ' + times : ' · timing not supplied by this selection') + '</small>' +
-        '<span class="lj-truth ' + String(leg.truth) + '">' + String(leg.truth) + '</span>';
+        '<span class="lj-truth ' + String(leg.truth) + '">' + truthText + '</span>';
       list.append(row);
     }
     const result = connectionResult();
@@ -281,8 +284,17 @@ export function mountJourneyContinuityMonitor({
       : 'Select a transit vehicle/stop or aircraft, then add it to the journey.';
   }
 
+  function refreshMovingPoints() {
+    legs = legs.map((leg) => {
+      if (!leg.entity) return leg;
+      const livePoint = pointFromEntity(leg.entity);
+      return livePoint ? { ...leg, point: livePoint } : leg;
+    });
+  }
+
   function frameTogether() {
     captureFlight();
+    refreshMovingPoints();
     const points = legs.map((leg) => {
       if (leg.layerId === 'flights' && currentFlight?.key === leg.key)
         return currentFlight.point;
@@ -370,6 +382,7 @@ export function mountJourneyContinuityMonitor({
   const timer = setInterval(() => {
     if (!root.hidden) {
       captureFlight();
+      refreshMovingPoints();
       render();
     }
   }, 5000);
