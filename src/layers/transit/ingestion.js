@@ -40,6 +40,10 @@ export const FUTURE_STAMP_TOLERANCE_MS = 10_000;
  * refused until real time caught up with its old mistake.
  */
 export const ORDER_REJECTS_BEFORE_RESET = 3;
+export const MAP_MATCH_MIN_FIXES = 3;
+export const MAP_MATCH_MAX_FIXES = 8;
+export const MAP_MATCH_REFRESH_MS = 30_000;
+export const MAP_MATCH_MAX_CONCURRENT = 2;
 
 /**
  * Fetching feeds through the proxy and turning snapshots into rendered points.
@@ -69,6 +73,79 @@ export function createIngestion({ state, services, parts, source }) {
     return status;
   }
 
+  function maybeRequestMapMatch(entry) {
+    if (
+      entry?.mode !== 'bus' ||
+      typeof source?.requestMapMatch !== 'function' ||
+      !entry?.track ||
+      entry.track.count < MAP_MATCH_MIN_FIXES ||
+      (!state._visible.has(entry) && state._selectedKey !== entry.key)
+    )
+      return;
+    const now = Date.now();
+    if (
+      state._mapMatchInFlight.has(entry.key) ||
+      state._mapMatchInFlight.size >= MAP_MATCH_MAX_CONCURRENT ||
+      now - Number(entry.mapMatchRequestedAt || 0) < MAP_MATCH_REFRESH_MS
+    )
+      return;
+    const points = entry.fixes
+      .slice(-MAP_MATCH_MAX_FIXES)
+      .map((fix) => ({ lat: fix.lat, lon: fix.lon, time: fix.t }))
+      .filter(
+        (point) =>
+          Number.isFinite(point.lat) &&
+          Number.isFinite(point.lon) &&
+          Number.isFinite(point.time),
+      );
+    if (points.length < MAP_MATCH_MIN_FIXES) return;
+    entry.mapMatchRequestedAt = now;
+    const controller = new AbortController();
+    const promise = source
+      .requestMapMatch(points, 'bus', { signal: controller.signal })
+      .then((response) => {
+        if (!response?.ok) {
+          state._mapMatchRejected += 1;
+          return;
+        }
+        const body = response.body;
+        if (
+          !Array.isArray(body?.geometry) ||
+          body.geometry.length < 2 ||
+          body.geometry.some(
+            (point) =>
+              !Array.isArray(point) ||
+              point.length < 2 ||
+              !Number.isFinite(point[0]) ||
+              !Number.isFinite(point[1]),
+          )
+        ) {
+          state._mapMatchRejected += 1;
+          return;
+        }
+        entry.mapMatchGeometry = body.geometry;
+        entry.mapMatchMeanDeviationM = Number.isFinite(body.meanDeviationM)
+          ? body.meanDeviationM
+          : null;
+        entry.mapMatchMaxDeviationM = Number.isFinite(body.maxDeviationM)
+          ? body.maxDeviationM
+          : null;
+        entry.mapMatchAt = Date.now();
+        entry.endpointRevision = -1;
+        state._heightDirty.add(entry);
+        state._mapMatchCompleted += 1;
+        governorRequestRender('transit-map-match');
+      })
+      .catch((error) => {
+        if (error?.name !== 'AbortError') state._mapMatchRejected += 1;
+      })
+      .finally(() => {
+        if (state._mapMatchInFlight.get(entry.key)?.controller === controller)
+          state._mapMatchInFlight.delete(entry.key);
+      });
+    state._mapMatchInFlight.set(entry.key, { controller, promise });
+  }
+
   function removeVehicle(key) {
     const entry = state._vehicles.get(key);
     if (!entry) return;
@@ -84,6 +161,8 @@ export function createIngestion({ state, services, parts, source }) {
     state._heightDirty.delete(entry);
     parts.rendering.cancelWake(entry);
     destroyTrack(entry.track);
+    state._mapMatchInFlight.get(key)?.controller?.abort();
+    state._mapMatchInFlight.delete(key);
     state._vehicles.delete(key);
     state._detectRevision += 1;
   }
@@ -368,6 +447,7 @@ export function createIngestion({ state, services, parts, source }) {
       }
       entry.record = record;
       entry.fetchedAt = fetchedAt;
+      maybeRequestMapMatch(entry);
       entry.pollSeq = pollSeq;
       seen += 1;
     }
@@ -495,6 +575,9 @@ export function createIngestion({ state, services, parts, source }) {
   function abortAllInFlight() {
     for (const { controller } of state._inFlight.values()) controller.abort();
     state._inFlight.clear();
+    for (const { controller } of state._mapMatchInFlight.values())
+      controller.abort();
+    state._mapMatchInFlight.clear();
   }
 
   return {
@@ -505,5 +588,6 @@ export function createIngestion({ state, services, parts, source }) {
     applySnapshot,
     pollFeed,
     abortAllInFlight,
+    maybeRequestMapMatch,
   };
 }

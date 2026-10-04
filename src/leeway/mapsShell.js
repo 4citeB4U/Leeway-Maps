@@ -28,6 +28,7 @@ import { mountPersonalCockpitViewport } from './personalCockpitViewport.js';
 import { mountPersonalTransitControls } from './personalTransitControls.js';
 import { mountPersonalStreetView } from './personalStreetView.js';
 import { mountPersonalPlacesOverlay } from './personalPlacesOverlay.js';
+import { mountSpatialMeasurementGate } from './spatialMeasurementGate.js';
 
 const PERSONAL_HIDDEN_LAYER_IDS = new Set([
   'military',
@@ -1540,6 +1541,11 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     viewer,
     notify: say,
   });
+  const spatialMeasurement = mountSpatialMeasurementGate({
+    shell,
+    dataManager,
+    placesOverlay,
+  });
   const journeyContinuity = mountJourneyContinuityMonitor({
     viewer,
     dataManager,
@@ -1574,12 +1580,14 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     selectCctv,
     getDeviceProfile: () => devicePolicyState,
     getRuntimeCapabilities: () => ({ runtimeCapabilities, workloadPlan }),
+    getSpatialMeasurement: () => spatialMeasurement,
     openAgent: () => toggleAgent(true),
     closeAgent: () => toggleAgent(false),
     notify: say,
     destroy() {
       journeyContinuity.destroy();
       mapToolsPanel?.destroy();
+      spatialMeasurement.destroy();
       placesOverlay.destroy();
       streetView.destroy();
       transitControls.destroy();

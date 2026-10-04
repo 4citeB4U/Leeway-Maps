@@ -6,6 +6,7 @@ import { trackBackfillProxies } from '../providers/aircraft/tracks.js';
 import { cctvProxy } from '../providers/cctv.js';
 import { defaultSourceRoot } from '../providers/common/source-root.js';
 import { transitProxy } from '../providers/transit.js';
+import { transitMapMatchProxy } from '../providers/transit-map-match.js';
 import { weatherProxy } from '../providers/weather.js';
 import { celestrakProxy, rocketLaunchesProxy } from '../providers/space.js';
 import { tomtomProxy } from '../providers/traffic.js';
@@ -161,6 +162,7 @@ export function createWorldPlugins({ sourceRoot = defaultSourceRoot } = {}) {
     cctvProxy({ sourceRoot, statelessMedia: true }),
     weatherProxy(),
     transitProxy(),
+    transitMapMatchProxy(),
     celestrakProxy(),
     rocketLaunchesProxy(),
     tomtomProxy(),
