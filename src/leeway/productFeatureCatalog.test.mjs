@@ -31,6 +31,10 @@ test('personal directions do not offer commercial vehicle controls', async () =>
  assert.doesNotMatch(source, /<option value="(?:truck|semi|van)"|data-profile="(?:hazmat|oversize|grossWeightKg|axleWeightKg)"/);
  assert.match(source, /data-mode="foot"/);
  assert.match(source, /data-mode="bike"/);
+ assert.match(source, /FlowMaterialProperty/);
+ assert.match(source, /PolylineGlowMaterialProperty/);
+ assert.match(source, /holdContinuousRender\(ROUTE_RENDER_HOLD\)/);
+ assert.match(source, /releaseContinuousRender\(ROUTE_RENDER_HOLD\)/);
 });
 test('personal shell has no dormant commercial controls and travel contacts are opt-in', async () => {
  const shell = await readFile(new URL('./mapsShell.js', import.meta.url), 'utf8');
@@ -43,7 +47,13 @@ test('personal shell has no dormant commercial controls and travel contacts are 
  assert.match(shell, /lm-agent-mic/);
  assert.doesNotMatch(shell, /lm-profile/);
  assert.match(shell, /aria-label="Agent Lee"/);
+ assert.match(shell, /data-agent-flip/);
+ assert.match(shell, /data-cctv-viewport/);
+ assert.match(shell, /data-action="cockpit"/);
  assert.doesNotMatch(shell, /class="lws-right-tabs/);
+ const dock = shell.slice(shell.indexOf('aria-label="Agent Lee"'), shell.indexOf('aria-label="Agent Lee"') + 900);
+ assert.match(dock, /lm-agent-mic/);
+ assert.doesNotMatch(dock, /data-dock="(?:transit|traffic|weather|cctv|layers)"/);
  const peers = await readFile(new URL('./peerComms.js', import.meta.url), 'utf8');
  assert.doesNotMatch(peers, /Fleet coworkers|available driver or dispatcher|companyDirectory/);
  assert.match(peers, /identity\?\.directoryPolicy !== 'opt-in'/);
