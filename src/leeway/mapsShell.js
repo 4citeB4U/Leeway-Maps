@@ -27,6 +27,7 @@ import { buildWorkloadPlan, discoverRuntimeCapabilities } from './runtimeWorkloa
 import { mountPersonalCockpitViewport } from './personalCockpitViewport.js';
 import { mountPersonalTransitControls } from './personalTransitControls.js';
 import { mountPersonalStreetView } from './personalStreetView.js';
+import { mountPersonalPlacesOverlay } from './personalPlacesOverlay.js';
 
 const PERSONAL_HIDDEN_LAYER_IDS = new Set([
   'military',
@@ -260,8 +261,10 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     <nav class="lws-rail lm-rail" aria-label="LeeWay Maps navigation">
       <button class="lws-nav active" data-nav="map" type="button">${mapIcon('home')}<span>Home</span></button>
       <button class="lws-nav" data-dock="locate" type="button">${mapIcon('locate')}<span>My location</span></button>
+      <button class="lws-nav" data-action="route" type="button">${mapIcon('directions')}<span>Directions</span></button>
       <button class="lws-nav" data-nav="transit" type="button">${mapIcon('transit')}<span>Transit</span></button>
       <button class="lws-nav" data-nav="features" type="button">${mapIcon('explore')}<span>Explore</span></button>
+      <button class="lws-nav" data-action="places" type="button">${mapIcon('facilities')}<span>Places</span></button>
       <button class="lws-nav" data-dock="traffic" type="button">${mapIcon('traffic')}<span>Traffic</span></button>
       <button class="lws-nav" data-dock="cctv" type="button">${mapIcon('cctv')}<span>Cameras</span></button>
       <button class="lws-nav" data-dock="weather" type="button">${mapIcon('weather')}<span>Weather</span></button>
@@ -1197,6 +1200,10 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       if (!result?.ok) say(result?.error || 'Cockpit unavailable');
       return;
     }
+    if (action === 'places') {
+      placesOverlay.toggle();
+      return;
+    }
     if (action === 'help') {
       preferences.openAtlas?.();
       return;
@@ -1527,6 +1534,11 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     viewer,
     notify: say,
   });
+  const placesOverlay = mountPersonalPlacesOverlay({
+    shell,
+    viewer,
+    notify: say,
+  });
   const journeyContinuity = mountJourneyContinuityMonitor({
     viewer,
     dataManager,
@@ -1567,6 +1579,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     destroy() {
       journeyContinuity.destroy();
       mapToolsPanel?.destroy();
+      placesOverlay.destroy();
       streetView.destroy();
       transitControls.destroy();
       personalCockpit.destroy();
