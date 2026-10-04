@@ -39,6 +39,59 @@ export function personalPlacesTier(heightM) {
   return tierFor(Number(heightM));
 }
 
+function escapeOverpass(value) {
+  return String(value).replace(/[^0-9.-]/g, '');
+}
+
+function overpassPlacesQuery(point, radiusM) {
+  const lat = escapeOverpass(point.lat);
+  const lon = escapeOverpass(point.lon);
+  const radius = Math.max(250, Math.min(5000, Math.round(radiusM)));
+  return `[out:json][timeout:12];
+(
+  nwr(around:${radius},${lat},${lon})["name"]["amenity"];
+  nwr(around:${radius},${lat},${lon})["name"]["shop"];
+  nwr(around:${radius},${lat},${lon})["name"]["tourism"];
+  nwr(around:${radius},${lat},${lon})["name"]["office"];
+);
+out center tags;`;
+}
+
+function normalizeOverpassPlaces(payload, point) {
+  const rows = [];
+  for (const item of payload?.elements || []) {
+    const tags = item.tags || {};
+    const lat = Number(item.lat ?? item.center?.lat);
+    const lon = Number(item.lon ?? item.center?.lon);
+    const name = String(tags.name || '').trim();
+    if (!name || !Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+    const primaryType =
+      tags.amenity || tags.shop || tags.tourism || tags.office || 'place';
+    rows.push({
+      id: `osm:${item.type}:${item.id}`,
+      name,
+      latitude: lat,
+      longitude: lon,
+      primaryType,
+      types: [primaryType],
+      address: [
+        tags['addr:housenumber'],
+        tags['addr:street'],
+        tags['addr:city'],
+      ].filter(Boolean).join(' '),
+      source: 'OpenStreetMap / Overpass',
+      distanceM:
+        Math.hypot(
+          (lat - point.lat) * 111320,
+          (lon - point.lon) *
+            111320 *
+            Math.cos((point.lat * Math.PI) / 180),
+        ),
+    });
+  }
+  return rows.sort((a, b) => a.distanceM - b.distanceM);
+}
+
 export function mountPersonalPlacesOverlay({
   viewer,
   shell,
@@ -121,7 +174,7 @@ export function mountPersonalPlacesOverlay({
           backgroundPadding: new Cesium.Cartesian2(5, 3),
         },
         properties: {
-          source: 'Google Places',
+          source: place.source || 'Places provider',
           address: place.address || '',
           type: place.primaryType || '',
           distanceM: place.distanceM ?? null,
@@ -168,11 +221,27 @@ export function mountPersonalPlacesOverlay({
       });
       const data = await response.json().catch(() => ({}));
       if (request.signal.aborted) return;
-      const rows = Array.isArray(data.places) ? data.places : [];
-      if (!response.ok || data.configured === false) {
-        clear();
-        return;
+      let rows = Array.isArray(data.places) ? data.places : [];
+      let source = 'Google Places';
+      if (!response.ok || data.configured === false || !rows.length) {
+        const overpass = await fetchImpl('/api/overpass', {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'text/plain;charset=UTF-8',
+          },
+          body: overpassPlacesQuery(point, tier.radiusM),
+          signal: request.signal,
+        });
+        const payload = await overpass.json().catch(() => ({}));
+        if (!overpass.ok || request.signal.aborted) {
+          clear();
+          return;
+        }
+        rows = normalizeOverpassPlaces(payload, point);
+        source = 'OpenStreetMap / Overpass';
       }
+      rows = rows.slice(0, tier.limit).map((place) => ({ ...place, source }));
       cache.set(key, { rows, until: Date.now() + 300000 });
       if (cache.size > 24) cache.delete(cache.keys().next().value);
       render(rows, tier);
