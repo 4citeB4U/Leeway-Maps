@@ -255,6 +255,7 @@ export function createTransitNetworkLayer({
         const copy = `${name || key}\n${item.agency?.agency_name || ''}\n${data.source}\n${data.mappedOnly ? 'Community-mapped network. Timetables, arrivals, alerts, and live vehicles unavailable from this source.' : kind === 'routes' ? 'Published representative route; not live vehicle position.' : 'Select this stop to view the next hour of departures.'}\n${transitAlertText(item.alerts)}\nRetrieved ${data.retrievedAt}`;
         if (kind === 'routes') {
           const mode = routeMode(item);
+          if (allowedModes && !allowedModes.has(mode)) continue;
           const color = /^[0-9a-f]{6}$/i.test(item.route_color || '')
             ? `#${item.route_color}`
             : routeFallbackColor(mode);
@@ -394,6 +395,24 @@ export function createTransitNetworkLayer({
       refresh();
     },
     update,
+    setParams(params = {}) {
+      if (kind !== 'routes' || !Object.hasOwn(params, 'allowedModes')) return false;
+      const next = Array.isArray(params.allowedModes)
+        ? new Set(
+            params.allowedModes.filter((mode) =>
+              ['bus','rail','subway','tram','ferry','unknown'].includes(mode),
+            ),
+          )
+        : null;
+      allowedModes = next?.size ? next : null;
+      if (enabled) queueMicrotask(() => update(undefined, { force: true }));
+      return true;
+    },
+    getParams() {
+      return kind === 'routes'
+        ? { allowedModes: allowedModes ? [...allowedModes] : null }
+        : {};
+    },
     destroy() {
       layer.disable();
       viewer?.dataSources.remove(dataSource, true);
