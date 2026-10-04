@@ -106,26 +106,35 @@ export function mountPersonalTransitControls({
   });
 
   root.querySelector('[data-close]').onclick = () => {
-    root.hidden = true;
+    close();
   };
 
   let timer = null;
   async function open() {
     root.hidden = false;
+    root.setAttribute('aria-hidden', 'false');
     await enableTransitSuite?.();
     sync();
     clearInterval(timer);
     timer = setInterval(sync, 2500);
+    return { ok: true, open: true };
   }
   function close() {
     root.hidden = true;
+    root.setAttribute('aria-hidden', 'true');
     clearInterval(timer);
     timer = null;
+    return { ok: true, open: false };
+  }
+  async function toggle() {
+    return root.hidden ? open() : close();
   }
   return {
     root,
     open,
     close,
+    toggle,
+    isOpen: () => !root.hidden,
     sync,
     destroy() {
       close();

@@ -771,7 +771,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
         return true;
       }
       if (actionName === 'transit') {
-        await transitControls.open();
+        await transitControls.toggle();
         return true;
       }
       if (actionName === 'cctv') {
@@ -1175,7 +1175,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
         return;
       }
       if (id === 'transit') {
-        await transitControls.open();
+        await transitControls.toggle();
         return;
       }
       if (id === 'features') {
@@ -1393,7 +1393,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       return;
     }
     if (dock === 'transit') {
-      await transitControls.open();
+      await transitControls.toggle();
       return;
     }
     if (dock === 'three') {
