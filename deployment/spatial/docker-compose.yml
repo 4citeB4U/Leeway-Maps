@@ -1,0 +1,31 @@
+services:
+  valhalla:
+    image: ghcr.io/gis-ops/docker-valhalla/valhalla:latest
+    container_name: leeway-valhalla
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8002:8002"
+    environment:
+      tile_urls: \${VALHALLA_TILE_URLS}
+      build_tiles: \${VALHALLA_BUILD_TILES:-True}
+      build_elevation: \${VALHALLA_BUILD_ELEVATION:-True}
+      build_admins: \${VALHALLA_BUILD_ADMINS:-True}
+      build_time_zones: \${VALHALLA_BUILD_TIME_ZONES:-True}
+      server_threads: \${VALHALLA_SERVER_THREADS:-4}
+      force_rebuild: \${VALHALLA_FORCE_REBUILD:-False}
+    volumes:
+      - ./valhalla_data:/custom_files
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8002/status >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+
+  places:
+    image: nginx:1.27-alpine
+    container_name: leeway-overture-places
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8098:80"
+    volumes:
+      - ../../artifacts/overture:/usr/share/nginx/html/overture:ro
