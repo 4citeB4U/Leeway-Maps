@@ -737,9 +737,9 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
         return true;
       }
       if (actionName === 'cockpit') {
-        const result = await mapViewControls.actions.cockpit();
-        if (!result.ok) say(result.error);
-        return result.ok;
+        const result = personalCockpit.open();
+        if (!result?.ok) say(result?.error || 'Cockpit unavailable');
+        return Boolean(result?.ok);
       }
       toggleLayerMenu(true);
       return true;
