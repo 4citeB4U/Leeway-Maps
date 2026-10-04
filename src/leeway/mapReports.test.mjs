@@ -8,7 +8,9 @@ test('weather marks stale data and reports actual observations',()=>{
   assert.match(weatherReport(p,now+7200000),/^Older weather/);
   assert.equal(weatherReport({}),'Weather unavailable');
 });
-test('missing incident coverage and stale feeds never report clear roads',()=>{
-  assert.match(trafficReport([],{lat:40.7,lon:-74}),/coverage unavailable/);
+test('local traffic truth stays distinct from simulated or unavailable data',()=>{
+  assert.match(trafficReport([],{lat:43.04,lon:-87.91}),/Tap for local flow/);
+  assert.match(trafficReport([{id:'traffic',enabled:true,stats:{mode:'sim'}}],{lat:43.04,lon:-87.91}),/Simulated flow/);
+  assert.match(trafficReport([{id:'traffic',enabled:true,stats:{mode:'live',flowCoveragePct:72}}],{lat:43.04,lon:-87.91}),/Live flow · 72%/);
   assert.match(trafficReport([{id:'traffic-incidents',enabled:true,stats:{stale:true,count:0}}],{lat:41.8,lon:-87.6}),/outdated/);
 });
