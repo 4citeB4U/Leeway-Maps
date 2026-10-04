@@ -9,6 +9,26 @@ export function createTransitSource({
       signal?.throwIfAborted();
       return fetchTransitHistory(feedId, vehicleId, signal, fetchImpl);
     },
+    requestMapMatch(points, mode = 'bus', { signal } = {}) {
+      signal?.throwIfAborted();
+      if (!Array.isArray(points) || points.length < 3 || points.length > 12)
+        throw new TypeError('3–12 transit GPS points are required');
+      return Promise.resolve(
+        fetchImpl('/api/transit/map-match', {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ points, mode }),
+          signal,
+        }),
+      ).then(async (response) => ({
+        ok: response.ok,
+        status: response.status,
+        body: await response.json().catch(() => ({})),
+      }));
+    },
     requestSnapshot(feedId, { signal } = {}) {
       signal?.throwIfAborted();
       if (typeof feedId !== 'string' || !feedId || feedId.length > 160)
