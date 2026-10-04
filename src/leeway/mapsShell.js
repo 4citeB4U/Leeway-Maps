@@ -267,6 +267,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       <div class="lws-spacer"></div>
       <button class="lws-nav lm-rail-more" data-dock="layers" type="button">${mapIcon('more')}<span>More</span></button>
     </nav>
+    <button class="lm-rail-toggle" data-action="toggle-personal-rail" type="button" aria-label="Collapse map controls" aria-expanded="true">‹</button>
 
     <aside class="lws-layer-menu lm-sheet" data-layer-menu>
       <div class="lws-layer-head"><strong>More</strong><div class="lm-sheet-actions"><button class="lws-chip" data-action="preferences" type="button">Settings</button><button class="lws-chip" data-action="map-tools" type="button">Map display</button><button class="lws-chip" data-action="close-layers" aria-label="Close more menu">×</button></div></div>
@@ -1277,6 +1278,16 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     }
     if (action === 'collapse') {
       shell.querySelector('.lws-rail').classList.toggle('compact');
+      return;
+    }
+    if (action === 'toggle-personal-rail') {
+      const hidden = document.body.classList.toggle('leeway-personal-rail-hidden');
+      const button = shell.querySelector('[data-action="toggle-personal-rail"]');
+      if (button) {
+        button.textContent = hidden ? '›' : '‹';
+        button.setAttribute('aria-expanded', String(!hidden));
+        button.setAttribute('aria-label', hidden ? 'Show map controls' : 'Collapse map controls');
+      }
       return;
     }
 
