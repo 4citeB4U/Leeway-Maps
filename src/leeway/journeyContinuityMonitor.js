@@ -16,6 +16,12 @@ import {
   boundsForPoints,
   formatConnectionAssessment,
 } from './journeyContinuityCore.js';
+import {
+  connectionChange,
+  connectionEvidenceReady,
+  routePlannerLeg,
+  upsertJourneyLeg,
+} from './journeyItineraryCore.js';
 
 function pointFromEntity(entity) {
   try {
@@ -77,6 +83,7 @@ export function mountJourneyContinuityMonitor({
   dataManager,
   shell,
   mapViewControls,
+  routePlanner,
   openNearestCctv,
   notify = () => {},
   eventTarget = globalThis.window,
@@ -103,6 +110,7 @@ export function mountJourneyContinuityMonitor({
       <button type="button" data-cockpit>Cockpit flight</button>
       <button type="button" data-cctv>Nearby CCTV</button>
       <button type="button" data-clear>Clear</button>
+      <label class="lj-auto"><input type="checkbox" data-auto checked> Auto-bind selected trip subjects</label>
     </div>
     <div data-status class="lj-status">Select a transit vehicle/stop or aircraft, then add it to the journey.</div>
     <ol data-legs class="lj-legs"></ol>
@@ -113,7 +121,7 @@ export function mountJourneyContinuityMonitor({
   const style = documentRef.createElement('style');
   style.textContent = `
     .lw-journey-watch{position:fixed;z-index:11020;right:18px;top:84px;width:min(520px,calc(100vw - 36px));max-height:calc(100dvh - 170px);overflow:auto;padding:16px;border:1px solid rgba(77,223,239,.4);border-radius:18px;background:rgba(3,15,24,.97);color:#effcff;box-shadow:0 24px 70px #0009;font:14px/1.45 Inter,system-ui,sans-serif}
-    .lw-journey-watch[hidden]{display:none}.lw-journey-watch header{display:flex;justify-content:space-between;gap:12px;align-items:center}.lw-journey-watch header small{color:#72efff;letter-spacing:.13em}.lw-journey-watch h2{margin:2px 0;font-size:24px}.lw-journey-watch button{border:1px solid rgba(89,220,238,.35);border-radius:9px;background:#0b2935;color:#effcff;padding:8px 10px;cursor:pointer}.lj-actions{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}.lj-note{color:#b8d2d9}.lj-status,.lj-connection{padding:10px;border-radius:10px;background:rgba(255,255,255,.04);margin:10px 0}.lj-legs{display:grid;gap:8px;padding-left:22px}.lj-leg{padding:10px;border:1px solid rgba(255,255,255,.09);border-radius:11px;background:#081c27}.lj-leg strong{display:block}.lj-leg small{display:block;color:#a9c4cc}.lj-truth{font-size:10px;font-weight:800;letter-spacing:.06em}.lj-truth.LIVE,.lj-truth.PREDICTED{color:#62f1aa}.lj-truth.SCHEDULED{color:#7eeaff}.lj-truth.UNAVAILABLE,.lj-truth.STALE{color:#ffcb6b}
+    .lw-journey-watch[hidden]{display:none}.lw-journey-watch header{display:flex;justify-content:space-between;gap:12px;align-items:center}.lw-journey-watch header small{color:#72efff;letter-spacing:.13em}.lw-journey-watch h2{margin:2px 0;font-size:24px}.lw-journey-watch button{border:1px solid rgba(89,220,238,.35);border-radius:9px;background:#0b2935;color:#effcff;padding:8px 10px;cursor:pointer}.lj-actions{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}.lj-auto{display:flex;align-items:center;gap:7px;width:100%;font-size:12px;color:#c9dce2}.lj-note{color:#b8d2d9}.lj-status,.lj-connection{padding:10px;border-radius:10px;background:rgba(255,255,255,.04);margin:10px 0}.lj-legs{display:grid;gap:8px;padding-left:22px}.lj-leg{padding:10px;border:1px solid rgba(255,255,255,.09);border-radius:11px;background:#081c27}.lj-leg strong{display:block}.lj-leg small{display:block;color:#a9c4cc}.lj-truth{font-size:10px;font-weight:800;letter-spacing:.06em}.lj-truth.LIVE,.lj-truth.PREDICTED{color:#62f1aa}.lj-truth.SCHEDULED{color:#7eeaff}.lj-truth.UNAVAILABLE,.lj-truth.STALE{color:#ffcb6b}
     body[data-leeway-edition="personal"] .lw-journey-watch{border-color:#d0a329;background:linear-gradient(145deg,#2a2a0e,#0a2416 62%,#2a1014);font-size:16px}body[data-leeway-edition="personal"] .lw-journey-watch header small,body[data-leeway-edition="personal"] .lw-journey-watch .lj-truth.SCHEDULED{color:#ffe36f}body[data-leeway-edition="personal"] .lw-journey-watch button{font-size:15px;border-color:#87b94d;background:#183521}
   `;
   documentRef.head.append(style);
@@ -121,6 +129,15 @@ export function mountJourneyContinuityMonitor({
   let currentTransit = null;
   let currentFlight = null;
   let legs = [];
+  let previousConnection = null;
+  const autoBind = () => root.querySelector('[data-auto]')?.checked !== false;
+
+  function bindLeg(leg, options = {}) {
+    if (!leg?.key) return false;
+    legs = upsertJourneyLeg(legs, leg, options);
+    render();
+    return true;
+  }
 
   function flightInfo() {
     const module = dataManager?.layers?.get?.('flights')?.module;
@@ -142,7 +159,8 @@ export function mountJourneyContinuityMonitor({
       truth: departure?.truth || (kind === 'vehicles' ? 'LIVE' : 'MAPPED'),
       entity,
     };
-    render();
+    if (autoBind()) bindLeg(currentTransit);
+    else render();
   }
 
   function captureFlight() {
@@ -170,7 +188,8 @@ export function mountJourneyContinuityMonitor({
           : 'UNAVAILABLE',
       scheduleRetrievedAt: parseTime(schedule.retrievedAt),
     };
-    render();
+    if (autoBind()) bindLeg(currentFlight);
+    else render();
   }
 
   function selectedCandidate() {
@@ -190,15 +209,14 @@ export function mountJourneyContinuityMonitor({
       notify('Select a transit vehicle/stop or aircraft first');
       return;
     }
-    if (!legs.some((leg) => leg.key === candidate.key))
-      legs.push({ ...candidate });
-    render();
+    bindLeg(candidate);
   }
 
   function connectionResult() {
     if (legs.length < 2) return null;
     const inbound = legs[legs.length - 2];
     const outbound = legs[legs.length - 1];
+    if (!connectionEvidenceReady(inbound, outbound)) return null;
     return assessConnection({
       inboundArrivalMs: inbound.arrivalMs,
       outboundDepartureMs: outbound.departureMs,
@@ -226,9 +244,17 @@ export function mountJourneyContinuityMonitor({
       list.append(row);
     }
     const result = connectionResult();
-    root.querySelector('[data-connection]').textContent = result
+    const connectionText = result
       ? formatConnectionAssessment(result)
-      : 'Add at least two timed legs to evaluate a connection.';
+      : legs.length >= 2
+        ? 'Connection timing is waiting for authoritative LIVE, PREDICTED, or SCHEDULED arrival/departure evidence.'
+        : 'Add at least two timed legs to evaluate a connection.';
+    root.querySelector('[data-connection]').textContent = connectionText;
+    const change = connectionChange(previousConnection, result);
+    if (change?.meaningful && result) {
+      notify(connectionText);
+    }
+    previousConnection = result;
     const candidate = currentTransit || currentFlight;
     root.querySelector('[data-status]').textContent = candidate
       ? 'Current selection: ' + candidate.label + ' · ' + candidate.truth
@@ -267,6 +293,13 @@ export function mountJourneyContinuityMonitor({
   }
 
   const removeTransit = viewer?.selectedEntityChanged?.addEventListener?.(captureTransit);
+  const removeRoute = routePlanner?.subscribe?.((event) => {
+    if (event?.type !== 'route-ready') return;
+    const leg = routePlannerLeg(event.state);
+    if (!leg) return;
+    bindLeg(leg, { position: 'prepend' });
+    notify('Planned ' + leg.kind + ' leg added to Journey Watch. Its route time is MAPPED and does not count as live transfer proof.');
+  });
   const onFlight = () => captureFlight();
   eventTarget?.addEventListener?.('gev:awareness-subject-selected', onFlight);
 
@@ -300,6 +333,7 @@ export function mountJourneyContinuityMonitor({
     destroy() {
       clearInterval(timer);
       removeTransit?.();
+      removeRoute?.();
       eventTarget?.removeEventListener?.('gev:awareness-subject-selected', onFlight);
       launcher.remove();
       root.remove();
