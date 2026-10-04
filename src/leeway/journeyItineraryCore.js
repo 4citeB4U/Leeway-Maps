@@ -112,10 +112,20 @@ export function bindLiveEvidenceToPlannedLeg(legs, liveLeg) {
   });
   if (plannedIndex < 0) return upsertJourneyLeg(next, liveLeg);
   const planned = next[plannedIndex];
+  const liveHasTimedEvidence =
+    Number.isFinite(liveLeg.departureMs) || Number.isFinite(liveLeg.arrivalMs);
   next[plannedIndex] = {
     ...planned,
     ...liveLeg,
     key: planned.key,
+    departureMs: Number.isFinite(liveLeg.departureMs)
+      ? liveLeg.departureMs
+      : planned.departureMs ?? null,
+    arrivalMs: Number.isFinite(liveLeg.arrivalMs)
+      ? liveLeg.arrivalMs
+      : planned.arrivalMs ?? null,
+    truth: liveHasTimedEvidence ? liveLeg.truth : planned.truth,
+    positionTruth: liveLeg.truth || null,
     plannedDepartureMs: planned.plannedDepartureMs ?? planned.departureMs ?? null,
     plannedArrivalMs: planned.plannedArrivalMs ?? planned.arrivalMs ?? null,
     scheduledDepartureMs: planned.scheduledDepartureMs ?? planned.departureMs ?? null,
