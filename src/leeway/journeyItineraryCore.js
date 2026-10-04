@@ -101,7 +101,11 @@ export function bindLiveEvidenceToPlannedLeg(legs, liveLeg) {
   if (!aliases.size) return upsertJourneyLeg(legs, liveLeg);
   const next = Array.isArray(legs) ? legs.map((leg) => ({ ...leg })) : [];
   const plannedIndex = next.findIndex((leg) => {
-    if (leg.kind !== liveLeg.kind && !(leg.kind === 'transit' && ['vehicles','stops','routes'].includes(liveLeg.kind)))
+    if (
+      leg.kind !== liveLeg.kind &&
+      !(['transit','rail','ferry'].includes(leg.kind) &&
+        ['vehicles','stops','routes'].includes(liveLeg.kind))
+    )
       return false;
     const ref = normalizeJourneyReference(leg.reference || leg.label);
     return ref && aliases.has(ref);
