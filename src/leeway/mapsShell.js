@@ -349,21 +349,25 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   }
 
   function syncCctvInspector() {
-    const open = Boolean(
+    const cctvOpen = Boolean(
       cctvPanel && !cctvPanel.classList.contains('collapsed'),
     );
-    contextInspector.classList.toggle('open', open);
-    if (!open) contextInspector.classList.remove('minimized');
-    if (open) {
+    const weatherOpen = Boolean(
+      weatherPanel &&
+        !weatherPanel.hidden &&
+        !weatherPanel.classList.contains('collapsed'),
+    );
+    contextInspector.classList.toggle('open', cctvOpen || weatherOpen);
+    if (!cctvOpen && !weatherOpen) contextInspector.classList.remove('minimized');
+    if (cctvOpen) {
       activeRightPanel = 'cctv';
-      syncRightTabs();
     } else if (activeRightPanel === 'cctv') {
-      activeRightPanel = null;
-      syncRightTabs();
+      activeRightPanel = weatherOpen ? 'weather' : null;
     }
+    syncRightTabs();
     document.body.classList.toggle(
       'leeway-cctv-inspecting',
-      open && activeRightPanel === 'cctv',
+      cctvOpen && activeRightPanel === 'cctv',
     );
   }
 
@@ -391,12 +395,16 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     contextInspector.appendChild(weatherPanel);
     weatherPanel.classList.add('collapsed');
     const syncWeatherPanel = () => {
-      const open =
+      const weatherOpen =
         !weatherPanel.hidden && !weatherPanel.classList.contains('collapsed');
-      if (!open && activeRightPanel === 'weather') {
-        activeRightPanel = null;
-        syncRightTabs();
-      }
+      const cctvOpen = Boolean(
+        cctvPanel && !cctvPanel.classList.contains('collapsed'),
+      );
+      if (weatherOpen) activeRightPanel = 'weather';
+      else if (activeRightPanel === 'weather')
+        activeRightPanel = cctvOpen ? 'cctv' : null;
+      contextInspector.classList.toggle('open', weatherOpen || cctvOpen);
+      syncRightTabs();
     };
     weatherObserver = new MutationObserver(syncWeatherPanel);
     weatherObserver.observe(weatherPanel, {
