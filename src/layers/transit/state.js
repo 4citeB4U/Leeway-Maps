@@ -81,6 +81,9 @@ export function createState({ services }) {
   state._feedStatus = new Map();
   /** @type {Map<string, {controller: AbortController, promise: Promise<void>}>} */
   state._inFlight = new Map();
+  state._mapMatchInFlight = new Map();
+  state._mapMatchCompleted = 0;
+  state._mapMatchRejected = 0;
   /** @type {Map<string, object>} vehicle key → runtime entry */
   state._vehicles = new Map();
 
