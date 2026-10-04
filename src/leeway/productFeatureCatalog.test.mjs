@@ -149,3 +149,10 @@ test('direct transit animation can follow exact matching route geometry without 
  assert.match(rendering, /mapped-route-geometry/);
  assert.match(rendering, /sampleRouteTraversal/);
 });
+
+
+test('transit route geometry index is initialized before direct buses consult it', async () => {
+ const network = await readFile(new URL('../layers/transit/network.js', import.meta.url), 'utf8');
+ assert.match(network, /routeGeometryIndex = new Map\(\)/);
+ assert.match(network, /routePathBetween/);
+});
