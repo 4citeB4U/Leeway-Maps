@@ -85,6 +85,13 @@ export function mountExperiencePreferences() {
       refresh();
       language.focus();
     },
+    openAtlas() {
+      root.hidden = false;
+      refresh();
+      const first = root.querySelector('.lw-atlas-grid details');
+      if (first) first.open = true;
+      first?.querySelector('summary')?.focus?.();
+    },
     destroy() {
       audio.pause();
       if (mediaUrl) URL.revokeObjectURL(mediaUrl);
