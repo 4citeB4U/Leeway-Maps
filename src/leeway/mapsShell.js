@@ -29,6 +29,7 @@ import { mountPersonalTransitControls } from './personalTransitControls.js';
 import { mountPersonalStreetView } from './personalStreetView.js';
 import { mountPersonalPlacesOverlay } from './personalPlacesOverlay.js';
 import { mountSpatialMeasurementGate } from './spatialMeasurementGate.js';
+import { mountStaticSpatialObservationGate } from './staticSpatialObservationGate.js';
 
 const PERSONAL_HIDDEN_LAYER_IDS = new Set([
   'military',
@@ -1546,6 +1547,12 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     dataManager,
     placesOverlay,
   });
+  const staticSpatialObservation = mountStaticSpatialObservationGate({
+    shell,
+    dataManager,
+    placesOverlay,
+    viewer,
+  });
   const journeyContinuity = mountJourneyContinuityMonitor({
     viewer,
     dataManager,
@@ -1581,12 +1588,14 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     getDeviceProfile: () => devicePolicyState,
     getRuntimeCapabilities: () => ({ runtimeCapabilities, workloadPlan }),
     getSpatialMeasurement: () => spatialMeasurement,
+    getStaticSpatialObservation: () => staticSpatialObservation,
     openAgent: () => toggleAgent(true),
     closeAgent: () => toggleAgent(false),
     notify: say,
     destroy() {
       journeyContinuity.destroy();
       mapToolsPanel?.destroy();
+      staticSpatialObservation.destroy();
       spatialMeasurement.destroy();
       placesOverlay.destroy();
       streetView.destroy();
