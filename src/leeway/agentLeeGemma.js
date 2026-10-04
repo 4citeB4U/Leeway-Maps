@@ -328,7 +328,10 @@ export function mountAgentLeeGemma(application, shell = null) {
       <p class="lal-note" data-talk-status>Talk is push-to-talk. It requests this browser’s microphone only when pressed, puts the transcript in the text field, and then asks Agent Lee. Recognition availability depends on the browser and its permission.</p>
     </div>
   `;
-  document.body.appendChild(root);
+  const agentSlot =
+    shell?.root?.querySelector?.('[data-agent-slot]') ||
+    document.querySelector?.('#leeway-world-shell [data-agent-slot]');
+  (agentSlot || document.body).appendChild(root);
 
   const setupToggle = root.querySelector('[data-action="setup-toggle"]');
   const setupPanel = root.querySelector('#lal-model-voice-setup');

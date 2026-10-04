@@ -24,6 +24,7 @@ import { featureCatalogForEdition } from './productFeatureCatalog.js';
 import { mountJourneyContinuityMonitor } from './journeyContinuityMonitor.js';
 import { applyMobileRenderPolicy, deviceCapabilityProfile } from './devicePerformanceProfile.js';
 import { buildWorkloadPlan, discoverRuntimeCapabilities } from './runtimeWorkloadBroker.js';
+import { mountPersonalCockpitViewport } from './personalCockpitViewport.js';
 
 const PERSONAL_HIDDEN_LAYER_IDS = new Set([
   'military',
@@ -184,6 +185,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   const styleManager = components.controls?.styleManager;
   const viewer = components.scene?.viewer;
   const dataManager = components.data?.dataManager;
+  const catalog = components.data?.catalog;
   const mapStackController = components.scene?.mapStackController;
   const operations = components.scene?.operations;
   let labeledWorldStackRequested = false;
@@ -249,23 +251,26 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       <div class="lws-search lm-search">
         <span class="lm-search-icon" aria-hidden="true">⌕</span>
         <input aria-label="Search LeeWay Maps" placeholder="Where do you want to go?" />
-        <button type="button" data-dock="locate" class="lm-search-locate" aria-label="Use my location">${mapIcon('locate')}</button>
       </div>
-      <div class="lws-top-actions lm-top-actions">
-        <button class="lm-pill lm-pill-white" data-action="help" type="button">${mapIcon('info')}<span>Help</span></button>
-      </div>
+      <div class="lws-top-actions lm-top-actions" aria-hidden="true"></div>
     </header>
 
     <nav class="lws-rail lm-rail" aria-label="LeeWay Maps navigation">
       <button class="lws-nav active" data-nav="map" type="button">${mapIcon('home')}<span>Home</span></button>
+      <button class="lws-nav" data-dock="locate" type="button">${mapIcon('locate')}<span>My location</span></button>
       <button class="lws-nav" data-nav="transit" type="button">${mapIcon('transit')}<span>Transit</span></button>
       <button class="lws-nav" data-nav="features" type="button">${mapIcon('explore')}<span>Explore</span></button>
+      <button class="lws-nav" data-dock="traffic" type="button">${mapIcon('traffic')}<span>Traffic</span></button>
+      <button class="lws-nav" data-dock="cctv" type="button">${mapIcon('cctv')}<span>Cameras</span></button>
+      <button class="lws-nav" data-dock="weather" type="button">${mapIcon('weather')}<span>Weather</span></button>
+      <button class="lws-nav" data-action="cockpit" type="button">${mapIcon('cockpit')}<span>Cockpit</span></button>
       <div class="lws-spacer"></div>
       <button class="lws-nav lm-rail-more" data-dock="layers" type="button">${mapIcon('more')}<span>More</span></button>
     </nav>
+    <button class="lm-rail-toggle" data-action="toggle-personal-rail" type="button" aria-label="Collapse map controls" aria-expanded="true">‹</button>
 
     <aside class="lws-layer-menu lm-sheet" data-layer-menu>
-      <div class="lws-layer-head"><strong>More</strong><div class="lm-sheet-actions"><button class="lws-chip" data-action="preferences" type="button">Settings</button><button class="lws-chip" data-action="map-tools" type="button">Map display</button><button class="lws-chip" data-action="close-layers" aria-label="Close more menu">×</button></div></div>
+      <div class="lws-layer-head"><strong>More</strong><div class="lm-sheet-actions"><button class="lws-chip" data-action="help" type="button">Help / Atlas</button><button class="lws-chip" data-action="preferences" type="button">Settings</button><button class="lws-chip" data-action="map-tools" type="button">Map display</button><button class="lws-chip" data-action="close-layers" aria-label="Close more menu">×</button></div></div>
       <p class="lm-sheet-help">Turn on only what you want to see. LeeWay keeps live, scheduled and mapped information separate.</p>
       <div data-layer-list></div>
     </aside>
@@ -273,25 +278,20 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     <div data-route-planner></div>
     <button class="lws-live" data-action="connect-world" type="button"><b data-world-led>● CHECK</b><span data-world-status>Connect live world data</span></button>
 
-    <nav class="lws-dock lm-dock" aria-label="Quick map tools">
-      <button class="lws-dock-btn lm-home-action" data-dock="locate" type="button">${mapIcon('locate')}<span>My location</span></button>
-      <button class="lws-dock-btn" data-dock="transit" type="button">${mapIcon('transit')}<span>Transit</span></button>
-      <button class="lws-dock-btn" data-dock="traffic" type="button">${mapIcon('traffic')}<span>Traffic</span></button>
-      <button class="lws-ai lm-agent-mic" data-action="ai" type="button" aria-label="Talk to Agent Lee">${mapIcon('mic')}<strong>Agent Lee</strong></button>
-      <button class="lws-dock-btn" data-dock="weather" type="button">${mapIcon('weather')}<span>Weather</span></button>
-      <button class="lws-dock-btn" data-dock="cctv" type="button">${mapIcon('cctv')}<span>Cameras</span></button>
-      <button class="lws-dock-btn" data-dock="layers" type="button">${mapIcon('more')}<span>More</span></button>
+    <nav class="lws-dock lm-dock lm-agent-dock" aria-label="Agent Lee">
+      <div class="lm-agent-flip" data-agent-flip>
+        <button class="lws-ai lm-agent-mic" data-action="ai" type="button" aria-label="Talk to Agent Lee">${mapIcon('mic')}<strong>Agent Lee</strong></button>
+        <div class="lm-agent-card-slot" data-agent-slot></div>
+      </div>
     </nav>
 
     <div class="lws-location-badge lm-location-card" data-location-badge hidden aria-hidden="true"><strong></strong><span></span></div>
-    <aside class="lws-context-inspector" data-context-inspector></aside>
+    <aside class="lws-context-inspector lm-left-drawer" data-context-inspector></aside>
 
-    <div class="lws-right-tabs lm-context-actions" aria-label="Nearby information">
-      <button class="lws-right-tab" data-action="right-ops" type="button">${mapIcon('journey')}<span>Trip</span></button>
-      <button class="lws-right-tab" data-action="right-cctv" type="button">${mapIcon('cctv')}<span>Cameras</span></button>
-      <button class="lws-right-tab" data-action="right-weather" type="button">${mapIcon('weather')}<span>Weather</span></button>
-      <button class="lws-right-tab" data-action="right-national" type="button">${mapIcon('map')}<span>Coverage</span></button>
-    </div>
+    <section class="lm-cctv-viewport" data-cctv-viewport hidden aria-label="Current CCTV view">
+      <header><span class="lm-live-dot" aria-hidden="true"></span><strong data-cctv-channel>CCTV</strong><button type="button" data-action="hide-cctv-view" aria-label="Hide CCTV view">×</button></header>
+      <div class="lm-cctv-frame-slot" data-cctv-frame-slot></div>
+    </section>
 
     <button class="lws-ui-restore" data-action="restore-ui" type="button">Show controls</button>
     <button class="lws-inspector-toggle" data-action="collapse-inspector" type="button" aria-label="Collapse panel">‹</button>
@@ -315,42 +315,27 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   let toastTimer;
   let activeRightPanel = null;
   let recenteringDistantGlobe = false;
-  const rightOpsTab = shell.querySelector('[data-action="right-ops"]');
-  const rightCctvTab = shell.querySelector('[data-action="right-cctv"]');
-  const rightWeatherTab = shell.querySelector('[data-action="right-weather"]');
-  const rightNationalTab = shell.querySelector(
-    '[data-action="right-national"]',
-  );
+  const cctvViewport = shell.querySelector('[data-cctv-viewport]');
+  const cctvFrameSlot = shell.querySelector('[data-cctv-frame-slot]');
+  const cctvChannel = shell.querySelector('[data-cctv-channel]');
   const weatherPanel = document.getElementById('weather-panel');
+  const weatherOriginalParent = weatherPanel?.parentNode || null;
+  const weatherOriginalNextSibling = weatherPanel?.nextSibling || null;
   let locationCell = '';
   let locationRequestGeneration = 0;
   function syncRightTabs() {
-    document.body.classList.toggle(
-      'leeway-right-ops-open',
-      activeRightPanel === 'ops',
-    );
-    document.body.classList.toggle(
-      'leeway-right-cctv-open',
-      activeRightPanel === 'cctv',
-    );
-    document.body.classList.toggle(
-      'leeway-right-weather-open',
-      activeRightPanel === 'weather',
-    );
-    rightOpsTab?.classList.toggle('active', activeRightPanel === 'ops');
-    rightCctvTab?.classList.toggle('active', activeRightPanel === 'cctv');
-    rightWeatherTab?.classList.toggle('active', activeRightPanel === 'weather');
-    rightNationalTab?.classList.toggle(
-      'active',
-      activeRightPanel === 'national',
-    );
+    document.body.classList.toggle('leeway-right-ops-open', activeRightPanel === 'ops');
+    document.body.classList.toggle('leeway-right-cctv-open', activeRightPanel === 'cctv');
+    document.body.classList.toggle('leeway-right-weather-open', activeRightPanel === 'weather');
   }
 
   function setRightPanel(panel = null, { toggle = true } = {}) {
     const next = toggle && panel === activeRightPanel ? null : panel;
     activeRightPanel = next;
+    contextInspector.classList.toggle('open', Boolean(next));
     if (next === 'cctv') {
       cctvPanel?.classList.remove('collapsed');
+      if (cctvViewport) cctvViewport.hidden = false;
     } else if (cctvPanel && !cctvPanel.classList.contains('collapsed')) {
       cctvPanel.classList.add('collapsed');
     }
@@ -365,27 +350,41 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   }
 
   function syncCctvInspector() {
-    const open = Boolean(
+    const cctvOpen = Boolean(
       cctvPanel && !cctvPanel.classList.contains('collapsed'),
     );
-    contextInspector.classList.toggle('open', open);
-    if (!open) contextInspector.classList.remove('minimized');
-    if (open) {
+    const weatherOpen = Boolean(
+      weatherPanel &&
+        !weatherPanel.hidden &&
+        !weatherPanel.classList.contains('collapsed'),
+    );
+    contextInspector.classList.toggle('open', cctvOpen || weatherOpen);
+    if (!cctvOpen && !weatherOpen) contextInspector.classList.remove('minimized');
+    if (cctvOpen) {
       activeRightPanel = 'cctv';
-      syncRightTabs();
     } else if (activeRightPanel === 'cctv') {
-      activeRightPanel = null;
-      syncRightTabs();
+      activeRightPanel = weatherOpen ? 'weather' : null;
     }
+    syncRightTabs();
     document.body.classList.toggle(
       'leeway-cctv-inspecting',
-      open && activeRightPanel === 'cctv',
+      cctvOpen && activeRightPanel === 'cctv',
     );
   }
 
   if (cctvPanel) {
     contextInspector.appendChild(cctvPanel);
     cctvPanel.classList.add('collapsed');
+    const frameWrap = cctvPanel.querySelector('#cctv-frame-wrap');
+    if (frameWrap && cctvFrameSlot) cctvFrameSlot.appendChild(frameWrap);
+    const updateCctvChannel = () => {
+      const select = document.getElementById('cctv-camera-select');
+      const option = select?.selectedOptions?.[0];
+      const label = option?.textContent?.trim() || document.getElementById('cctv-meta')?.textContent?.trim() || 'CCTV';
+      if (cctvChannel) cctvChannel.textContent = label;
+    };
+    document.getElementById('cctv-camera-select')?.addEventListener('change', updateCctvChannel);
+    cctvViewport?.addEventListener('leeway:cctv-frame-ready', updateCctvChannel);
     cctvObserver = new MutationObserver(syncCctvInspector);
     cctvObserver.observe(cctvPanel, {
       attributes: true,
@@ -394,13 +393,19 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     syncCctvInspector();
   }
   if (weatherPanel) {
+    contextInspector.appendChild(weatherPanel);
+    weatherPanel.classList.add('collapsed');
     const syncWeatherPanel = () => {
-      const open =
+      const weatherOpen =
         !weatherPanel.hidden && !weatherPanel.classList.contains('collapsed');
-      if (!open && activeRightPanel === 'weather') {
-        activeRightPanel = null;
-        syncRightTabs();
-      }
+      const cctvOpen = Boolean(
+        cctvPanel && !cctvPanel.classList.contains('collapsed'),
+      );
+      if (weatherOpen) activeRightPanel = 'weather';
+      else if (activeRightPanel === 'weather')
+        activeRightPanel = cctvOpen ? 'cctv' : null;
+      contextInspector.classList.toggle('open', weatherOpen || cctvOpen);
+      syncRightTabs();
     };
     weatherObserver = new MutationObserver(syncWeatherPanel);
     weatherObserver.observe(weatherPanel, {
@@ -409,6 +414,40 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     });
   }
   const closeRightPanel = () => setRightPanel(null, { toggle: false });
+
+  function makeFloatingPanel(panel) {
+    if (!panel) return () => {};
+    const handle = panel.querySelector('header');
+    if (!handle) return () => {};
+    let drag = null;
+    const move = (event) => {
+      if (!drag) return;
+      const left = Math.max(8, Math.min(globalThis.innerWidth - panel.offsetWidth - 8, drag.left + event.clientX - drag.x));
+      const top = Math.max(86, Math.min(globalThis.innerHeight - panel.offsetHeight - 8, drag.top + event.clientY - drag.y));
+      panel.style.left = left + 'px';
+      panel.style.top = top + 'px';
+      panel.style.right = 'auto';
+      panel.style.bottom = 'auto';
+    };
+    const up = () => {
+      drag = null;
+      globalThis.removeEventListener('pointermove', move);
+      globalThis.removeEventListener('pointerup', up);
+    };
+    const down = (event) => {
+      if (event.target.closest('button,input,select,a')) return;
+      const rect = panel.getBoundingClientRect();
+      drag = { x: event.clientX, y: event.clientY, left: rect.left, top: rect.top };
+      globalThis.addEventListener('pointermove', move);
+      globalThis.addEventListener('pointerup', up, { once: true });
+    };
+    handle.addEventListener('pointerdown', down);
+    return () => {
+      handle.removeEventListener('pointerdown', down);
+      up();
+    };
+  }
+  const stopCctvViewportDrag = makeFloatingPanel(cctvViewport);
   document.addEventListener('leeway:right-panel-close', closeRightPanel);
   let cctvRecoveryTimer = null;
   let cctvRecoveryCount = 0;
@@ -446,11 +485,14 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   const confirmWorkingCctv = () => {
     cctvRecoveryCount = 0;
   };
-  cctvPanel?.addEventListener(
+  cctvViewport?.addEventListener(
     'leeway:cctv-frame-unavailable',
     recoverFailedCctv,
   );
-  cctvPanel?.addEventListener('leeway:cctv-frame-ready', confirmWorkingCctv);
+  cctvViewport?.addEventListener(
+    'leeway:cctv-frame-ready',
+    confirmWorkingCctv,
+  );
 
   function renderLayerMenu() {
     const rows = (dataManager?.getAll?.() || [])
@@ -695,9 +737,9 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
         return true;
       }
       if (actionName === 'cockpit') {
-        const result = await mapViewControls.actions.cockpit();
-        if (!result.ok) say(result.error);
-        return result.ok;
+        const result = personalCockpit.open();
+        if (!result?.ok) say(result?.error || 'Cockpit unavailable');
+        return Boolean(result?.ok);
       }
       toggleLayerMenu(true);
       return true;
@@ -984,6 +1026,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     if (!panel) return;
     const next = open == null ? !panel.classList.contains('leeway-open') : open;
     panel.classList.toggle('leeway-open', next);
+    shell.querySelector('[data-agent-flip]')?.classList.toggle('open', next);
     panel.dispatchEvent(
       new CustomEvent(next ? 'leeway:agent-open' : 'leeway:agent-close'),
     );
@@ -1081,7 +1124,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
         return;
       }
       if (id === 'transit') {
-        await toggleLayer('transit');
+        await enableTransitSuite();
         return;
       }
       if (id === 'features') {
@@ -1100,6 +1143,11 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
 
     if (action === 'ai') {
       toggleAgent();
+      return;
+    }
+    if (action === 'cockpit') {
+      const result = personalCockpit.open();
+      if (!result?.ok) say(result?.error || 'Cockpit unavailable');
       return;
     }
     if (action === 'help') {
@@ -1224,8 +1272,22 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       toggleLayerMenu(false);
       return;
     }
+    if (action === 'hide-cctv-view') {
+      if (cctvViewport) cctvViewport.hidden = true;
+      return;
+    }
     if (action === 'collapse') {
       shell.querySelector('.lws-rail').classList.toggle('compact');
+      return;
+    }
+    if (action === 'toggle-personal-rail') {
+      const hidden = document.body.classList.toggle('leeway-personal-rail-hidden');
+      const button = shell.querySelector('[data-action="toggle-personal-rail"]');
+      if (button) {
+        button.textContent = hidden ? '›' : '‹';
+        button.setAttribute('aria-expanded', String(!hidden));
+        button.setAttribute('aria-label', hidden ? 'Show map controls' : 'Collapse map controls');
+      }
       return;
     }
 
@@ -1247,8 +1309,11 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
         durationSec: 1.4,
       });
       if (opened.ok) {
+        if (cctvViewport) cctvViewport.hidden = false;
+        if (cctvChannel)
+          cctvChannel.textContent = opened.camera?.name || opened.cameraId || 'CCTV';
         say(
-          `CCTV · ${opened.camera?.name || opened.cameraId} · ${opened.camera?.provider || 'official provider'}`,
+          `CCTV channel · ${opened.camera?.name || opened.cameraId} · ${opened.camera?.provider || 'official provider'}`,
         );
       } else {
         say(`CCTV unavailable in this view · ${opened.reason}`);
@@ -1270,10 +1335,13 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     }
     if (dock === 'weather') {
       openWeather();
+      await mapReports.refresh();
+      const summary = mapReports.getSummary?.();
+      if (summary?.weather) say(summary.weather);
       return;
     }
     if (dock === 'transit') {
-      await toggleLayer('transit');
+      await enableTransitSuite();
       return;
     }
     if (dock === 'three') {
@@ -1392,7 +1460,13 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   ]);
   const devicePolicyState = applyMobileRenderPolicy({ viewer, dataManager, profile: deviceProfile });
   document.body.dataset.leewayDevicePolicy = devicePolicyState.policy.id;
-  const mapViewControls = mountMapViewControls({ application, shell });
+  const mapViewControls = mountMapViewControls({ application, shell, addLauncher: false });
+  const personalCockpit = mountPersonalCockpitViewport({
+    shell,
+    styleManager,
+    catalog,
+    notify: say,
+  });
   const journeyContinuity = mountJourneyContinuityMonitor({
     viewer,
     dataManager,
@@ -1439,16 +1513,17 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     destroy() {
       journeyContinuity.destroy();
       mapToolsPanel?.destroy();
+      personalCockpit.destroy();
       mapViewControls.destroy();
       cctvObserver?.disconnect();
       weatherObserver?.disconnect();
       document.removeEventListener('leeway:right-panel-close', closeRightPanel);
       clearTimeout(cctvRecoveryTimer);
-      cctvPanel?.removeEventListener(
+      cctvViewport?.removeEventListener(
         'leeway:cctv-frame-unavailable',
         recoverFailedCctv,
       );
-      cctvPanel?.removeEventListener(
+      cctvViewport?.removeEventListener(
         'leeway:cctv-frame-ready',
         confirmWorkingCctv,
       );
@@ -1456,8 +1531,11 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       weatherObserver = null;
       removeWorldCentering?.();
       removeLocationBadgeListener?.();
+      stopCctvViewportDrag?.();
       globalThis.removeEventListener?.('resize', onViewportResize);
       if (cctvPanel && cctvOriginalParent) {
+        const frameWrap = cctvFrameSlot?.querySelector?.('#cctv-frame-wrap');
+        if (frameWrap) cctvPanel.querySelector('.cyber-panel-body')?.prepend(frameWrap);
         if (
           cctvOriginalNextSibling &&
           cctvOriginalNextSibling.parentNode === cctvOriginalParent
@@ -1465,6 +1543,16 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
           cctvOriginalParent.insertBefore(cctvPanel, cctvOriginalNextSibling);
         } else {
           cctvOriginalParent.appendChild(cctvPanel);
+        }
+      }
+      if (weatherPanel && weatherOriginalParent) {
+        if (
+          weatherOriginalNextSibling &&
+          weatherOriginalNextSibling.parentNode === weatherOriginalParent
+        ) {
+          weatherOriginalParent.insertBefore(weatherPanel, weatherOriginalNextSibling);
+        } else {
+          weatherOriginalParent.appendChild(weatherPanel);
         }
       }
       document.body.classList.remove(

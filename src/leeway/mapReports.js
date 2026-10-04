@@ -62,7 +62,12 @@ export function mountMapReports({
   traffic.addEventListener('click', onTraffic);
   track.append(weather, traffic);bar.append(track);shell.append(bar);
   let request, cell = '', updated = 0, destroyed = false;
-  function renderTraffic() { traffic.textContent = trafficReport(dataManager?.getAll?.() || [], getPoint()); }
+  let currentWeather = 'Weather unavailable';
+  let currentTraffic = 'Traffic · Waiting for your location';
+  function renderTraffic() {
+    currentTraffic = trafficReport(dataManager?.getAll?.() || [], getPoint());
+    traffic.textContent = currentTraffic;
+  }
   async function refresh() {
     renderTraffic();
     const point = getPoint();
@@ -80,10 +85,14 @@ export function mountMapReports({
       const place = getLocationLabel();
       const scope =
         point.accuracy > 10000 ? `${place} area` : place;
-      weather.textContent = `${scope} · ${weatherReport(payload)}`;
+      currentWeather = `${scope} · ${weatherReport(payload)}`;
+      weather.textContent = currentWeather;
       weather.title = `Your current location ${key}. Open-Meteo · observation ${payload.weather?.observedAt || 'unknown'}. Click for weather details.`;
     } catch {
-      if (!destroyed && request === controller) weather.textContent = 'Weather unavailable · Open details';
+      if (!destroyed && request === controller) {
+        currentWeather = 'Weather unavailable · Open details';
+        weather.textContent = currentWeather;
+      }
     }
   }
   // Reports follow the device location, not wherever the user pans the map.
@@ -92,6 +101,9 @@ export function mountMapReports({
   void refresh();
   return {
     refresh,
+    getSummary() {
+      return { weather: currentWeather, traffic: currentTraffic };
+    },
     destroy() {
       destroyed = true;
       request?.abort();
