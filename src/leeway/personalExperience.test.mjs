@@ -22,11 +22,18 @@ test('Personal Maps pins the green yellow red white consumer palette', () => {
   assert.match(theme, /background:rgba\(255,255,255/);
 });
 
-test('Personal Maps presents everyday navigation before specialist controls', () => {
-  const dock = shell.indexOf('aria-label="Quick map tools"');
-  assert.ok(dock > 0);
-  const section = shell.slice(dock, dock + 3500);
-  for (const label of ['My location', 'Directions', 'Transit', 'Traffic', 'Weather', 'Cameras', 'Help', 'More'])
-    assert.match(section, new RegExp('>' + label + '<'));
-  assert.doesNotMatch(section, />Military</);
+test('Personal Maps uses one left operations rail and one center Agent Lee control', () => {
+  const rail = shell.indexOf('aria-label="LeeWay Maps navigation"');
+  const dock = shell.indexOf('aria-label="Agent Lee"');
+  assert.ok(rail > 0);
+  assert.ok(dock > rail);
+  const railSection = shell.slice(rail, dock);
+  for (const label of ['Home', 'Transit', 'Explore', 'Traffic', 'Cameras', 'Weather', 'Cockpit', 'More'])
+    assert.match(railSection, new RegExp('>' + label + '<'));
+  const dockSection = shell.slice(dock, dock + 1000);
+  assert.match(dockSection, /lm-agent-mic/);
+  assert.match(dockSection, />Agent Lee</);
+  assert.doesNotMatch(dockSection, />Transit<|>Traffic<|>Weather<|>Cameras<|>More</);
+  assert.doesNotMatch(shell, /class="lws-right-tabs/);
+  assert.doesNotMatch(railSection, />Military</);
 });
