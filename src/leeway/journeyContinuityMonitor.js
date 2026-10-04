@@ -17,8 +17,10 @@ import {
   formatConnectionAssessment,
 } from './journeyContinuityCore.js';
 import {
+  bindLiveEvidenceToPlannedLeg,
   connectionChange,
   connectionEvidenceReady,
+  normalizeJourneyReference,
   routePlannerLeg,
   upsertJourneyLeg,
 } from './journeyItineraryCore.js';
@@ -112,6 +114,17 @@ export function mountJourneyContinuityMonitor({
       <button type="button" data-clear>Clear</button>
       <label class="lj-auto"><input type="checkbox" data-auto checked> Auto-bind selected trip subjects</label>
     </div>
+    <details class="lj-plan"><summary>Add a scheduled trip leg</summary>
+      <form data-plan-form class="lj-plan-form">
+        <label>Mode<select name="kind"><option value="transit">Bus / transit</option><option value="rail">Rail</option><option value="flight">Flight</option><option value="ferry">Ferry / vessel</option></select></label>
+        <label>Service / flight / route ID<input name="reference" required placeholder="Example: DAL1234 or MCTS80"></label>
+        <label class="wide">Label<input name="label" placeholder="Example: Delta 1234 to Chicago"></label>
+        <label>Scheduled departure<input name="departure" type="datetime-local"></label>
+        <label>Scheduled arrival<input name="arrival" type="datetime-local"></label>
+        <button type="submit">Add planned leg</button>
+      </form>
+      <p class="lj-note">Exact service identity is used for automatic live binding. A live subject never overwrites a different planned service.</p>
+    </details>
     <div data-status class="lj-status">Select a transit vehicle/stop or aircraft, then add it to the journey.</div>
     <ol data-legs class="lj-legs"></ol>
     <div data-connection class="lj-connection">Add at least two timed legs to evaluate a connection.</div>
@@ -121,7 +134,7 @@ export function mountJourneyContinuityMonitor({
   const style = documentRef.createElement('style');
   style.textContent = `
     .lw-journey-watch{position:fixed;z-index:11020;right:18px;top:84px;width:min(520px,calc(100vw - 36px));max-height:calc(100dvh - 170px);overflow:auto;padding:16px;border:1px solid rgba(77,223,239,.4);border-radius:18px;background:rgba(3,15,24,.97);color:#effcff;box-shadow:0 24px 70px #0009;font:14px/1.45 Inter,system-ui,sans-serif}
-    .lw-journey-watch[hidden]{display:none}.lw-journey-watch header{display:flex;justify-content:space-between;gap:12px;align-items:center}.lw-journey-watch header small{color:#72efff;letter-spacing:.13em}.lw-journey-watch h2{margin:2px 0;font-size:24px}.lw-journey-watch button{border:1px solid rgba(89,220,238,.35);border-radius:9px;background:#0b2935;color:#effcff;padding:8px 10px;cursor:pointer}.lj-actions{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}.lj-auto{display:flex;align-items:center;gap:7px;width:100%;font-size:12px;color:#c9dce2}.lj-note{color:#b8d2d9}.lj-status,.lj-connection{padding:10px;border-radius:10px;background:rgba(255,255,255,.04);margin:10px 0}.lj-legs{display:grid;gap:8px;padding-left:22px}.lj-leg{padding:10px;border:1px solid rgba(255,255,255,.09);border-radius:11px;background:#081c27}.lj-leg strong{display:block}.lj-leg small{display:block;color:#a9c4cc}.lj-truth{font-size:10px;font-weight:800;letter-spacing:.06em}.lj-truth.LIVE,.lj-truth.PREDICTED{color:#62f1aa}.lj-truth.SCHEDULED{color:#7eeaff}.lj-truth.UNAVAILABLE,.lj-truth.STALE{color:#ffcb6b}
+    .lw-journey-watch[hidden]{display:none}.lw-journey-watch header{display:flex;justify-content:space-between;gap:12px;align-items:center}.lw-journey-watch header small{color:#72efff;letter-spacing:.13em}.lw-journey-watch h2{margin:2px 0;font-size:24px}.lw-journey-watch button{border:1px solid rgba(89,220,238,.35);border-radius:9px;background:#0b2935;color:#effcff;padding:8px 10px;cursor:pointer}.lj-actions{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}.lj-plan{margin:10px 0;border:1px solid rgba(255,255,255,.09);border-radius:11px;padding:9px}.lj-plan summary{cursor:pointer;font-weight:800}.lj-plan-form{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.lj-plan-form label{display:grid;gap:4px;font-size:11px;color:#c9dce2}.lj-plan-form .wide,.lj-plan-form button{grid-column:1/-1}.lj-plan-form input,.lj-plan-form select{min-width:0;border:1px solid rgba(89,220,238,.25);border-radius:8px;background:#071b25;color:#effcff;padding:8px;font:inherit}.lj-auto{display:flex;align-items:center;gap:7px;width:100%;font-size:12px;color:#c9dce2}.lj-note{color:#b8d2d9}.lj-status,.lj-connection{padding:10px;border-radius:10px;background:rgba(255,255,255,.04);margin:10px 0}.lj-legs{display:grid;gap:8px;padding-left:22px}.lj-leg{padding:10px;border:1px solid rgba(255,255,255,.09);border-radius:11px;background:#081c27}.lj-leg strong{display:block}.lj-leg small{display:block;color:#a9c4cc}.lj-truth{font-size:10px;font-weight:800;letter-spacing:.06em}.lj-truth.LIVE,.lj-truth.PREDICTED{color:#62f1aa}.lj-truth.SCHEDULED{color:#7eeaff}.lj-truth.UNAVAILABLE,.lj-truth.STALE{color:#ffcb6b}
     body[data-leeway-edition="personal"] .lw-journey-watch{border-color:#d0a329;background:linear-gradient(145deg,#2a2a0e,#0a2416 62%,#2a1014);font-size:16px}body[data-leeway-edition="personal"] .lw-journey-watch header small,body[data-leeway-edition="personal"] .lw-journey-watch .lj-truth.SCHEDULED{color:#ffe36f}body[data-leeway-edition="personal"] .lw-journey-watch button{font-size:15px;border-color:#87b94d;background:#183521}
   `;
   documentRef.head.append(style);
@@ -134,7 +147,9 @@ export function mountJourneyContinuityMonitor({
 
   function bindLeg(leg, options = {}) {
     if (!leg?.key) return false;
-    legs = upsertJourneyLeg(legs, leg, options);
+    legs = options.matchPlanned
+      ? bindLiveEvidenceToPlannedLeg(legs, leg)
+      : upsertJourneyLeg(legs, leg, options);
     render();
     return true;
   }
@@ -148,18 +163,21 @@ export function mountJourneyContinuityMonitor({
     const kind = transitKind(entity?.id);
     if (!kind) return;
     const departure = firstDeparture(entity);
+    const record = entity?._leewayTransitRecord || {};
     currentTransit = {
       key: String(entity.id),
       layerId: 'transit-' + kind,
       kind,
       label: entity.name || String(entity.id),
+      reference: record.route || record.trip || record.label || String(entity.id),
+      aliases: [record.route, record.trip, record.label, record.id, entity.name].filter(Boolean),
       point: pointFromEntity(entity),
       arrivalMs: null,
       departureMs: departure?.departureMs || null,
       truth: departure?.truth || (kind === 'vehicles' ? 'LIVE' : 'MAPPED'),
       entity,
     };
-    if (autoBind()) bindLeg(currentTransit);
+    if (autoBind()) bindLeg(currentTransit, { matchPlanned: true });
     else render();
   }
 
@@ -172,6 +190,8 @@ export function mountJourneyContinuityMonitor({
       layerId: 'flights',
       kind: 'flight',
       label: info.callsign || info.registration || info.icao24 || 'Selected aircraft',
+      reference: info.callsign || info.registration || info.icao24 || null,
+      aliases: [info.callsign, info.registration, info.icao24].filter(Boolean),
       point:
         Number.isFinite(info.latitude) && Number.isFinite(info.longitude)
           ? { lat: info.latitude, lon: info.longitude }
@@ -188,7 +208,7 @@ export function mountJourneyContinuityMonitor({
           : 'UNAVAILABLE',
       scheduleRetrievedAt: parseTime(schedule.retrievedAt),
     };
-    if (autoBind()) bindLeg(currentFlight);
+    if (autoBind()) bindLeg(currentFlight, { matchPlanned: true });
     else render();
   }
 
@@ -316,7 +336,36 @@ export function mountJourneyContinuityMonitor({
     if (result?.ok === false) notify(result.error || 'Cockpit unavailable');
   };
   root.querySelector('[data-cctv]').onclick = () => void showNearbyCctv();
-  root.querySelector('[data-clear]').onclick = () => { legs = []; render(); };
+  root.querySelector('[data-clear]').onclick = () => { legs = []; previousConnection = null; render(); };
+  root.querySelector('[data-plan-form]').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const values = Object.fromEntries(new FormData(form).entries());
+    const reference = normalizeJourneyReference(values.reference);
+    if (!reference) {
+      notify('Enter a service, route, train, or flight identity');
+      return;
+    }
+    const departureMs = values.departure ? Date.parse(values.departure) : null;
+    const arrivalMs = values.arrival ? Date.parse(values.arrival) : null;
+    const kind = String(values.kind || 'transit');
+    const leg = {
+      key: 'planned:' + kind + ':' + reference,
+      kind,
+      layerId: 'planned',
+      reference,
+      aliases: [reference],
+      label: String(values.label || values.reference || reference),
+      departureMs: Number.isFinite(departureMs) ? departureMs : null,
+      arrivalMs: Number.isFinite(arrivalMs) ? arrivalMs : null,
+      plannedDepartureMs: Number.isFinite(departureMs) ? departureMs : null,
+      plannedArrivalMs: Number.isFinite(arrivalMs) ? arrivalMs : null,
+      truth: 'SCHEDULED',
+    };
+    bindLeg(leg);
+    form.reset();
+    notify('Scheduled ' + kind + ' leg added. Live evidence will bind only on exact service identity.');
+  });
 
   const timer = setInterval(() => {
     if (!root.hidden) {
