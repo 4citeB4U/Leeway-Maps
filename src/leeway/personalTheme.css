@@ -677,3 +677,187 @@ body[data-leeway-edition="personal"] #leeway-world-shell .lm-profile span{
   border:2px solid #fff!important;
   box-shadow:0 0 0 2px var(--lm-yellow)!important
 }
+
+
+/* Personal Maps cleanup — keep the map canvas dominant. */
+body[data-leeway-edition="personal"] #leeway-world-shell {
+  --lm-border:#9aa99d;
+  --lm-border-strong:#66766a;
+  --lm-text:#1f2d24;
+  --lm-muted:#526158;
+  --lm-glass:rgba(255,255,255,.84);
+  --lm-glass-strong:rgba(255,255,255,.93);
+}
+
+/* Restore the approved supplied LeeWay emblem; do not replace it with a generated mark. */
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-brand-mark{
+  width:52px!important;height:52px!important;flex-basis:52px!important;
+  border:1.5px solid #9eb3a3!important;border-radius:50%!important;
+  background:rgba(255,255,255,.92)!important;padding:2px!important;overflow:hidden!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-brand-logo{
+  width:100%!important;height:100%!important;display:block!important;border-radius:50%!important;
+  object-fit:cover!important;object-position:center!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-brand-svg{display:none!important}
+
+/* Header is one search surface, not repeated Search / Directions / Explore / Agent controls. */
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-top{
+  height:78px!important;
+  grid-template-columns:minmax(230px,340px) minmax(280px,1fr) auto!important;
+  background:rgba(255,255,255,.90)!important;
+  border-left:1px solid rgba(255,255,255,.72)!important;
+  border-right:1px solid rgba(255,255,255,.72)!important;
+  backdrop-filter:blur(18px) saturate(1.1)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-top-actions{
+  display:flex!important;width:auto!important;min-width:0!important;justify-content:flex-end!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-pill{
+  border:1.5px solid var(--lm-border)!important;
+  background:rgba(255,255,255,.88)!important;
+  color:var(--lm-text)!important;
+  box-shadow:0 3px 10px rgba(17,48,29,.11)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-search input{
+  border:1.5px solid var(--lm-border-strong)!important;
+  background:rgba(255,255,255,.82)!important;color:var(--lm-text)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-search input::placeholder{color:#59675e!important;opacity:1!important}
+
+/* Keep left navigation readable but visually light. */
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail{
+  width:82px!important;top:92px!important;bottom:86px!important;
+  background:rgba(255,255,255,.82)!important;border:1.5px solid var(--lm-border)!important;
+  backdrop-filter:blur(15px)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail .lws-nav{
+  min-height:58px!important;color:#37463c!important;font-size:12px!important;
+  border:1px solid transparent!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail .lws-nav:hover{
+  border-color:#aebbb1!important;background:rgba(255,255,255,.72)!important;
+}
+
+/* Dedicated location card is intentionally hidden; location/weather/traffic live in the ticker. */
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-location-card{display:none!important}
+
+/* Slim seven-control glass dock with Agent Lee permanently in the middle. */
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-dock{
+  bottom:10px!important;width:min(760px,calc(100vw - 112px))!important;max-width:760px!important;
+  min-height:62px!important;grid-template-columns:repeat(7,minmax(64px,1fr))!important;
+  gap:5px!important;padding:5px!important;border-radius:20px!important;
+  border:1.5px solid var(--lm-border-strong)!important;
+  background:rgba(255,255,255,.78)!important;backdrop-filter:blur(18px) saturate(1.12)!important;
+  box-shadow:0 8px 28px rgba(10,31,18,.18)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-dock .lws-dock-btn{
+  min-height:50px!important;border:1.5px solid #8e9d92!important;border-radius:14px!important;
+  background:rgba(255,255,255,.72)!important;color:#28362d!important;
+  box-shadow:0 2px 7px rgba(13,38,22,.10)!important;font-size:11px!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-dock .lws-dock-btn:hover{
+  border-color:#53675a!important;background:rgba(255,255,255,.93)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-agent-mic{
+  width:auto!important;min-width:0!important;height:66px!important;min-height:66px!important;
+  margin:-9px 1px!important;border-radius:50%!important;
+  border:3px solid #ffffff!important;outline:2px solid var(--lm-green-deep)!important;
+  background:radial-gradient(circle at 35% 28%,#40d684,#118f52 62%,#075d36)!important;
+  box-shadow:0 7px 18px rgba(6,92,49,.30)!important;color:#fff!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-agent-mic .lw-icon{
+  width:28px!important;height:28px!important;color:#fff!important;filter:none!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-agent-mic strong{
+  color:#fff!important;font-size:10px!important;font-weight:850!important;
+}
+
+/* More sheet and controls use stronger boundaries and readable copy. */
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-sheet{
+  background:rgba(255,255,255,.90)!important;border:1.5px solid var(--lm-border-strong)!important;
+  backdrop-filter:blur(18px)!important;color:var(--lm-text)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-sheet-actions{display:flex!important;gap:6px!important;align-items:center!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-sheet .lws-chip{
+  min-height:36px!important;padding:6px 9px!important;border:1.5px solid #839387!important;
+  background:rgba(255,255,255,.82)!important;color:#26352b!important;font-size:12px!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-sheet-help,
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-layer-id{
+  color:#526158!important;opacity:1!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-layer-row{
+  border:1px solid transparent!important;color:#27352c!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-layer-row:hover{border-color:#b0bcb2!important}
+
+/* Settings / Help stays translucent, high contrast, and never auto-opens. */
+body[data-leeway-edition="personal"] .lw-preferences{
+  background:rgba(255,255,255,.90)!important;border:1.5px solid #69786d!important;
+  backdrop-filter:blur(20px)!important;color:#243229!important;
+}
+body[data-leeway-edition="personal"] .lw-preferences :is(p,label,span){color:#435249!important;opacity:1!important}
+body[data-leeway-edition="personal"] .lw-preferences select,
+body[data-leeway-edition="personal"] .lw-preferences input,
+body[data-leeway-edition="personal"] .lw-preferences button{
+  border:1.5px solid #87968b!important;color:#26352b!important;background:rgba(255,255,255,.82)!important;
+}
+
+/* Weather + traffic ticker is the one compact location status surface. */
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-report-banner{
+  top:78px!important;left:92px!important;right:12px!important;min-height:34px!important;height:34px!important;
+  padding:0 10px!important;border:1px solid rgba(91,109,96,.50)!important;border-radius:0 0 12px 12px!important;
+  background:rgba(18,36,27,.84)!important;color:#f4fff7!important;backdrop-filter:blur(12px)!important;
+  box-shadow:0 4px 12px rgba(0,0,0,.14)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-report-banner button{
+  color:#f4fff7!important;font-size:13px!important;font-weight:700!important;opacity:1!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-report-track{gap:34px!important}
+
+/* Right context cards are glass, not opaque walls. */
+body[data-leeway-edition="personal"].leeway-enterprise-shell
+:is(#leeway-transit-world,#right-context-rail,.lws-context-inspector .cctv-panel-inner,#weather-panel,.lnc-root){
+  background:rgba(255,255,255,.88)!important;border:1.5px solid #75867a!important;
+  backdrop-filter:blur(18px)!important;
+}
+body[data-leeway-edition="personal"].leeway-enterprise-shell
+:is(#leeway-transit-world,#right-context-rail,#weather-panel,.lnc-root)
+:is(p,span,label,.rail-card-line,.rail-card-compact,.lnc-source){
+  color:#45544a!important;opacity:1!important;
+}
+
+/* Phone: reserve the center for the map and keep the dock thin. */
+@media (max-width:820px){
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-top{
+    height:116px!important;grid-template-columns:1fr auto!important;grid-template-rows:48px 54px!important;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-brand-mark{
+    width:40px!important;height:40px!important;flex-basis:40px!important;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-top-actions .lm-pill{
+    min-width:46px!important;padding:6px 9px!important;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lws-report-banner{
+    top:116px!important;left:6px!important;right:6px!important;height:32px!important;min-height:32px!important;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-dock{
+    width:calc(100vw - 10px)!important;grid-template-columns:repeat(7,minmax(48px,1fr))!important;
+    min-height:58px!important;padding:4px!important;gap:3px!important;overflow:visible!important;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-dock .lws-dock-btn{
+    min-width:0!important;min-height:48px!important;font-size:10px!important;padding:4px 2px!important;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-dock .lws-dock-btn .lw-icon{
+    width:20px!important;height:20px!important;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-agent-mic{
+    height:60px!important;min-height:60px!important;margin:-7px 0!important;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-context-actions{top:156px!important}
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-sheet,
+  body[data-leeway-edition="personal"] #leeway-world-shell .lw-route-planner{
+    top:154px!important;max-height:calc(100dvh - 230px)!important;
+  }
+}
