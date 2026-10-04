@@ -22,3 +22,8 @@ No browser chooses an upstream URL. /api/transit/map-match accepts only bounded 
 Run the app with Valhalla and Places configured, then capture a real 16x6 window with scripts/qa-spatial-formula-capture.mjs.
 
 Headless software GL is useful for regression only. Formula calibration requires real-device traces with provenance.
+
+
+## Live calibration checkpoint
+
+Use `?spatialMeasure=1` only for explicit measurement runs. Personal Places uses the configured commercial provider when available and a bounded OpenStreetMap/Overpass fallback otherwise, so rendered-label calibration remains source-backed. Transit calibration preserves raw GTFS-RT GPS and records route-constrained deviation separately. UI controls must pass the live-device button matrix before a trace is admitted to Formula calibration.
