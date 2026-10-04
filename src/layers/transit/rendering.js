@@ -22,6 +22,7 @@ import {
 import {
   buildRouteTraversal,
   sampleRouteTraversal,
+  slicePathBetween,
 } from './routeConstraint.js';
 import {
   MARKER_PIXEL_SIZE,
@@ -80,17 +81,29 @@ export function createRendering({ state, services, parts }) {
       '';
     const routeLayer =
       state._dataManager?.layers?.get?.('transit-routes')?.module;
-    const routePath = routeLayer?.routePathBetween?.(
-      routeRef,
-      { lat: entry.from.lat, lon: entry.from.lon },
-      { lat: entry.to.lat, lon: entry.to.lon },
-      90,
-    );
-    entry.routeTraversal = buildRouteTraversal(routePath);
-    entry.routeConstraint =
-      entry.routeTraversal
-        ? { routeRef, source: 'mapped-route-geometry' }
-        : null;
+    const fromPoint = { lat: entry.from.lat, lon: entry.from.lon };
+    const toPoint = { lat: entry.to.lat, lon: entry.to.lon };
+    const matchedPath = Array.isArray(entry.mapMatchGeometry)
+      ? slicePathBetween(entry.mapMatchGeometry, fromPoint, toPoint, 100)
+      : null;
+    const routePath = matchedPath
+      ? null
+      : routeLayer?.routePathBetween?.(routeRef, fromPoint, toPoint, 90);
+    entry.routeTraversal = buildRouteTraversal(matchedPath || routePath);
+    entry.routeConstraint = entry.routeTraversal
+      ? {
+          routeRef,
+          source: matchedPath
+            ? 'valhalla-meili-map-match'
+            : 'mapped-route-geometry',
+          meanDeviationM: matchedPath
+            ? entry.mapMatchMeanDeviationM ?? null
+            : null,
+          maxDeviationM: matchedPath
+            ? entry.mapMatchMaxDeviationM ?? null
+            : null,
+        }
+      : null;
     entry.fromCart = cartesianFor(
       entry.from.lat,
       entry.from.lon,
