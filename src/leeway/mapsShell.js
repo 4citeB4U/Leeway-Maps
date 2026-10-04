@@ -312,6 +312,9 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   const cctvOriginalNextSibling = cctvPanel?.nextSibling || null;
   let cctvObserver = null;
   let weatherObserver = null;
+  let transitFallbackTimer = null;
+  let cctvViewportArmed = false;
+  let personalCctvPerfInitialized = false;
   let toastTimer;
   let activeRightPanel = null;
   let recenteringDistantGlobe = false;
@@ -380,8 +383,12 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     const updateCctvChannel = () => {
       const select = document.getElementById('cctv-camera-select');
       const option = select?.selectedOptions?.[0];
-      const label = option?.textContent?.trim() || document.getElementById('cctv-meta')?.textContent?.trim() || 'CCTV';
+      const label =
+        option?.textContent?.trim() ||
+        document.getElementById('cctv-meta')?.textContent?.trim() ||
+        'CCTV';
       if (cctvChannel) cctvChannel.textContent = label;
+      if (cctvViewportArmed && cctvViewport) cctvViewport.hidden = false;
     };
     document.getElementById('cctv-camera-select')?.addEventListener('change', updateCctvChannel);
     cctvViewport?.addEventListener('leeway:cctv-frame-ready', updateCctvChannel);
@@ -646,13 +653,42 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     },
   });
 
+  function applyPersonalCctvPerformanceDefaults() {
+    if (personalCctvPerfInitialized) return;
+    const cctv = dataManager?.layers?.get('cctv')?.module;
+    cctv?.setParams?.(
+      {
+        coverageMode: 'off',
+        showProjection: false,
+        autoHop: false,
+      },
+      { origin: 'personal-performance-default' },
+    );
+    personalCctvPerfInitialized = true;
+  }
+
+  async function openPersonalCctvControls() {
+    cctvViewportArmed = true;
+    if (cctvViewport) cctvViewport.hidden = false;
+    if (
+      dataManager?.layers?.has('cctv') &&
+      !dataManager.isEnabled?.('cctv')
+    ) {
+      await dataManager.setEnabled('cctv', true, { origin: 'user' });
+    }
+    applyPersonalCctvPerformanceDefaults();
+    setRightPanel('cctv', { toggle: false });
+    return openNearestCctv(dataManager, {
+      origin: 'user',
+      durationSec: 1.4,
+    });
+  }
+
   async function enableTransitSuite() {
-    const requested = [
-      'transit',
-      'transit-routes',
-      'transit-stops',
-      'transit-vehicles',
-    ];
+    // Start with the direct operator feed plus mapped/published routes and stops.
+    // The generic regional-vehicle discovery layer is only a fallback; enabling
+    // both at once duplicates vehicles and burns network/render budget.
+    const requested = ['transit', 'transit-routes', 'transit-stops'];
     const results = [];
     for (const id of requested) {
       if (!dataManager?.layers?.has(id)) continue;
@@ -662,9 +698,21 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
         results.push(id);
       } catch {}
     }
+    clearTimeout(transitFallbackTimer);
+    transitFallbackTimer = setTimeout(async () => {
+      const direct = dataManager?.layers?.get('transit')?.module?.getStats?.();
+      if (Number(direct?.count || 0) > 0) return;
+      if (!dataManager?.layers?.has('transit-vehicles')) return;
+      try {
+        if (!dataManager.isEnabled?.('transit-vehicles'))
+          await dataManager.setEnabled('transit-vehicles', true, {
+            origin: 'transit-fallback',
+          });
+      } catch {}
+    }, 4500);
     say(
       results.length
-        ? `Public transit layers enabled · ${results.join(', ')}`
+        ? 'Transit map on · routes, stops and available live vehicles'
         : 'Transit layers are unavailable in this build',
     );
     return results.length > 0;
@@ -720,11 +768,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
         return enableTransitSuite();
       }
       if (actionName === 'cctv') {
-        setRightPanel('cctv', { toggle: false });
-        const opened = await openNearestCctv(dataManager, {
-          origin: 'user',
-          durationSec: 1.4,
-        });
+        const opened = await openPersonalCctvControls();
         say(
           opened.ok
             ? `CCTV · ${opened.camera?.name || opened.cameraId}`
@@ -1273,6 +1317,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       return;
     }
     if (action === 'hide-cctv-view') {
+      cctvViewportArmed = false;
       if (cctvViewport) cctvViewport.hidden = true;
       return;
     }
@@ -1302,12 +1347,8 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     }
     if (dock === 'cctv') {
       nationalCatalog.close();
-      setRightPanel('cctv', { toggle: false });
       say('Loading nearest public traffic camera…');
-      const opened = await openNearestCctv(dataManager, {
-        origin: 'user',
-        durationSec: 1.4,
-      });
+      const opened = await openPersonalCctvControls();
       if (opened.ok) {
         if (cctvViewport) cctvViewport.hidden = false;
         if (cctvChannel)
@@ -1408,9 +1449,12 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       .toLowerCase();
     if (!requested) return { ok: false, reason: 'camera-query-required' };
     nationalCatalog.close();
+    cctvViewportArmed = true;
+    if (cctvViewport) cctvViewport.hidden = false;
     if (dataManager?.layers?.has('cctv') && !dataManager.isEnabled?.('cctv')) {
       await dataManager.setEnabled('cctv', true, { origin: 'copilot' });
     }
+    applyPersonalCctvPerformanceDefaults();
     setRightPanel('cctv', { toggle: false });
     const cctv = dataManager?.layers?.get('cctv')?.module;
     const cameras = cctv?.getUIState?.()?.cameras || [];
@@ -1496,13 +1540,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     openWeather,
     async openCctv() {
       nationalCatalog.close();
-      if (
-        dataManager?.layers?.has('cctv') &&
-        !dataManager.isEnabled?.('cctv')
-      ) {
-        await dataManager.setEnabled('cctv', true, { origin: 'tool' });
-      }
-      setRightPanel('cctv', { toggle: false });
+      return openPersonalCctvControls();
     },
     selectCctv,
     getDeviceProfile: () => devicePolicyState,
@@ -1519,6 +1557,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       weatherObserver?.disconnect();
       document.removeEventListener('leeway:right-panel-close', closeRightPanel);
       clearTimeout(cctvRecoveryTimer);
+      clearTimeout(transitFallbackTimer);
       cctvViewport?.removeEventListener(
         'leeway:cctv-frame-unavailable',
         recoverFailedCctv,

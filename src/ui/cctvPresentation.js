@@ -40,7 +40,9 @@ export function _renderCctvState(state) {
   // does not pop open on every hop.
   const effectiveActiveId = enabled ? activeId || null : null;
   const isFirstActivation = this._lastSeenCctvActiveId === null;
+  const personalMaps = document.body?.dataset?.leewayEdition === 'personal';
   if (
+    !personalMaps &&
     effectiveActiveId &&
     effectiveActiveId !== this._lastSeenCctvActiveId &&
     (!state?.autoHop || isFirstActivation)
@@ -209,10 +211,16 @@ export function _renderCctvState(state) {
   if (this._cctvVideo) {
     this._cctvVideo.hidden = !liveIntent;
     if (this._cctvFrame) this._cctvFrame.hidden = liveIntent;
+    const personalViewport = document.querySelector?.(
+      '#leeway-world-shell .lm-cctv-viewport',
+    );
+    const personalViewportVisible =
+      personalMaps && personalViewport && !personalViewport.hidden;
     const visible =
       liveIntent &&
       !document.hidden &&
-      !this._cctvPanel?.classList.contains('collapsed');
+      (personalViewportVisible ||
+        !this._cctvPanel?.classList.contains('collapsed'));
     if (!visible || this._cctvVideoCameraId !== activeId) {
       this._cctvVideoSurface?.stop();
       this._cctvVideoSurface = null;

@@ -98,7 +98,10 @@ export function mountPersonalCockpitViewport({
     viewer.imageryLayers.addImageryProvider(createOsmImagery());
     viewer.scene.globe.depthTestAgainstTerrain = false;
     viewer.scene.screenSpaceCameraController.enableInputs = false;
-    viewer.resolutionScale = Math.min(1, globalThis.devicePixelRatio > 2 ? 0.75 : 0.9);
+    viewer.resolutionScale = Math.min(
+      0.78,
+      globalThis.devicePixelRatio > 2 ? 0.58 : 0.72,
+    );
     return viewer;
   }
 
@@ -133,22 +136,27 @@ export function mountPersonalCockpitViewport({
   }
 
   function open() {
+    root.hidden = false;
+    update();
+    if (!timer) timer = setInterval(update, 500);
     const info = trackedInfo();
     if (!info) {
-      notify('Select an aircraft first, then open Cockpit.');
-      return { ok: false, error: 'Select an aircraft first' };
+      notify('Cockpit is ready. Select an aircraft and this view will attach to it.');
+      return { ok: true, waitingForAircraft: true };
     }
-    root.hidden = false;
-    ensureViewer();
-    update();
-    if (!timer) timer = setInterval(update, 250);
-    return { ok: true };
+    return { ok: true, waitingForAircraft: false };
   }
 
   function close() {
     root.hidden = true;
     if (timer) clearInterval(timer);
     timer = null;
+    // A second Cesium context is intentionally on-demand. Release it when the
+    // cockpit viewport closes so Personal Maps does not keep two renderers and
+    // two imagery stacks resident in GPU memory.
+    viewer?.destroy?.();
+    viewer = null;
+    canvasHost.replaceChildren();
   }
 
   const header = root.querySelector('header');

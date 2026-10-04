@@ -69,10 +69,27 @@ export function normalizeTransitOsm(kind, payload) {
       ...common,
       route_short_name: tags.ref || '',
       route_long_name: tags.name || tags.route || 'Mapped route',
+      route_mode: tags.route || 'unknown',
       route_color: (tags.colour || '').replace(/^#/, ''),
       geometry: { type: 'MultiLineString', coordinates: joined },
     };
   });
+  if (kind === 'routes') {
+    const priority = {
+      train: 0,
+      subway: 1,
+      light_rail: 2,
+      tram: 3,
+      ferry: 4,
+      trolleybus: 5,
+      bus: 6,
+      unknown: 7,
+    };
+    rows.sort(
+      (a, b) =>
+        (priority[a.route_mode] ?? 7) - (priority[b.route_mode] ?? 7),
+    );
+  }
   return {
     source:
       '© OpenStreetMap contributors (ODbL) · https://www.openstreetmap.org/copyright',
