@@ -69,3 +69,30 @@ test('personal cockpit viewport is independent from the primary map camera', asy
  assert.match(cockpit, /requestRenderMode: true/);
  assert.match(cockpit, /getAircraftTrackingTarget/);
 });
+
+
+test('Personal CCTV media is independent from the settings card', async () => {
+ const shell = await readFile(new URL('./mapsShell.js', import.meta.url), 'utf8');
+ const presentation = await readFile(new URL('../ui/cctvPresentation.js', import.meta.url), 'utf8');
+ assert.match(shell, /cctvViewportArmed/);
+ assert.match(shell, /coverageMode: 'off'/);
+ assert.match(shell, /showProjection: false/);
+ assert.match(presentation, /personalViewportVisible/);
+ assert.match(presentation, /!personalMaps\s*&&\s*effectiveActiveId/);
+});
+
+test('Personal Transit avoids duplicate vehicle layers and keeps routes visible', async () => {
+ const shell = await readFile(new URL('./mapsShell.js', import.meta.url), 'utf8');
+ const network = await readFile(new URL('../layers/transit/network.js', import.meta.url), 'utf8');
+ assert.match(shell, /const requested = \['transit', 'transit-routes', 'transit-stops'\]/);
+ assert.match(shell, /origin: 'transit-fallback'/);
+ assert.match(network, /PolylineGlowMaterialProperty/);
+ assert.match(network, /mode === 'rail' \|\| mode === 'subway'/);
+});
+
+test('Personal cockpit opens as a viewport before aircraft selection and releases its GPU context on close', async () => {
+ const cockpit = await readFile(new URL('./personalCockpitViewport.js', import.meta.url), 'utf8');
+ assert.match(cockpit, /waitingForAircraft: true/);
+ assert.match(cockpit, /viewer\?\.destroy\?\.\(\)/);
+ assert.match(cockpit, /setInterval\(update, 500\)/);
+});
