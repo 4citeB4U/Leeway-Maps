@@ -1527,6 +1527,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     shell,
     dataManager,
     enableTransitSuite,
+    getPoint: viewCenterPoint,
     notify: say,
   });
   const streetView = mountPersonalStreetView({
