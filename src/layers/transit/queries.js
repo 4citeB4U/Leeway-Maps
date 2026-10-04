@@ -215,6 +215,9 @@ export function createQueries({ state, parts }) {
       const matched = [...state._vehicles.values()]
         .map((entry) => entry.mapMatchMeanDeviationM)
         .filter(Number.isFinite);
+      const constrained = [...state._vehicles.values()]
+        .map((entry) => entry.routeConstraintMeanDeviationM)
+        .filter(Number.isFinite);
       return {
         count,
         visibleCount: state._visible.size,
@@ -223,6 +226,10 @@ export function createQueries({ state, parts }) {
         mapMatchRejected: state._mapMatchRejected,
         mapMatchMeanDeviationM: matched.length
           ? matched.reduce((sum, value) => sum + value, 0) / matched.length
+          : null,
+        routeConstraintMeanDeviationM: constrained.length
+          ? constrained.reduce((sum, value) => sum + value, 0) /
+            constrained.length
           : null,
         lastUpdate: state._lastUpdate,
         error: count === 0 ? health.error : null,
