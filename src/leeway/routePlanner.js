@@ -21,6 +21,15 @@ import { formatDriverDistance as formatRouteDistance } from './driverUnits.js';
 import './routePlanner.css';
 import { normalizeValhallaUrl } from './valhallaRouting.js';
 import {
+  FlowMaterialProperty,
+  ensureFlowFabricRegistered,
+} from '../annotations/worldAnnotationRenderer.js';
+import {
+  governorRequestRender,
+  holdContinuousRender,
+  releaseContinuousRender,
+} from '../renderGovernor.js';
+import {
   addressText,
   createAddressStore,
   importAddresses,
@@ -82,6 +91,7 @@ export function mountRoutePlanner({
   } catch {
     endpointInput.value = import.meta.env?.VITE_LEEWAY_VALHALLA_URL || '';
   }
+  const ROUTE_RENDER_HOLD = 'personal-route-flow';
   let stops = [{ text: '' }, { text: '' }],
     entities = [],
     mapHandler = null,
@@ -122,7 +132,9 @@ export function mountRoutePlanner({
     for (const e of entities) viewer.entities.remove(e);
     entities = [];
     route = null;
+    releaseContinuousRender(ROUTE_RENDER_HOLD);
     result.replaceChildren();
+    governorRequestRender('personal-route-cleared');
     viewer.scene.requestRender?.();
     emit('route-cleared');
   }
@@ -557,19 +569,43 @@ export function mountRoutePlanner({
     return p;
   }
   function draw(payload) {
+    ensureFlowFabricRegistered();
+    const routePositions = Cesium.Cartesian3.fromDegreesArray(
+      payload.geometry.flatMap((p) => [p[0], p[1]]),
+    );
+    // Wide luminous halo makes the route legible over satellite imagery without
+    // replacing the street-following geometry supplied by the router.
+    entities.push(
+      viewer.entities.add({
+        name: 'Planned road route glow',
+        polyline: {
+          positions: routePositions,
+          width: 16,
+          material: new Cesium.PolylineGlowMaterialProperty({
+            color: Cesium.Color.fromCssColorString('#39ff8a').withAlpha(0.88),
+            glowPower: 0.42,
+            taperPower: 0.65,
+          }),
+          clampToGround: true,
+          classificationType: Cesium.ClassificationType.BOTH,
+        },
+      }),
+    );
+    // Bright animated core flows toward the destination. It reuses LeeWay's
+    // canonical GPU route-flow material rather than adding a second animation.
     entities.push(
       viewer.entities.add({
         name: 'Planned road route',
         polyline: {
-          positions: Cesium.Cartesian3.fromDegreesArray(
-            payload.geometry.flatMap((p) => [p[0], p[1]]),
-          ),
-          width: 6,
-          material: Cesium.Color.fromCssColorString('#43d9ff'),
+          positions: routePositions,
+          width: 8,
+          material: new FlowMaterialProperty('#caff46'),
           clampToGround: true,
+          classificationType: Cesium.ClassificationType.BOTH,
         },
       }),
     );
+    holdContinuousRender(ROUTE_RENDER_HOLD);
     stops.forEach((stop, i) =>
       entities.push(
         viewer.entities.add({
@@ -598,6 +634,7 @@ export function mountRoutePlanner({
       ),
     );
     void routeCamera.route(entities);
+    governorRequestRender('personal-route-flow');
     viewer.scene.requestRender?.();
   }
   async function plan(
