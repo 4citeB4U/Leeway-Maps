@@ -166,3 +166,12 @@ test('Personal Transit button is a reversible control rather than a one-way open
  assert.match(controls, /isOpen: \(\) => !root\.hidden/);
  assert.match(controls, /clearInterval\(timer\)/);
 });
+
+
+test('Personal Places has a bounded open-data fallback when commercial Places is unconfigured', async () => {
+ const places = await readFile(new URL('./personalPlacesOverlay.js', import.meta.url), 'utf8');
+ assert.match(places, /\/api\/overpass/);
+ assert.match(places, /around:\$\{radius\}/);
+ assert.match(places, /OpenStreetMap \/ Overpass/);
+ assert.match(places, /Math\.min\(5000/);
+});
