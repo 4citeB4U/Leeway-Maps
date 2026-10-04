@@ -283,6 +283,7 @@ export function createTransitNetworkLayer({
               route_mode: mode,
             });
             entity._leewayTransitDescription = copy;
+            entity.show = visibleModes.has(mode);
           }
           if (lines.length) count++;
         } else {
@@ -405,6 +406,27 @@ export function createTransitNetworkLayer({
     },
     attachDataManager(value) {
       manager = value;
+    },
+    setParams(params = {}) {
+      if (kind !== 'routes' || !Array.isArray(params.visibleModes)) return false;
+      visibleModes = new Set(
+        params.visibleModes
+          .map((value) => String(value || '').toLowerCase())
+          .filter((value) =>
+            ['bus','tram','subway','rail','ferry','unknown'].includes(value),
+          ),
+      );
+      for (const entity of dataSource?.entities?.values || []) {
+        const mode = routeMode(entity._leewayTransitRecord || {});
+        entity.show = visibleModes.has(mode);
+      }
+      viewer?.scene?.requestRender?.();
+      return true;
+    },
+    getParams() {
+      return kind === 'routes'
+        ? { visibleModes: [...visibleModes] }
+        : {};
     },
     getStats() {
       return {
