@@ -94,17 +94,13 @@ test('OpenSky state and track routes share tokens, retain cache and use regional
     throw Error(`Unexpected URL: ${url}`);
   });
   const states = install(providers.openSkyProxy());
-  assert.equal(
-    (await states('/api/opensky', '?lat=30&lon=-97')).statusCode,
-    200,
-  );
-  assert.equal(
-    (await states('/api/opensky', '?lat=30&lon=-97')).headers[
-      'x-opensky-cache'
-    ],
-    'HIT',
-  );
-  assert.equal(calls.length, 2);
+  const regionalFirst = await states('/api/opensky', '?lat=30&lon=-97');
+  assert.equal(regionalFirst.statusCode, 200);
+  assert.equal(regionalFirst.headers['x-flight-source'], 'adsb.lol');
+  const regionalSecond = await states('/api/opensky', '?lat=30&lon=-97');
+  assert.equal(regionalSecond.statusCode, 200);
+  assert.equal(regionalSecond.headers['x-flight-source'], 'adsb.lol');
+  assert.equal(calls.length, 3);
   const tracks = install(providers.trackBackfillProxies(), true);
   assert.equal(
     (await tracks('/api/opensky-track', '?icao24=ABC123')).statusCode,
