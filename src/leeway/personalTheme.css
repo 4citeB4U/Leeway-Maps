@@ -1103,3 +1103,58 @@ body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail-toggle{
     transition:transform .22s ease,opacity .22s ease!important;
   }
 }
+
+
+/* Independent cockpit viewport — can coexist with the CCTV monitor. */
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-cockpit-viewport{
+  pointer-events:auto;position:fixed;z-index:9815;top:104px;right:420px;
+  width:min(390px,34vw);height:260px;min-width:250px;min-height:190px;
+  max-width:72vw;max-height:70vh;resize:both;overflow:hidden;
+  border:1.5px solid rgba(82,210,239,.76);border-radius:18px;
+  background:rgba(2,15,24,.94);box-shadow:0 18px 52px rgba(0,0,0,.42);
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-cockpit-viewport[hidden]{display:none!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-cockpit-viewport>header{
+  display:flex;align-items:center;gap:8px;height:40px;padding:7px 10px;
+  color:#f1fcff;background:rgba(3,25,36,.96);cursor:move;
+  border-bottom:1px solid rgba(96,214,233,.28);
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-cockpit-viewport>header strong{
+  flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-cockpit-viewport>header button{
+  width:28px;height:28px;border-radius:9px;border:1px solid rgba(112,218,234,.45);
+  background:#0b2a38;color:#fff;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-cockpit-dot{
+  width:9px;height:9px;border-radius:50%;background:#54e7ff;box-shadow:0 0 10px #54e7ff;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-cockpit-canvas{
+  position:absolute;left:0;right:0;top:40px;bottom:28px;background:#02080c;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-cockpit-canvas .cesium-viewer,
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-cockpit-canvas .cesium-viewer-cesiumWidgetContainer,
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-cockpit-canvas .cesium-widget,
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-cockpit-canvas canvas{
+  width:100%!important;height:100%!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-cockpit-readout{
+  position:absolute;left:0;right:0;bottom:0;height:28px;padding:5px 9px;
+  background:rgba(2,16,24,.94);border-top:1px solid rgba(91,203,220,.25);
+  color:#d9f6fb;font:700 10px/1.6 system-ui,sans-serif;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;
+}
+@media(max-width:1100px){
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-cockpit-viewport{
+    right:18px;top:390px;
+  }
+}
+@media(max-width:820px){
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-cockpit-viewport{
+    right:8px;top:130px;width:min(310px,calc(100vw - 86px));height:210px;
+    max-width:calc(100vw - 86px);max-height:38vh;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-cctv-viewport:not([hidden]) + .lm-cockpit-viewport{
+    top:350px;
+  }
+}
