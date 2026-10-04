@@ -228,7 +228,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
 
   const shell = document.createElement('div');
   shell.id = 'leeway-world-shell';
-  shell.innerHTML = \`
+  shell.innerHTML = `
     <header class="lws-top lm-top">
       <div class="lws-brand lm-brand">
         <button class="lm-brand-button" data-action="map" type="button" aria-label="LeeWay Maps home">
@@ -244,24 +244,24 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       <div class="lws-search lm-search">
         <span class="lm-search-icon" aria-hidden="true">⌕</span>
         <input aria-label="Search LeeWay Maps" placeholder="Where do you want to go?" />
-        <button type="button" data-dock="locate" class="lm-search-locate" aria-label="Use my location">\${mapIcon('locate')}</button>
+        <button type="button" data-dock="locate" class="lm-search-locate" aria-label="Use my location">${mapIcon('locate')}</button>
       </div>
       <div class="lws-top-actions lm-top-actions">
-        <button class="lm-pill lm-pill-green" data-action="route" type="button">\${mapIcon('directions')}<span>Directions</span></button>
-        <button class="lm-pill lm-pill-yellow" data-nav="features" type="button">\${mapIcon('explore')}<span>Explore</span></button>
-        <button class="lm-pill lm-pill-white" data-action="help" type="button">\${mapIcon('info')}<span>Help</span></button>
+        <button class="lm-pill lm-pill-green" data-action="route" type="button">${mapIcon('directions')}<span>Directions</span></button>
+        <button class="lm-pill lm-pill-yellow" data-nav="features" type="button">${mapIcon('explore')}<span>Explore</span></button>
+        <button class="lm-pill lm-pill-white" data-action="help" type="button">${mapIcon('info')}<span>Help</span></button>
         <button class="lm-profile" data-action="ai" type="button" aria-label="Open Agent Lee"><span>AL</span><b>Agent Lee</b></button>
       </div>
     </header>
 
     <nav class="lws-rail lm-rail" aria-label="LeeWay Maps navigation">
-      <button class="lws-nav active" data-nav="map" type="button">\${mapIcon('home')}<span>Home</span></button>
-      <button class="lws-nav" data-action="route" type="button">\${mapIcon('directions')}<span>Directions</span></button>
-      <button class="lws-nav" data-nav="transit" type="button">\${mapIcon('transit')}<span>Transit</span></button>
-      <button class="lws-nav" data-nav="features" type="button">\${mapIcon('explore')}<span>Explore</span></button>
-      <button class="lws-nav" data-action="ai" type="button">\${mapIcon('talk')}<span>Agent Lee</span></button>
+      <button class="lws-nav active" data-nav="map" type="button">${mapIcon('home')}<span>Home</span></button>
+      <button class="lws-nav" data-action="route" type="button">${mapIcon('directions')}<span>Directions</span></button>
+      <button class="lws-nav" data-nav="transit" type="button">${mapIcon('transit')}<span>Transit</span></button>
+      <button class="lws-nav" data-nav="features" type="button">${mapIcon('explore')}<span>Explore</span></button>
+      <button class="lws-nav" data-action="ai" type="button">${mapIcon('talk')}<span>Agent Lee</span></button>
       <div class="lws-spacer"></div>
-      <button class="lws-nav lm-rail-more" data-dock="layers" type="button">\${mapIcon('more')}<span>More</span></button>
+      <button class="lws-nav lm-rail-more" data-dock="layers" type="button">${mapIcon('more')}<span>More</span></button>
     </nav>
 
     <aside class="lws-layer-menu lm-sheet" data-layer-menu>
@@ -274,30 +274,30 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     <button class="lws-live" data-action="connect-world" type="button"><b data-world-led>● CHECK</b><span data-world-status>Connect live world data</span></button>
 
     <nav class="lws-dock lm-dock" aria-label="Quick map tools">
-      <button class="lws-dock-btn lm-home-action" data-dock="locate" type="button">\${mapIcon('locate')}<span>My location</span></button>
-      <button class="lws-dock-btn" data-action="route" type="button">\${mapIcon('directions')}<span>Directions</span></button>
-      <button class="lws-dock-btn" data-dock="transit" type="button">\${mapIcon('transit')}<span>Transit</span></button>
-      <button class="lws-dock-btn" data-dock="traffic" type="button">\${mapIcon('traffic')}<span>Traffic</span></button>
-      <button class="lws-dock-btn" data-dock="weather" type="button">\${mapIcon('weather')}<span>Weather</span></button>
-      <button class="lws-dock-btn" data-dock="cctv" type="button">\${mapIcon('cctv')}<span>Cameras</span></button>
-      <button class="lws-dock-btn" data-action="help" type="button">\${mapIcon('info')}<span>Help</span></button>
-      <button class="lws-dock-btn" data-dock="layers" type="button">\${mapIcon('more')}<span>More</span></button>
+      <button class="lws-dock-btn lm-home-action" data-dock="locate" type="button">${mapIcon('locate')}<span>My location</span></button>
+      <button class="lws-dock-btn" data-action="route" type="button">${mapIcon('directions')}<span>Directions</span></button>
+      <button class="lws-dock-btn" data-dock="transit" type="button">${mapIcon('transit')}<span>Transit</span></button>
+      <button class="lws-dock-btn" data-dock="traffic" type="button">${mapIcon('traffic')}<span>Traffic</span></button>
+      <button class="lws-dock-btn" data-dock="weather" type="button">${mapIcon('weather')}<span>Weather</span></button>
+      <button class="lws-dock-btn" data-dock="cctv" type="button">${mapIcon('cctv')}<span>Cameras</span></button>
+      <button class="lws-dock-btn" data-action="help" type="button">${mapIcon('info')}<span>Help</span></button>
+      <button class="lws-dock-btn" data-dock="layers" type="button">${mapIcon('more')}<span>More</span></button>
     </nav>
 
     <div class="lws-location-badge lm-location-card" data-location-badge><strong>Finding your area…</strong><span>Geographic context loading</span></div>
     <aside class="lws-context-inspector" data-context-inspector></aside>
 
     <div class="lws-right-tabs lm-context-actions" aria-label="Nearby information">
-      <button class="lws-right-tab" data-action="right-ops" type="button">\${mapIcon('journey')}<span>Trip</span></button>
-      <button class="lws-right-tab" data-action="right-cctv" type="button">\${mapIcon('cctv')}<span>Cameras</span></button>
-      <button class="lws-right-tab" data-action="right-weather" type="button">\${mapIcon('weather')}<span>Weather</span></button>
-      <button class="lws-right-tab" data-action="right-national" type="button">\${mapIcon('map')}<span>Coverage</span></button>
+      <button class="lws-right-tab" data-action="right-ops" type="button">${mapIcon('journey')}<span>Trip</span></button>
+      <button class="lws-right-tab" data-action="right-cctv" type="button">${mapIcon('cctv')}<span>Cameras</span></button>
+      <button class="lws-right-tab" data-action="right-weather" type="button">${mapIcon('weather')}<span>Weather</span></button>
+      <button class="lws-right-tab" data-action="right-national" type="button">${mapIcon('map')}<span>Coverage</span></button>
     </div>
 
     <button class="lws-ui-restore" data-action="restore-ui" type="button">Show controls</button>
     <button class="lws-inspector-toggle" data-action="collapse-inspector" type="button" aria-label="Collapse panel">‹</button>
     <div class="lws-toast" role="status" aria-live="polite"></div>
-  \`;
+  `;
   document.body.appendChild(shell);
 
   const toast = shell.querySelector('.lws-toast');
