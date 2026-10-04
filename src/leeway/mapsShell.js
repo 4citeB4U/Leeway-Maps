@@ -318,6 +318,8 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   const cctvFrameSlot = shell.querySelector('[data-cctv-frame-slot]');
   const cctvChannel = shell.querySelector('[data-cctv-channel]');
   const weatherPanel = document.getElementById('weather-panel');
+  const weatherOriginalParent = weatherPanel?.parentNode || null;
+  const weatherOriginalNextSibling = weatherPanel?.nextSibling || null;
   let locationCell = '';
   let locationRequestGeneration = 0;
   function syncRightTabs() {
@@ -329,6 +331,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   function setRightPanel(panel = null, { toggle = true } = {}) {
     const next = toggle && panel === activeRightPanel ? null : panel;
     activeRightPanel = next;
+    contextInspector.classList.toggle('open', Boolean(next));
     if (next === 'cctv') {
       cctvPanel?.classList.remove('collapsed');
       if (cctvViewport) cctvViewport.hidden = false;
@@ -385,6 +388,8 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     syncCctvInspector();
   }
   if (weatherPanel) {
+    contextInspector.appendChild(weatherPanel);
+    weatherPanel.classList.add('collapsed');
     const syncWeatherPanel = () => {
       const open =
         !weatherPanel.hidden && !weatherPanel.classList.contains('collapsed');
@@ -400,6 +405,40 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     });
   }
   const closeRightPanel = () => setRightPanel(null, { toggle: false });
+
+  function makeFloatingPanel(panel) {
+    if (!panel) return () => {};
+    const handle = panel.querySelector('header');
+    if (!handle) return () => {};
+    let drag = null;
+    const move = (event) => {
+      if (!drag) return;
+      const left = Math.max(8, Math.min(globalThis.innerWidth - panel.offsetWidth - 8, drag.left + event.clientX - drag.x));
+      const top = Math.max(86, Math.min(globalThis.innerHeight - panel.offsetHeight - 8, drag.top + event.clientY - drag.y));
+      panel.style.left = left + 'px';
+      panel.style.top = top + 'px';
+      panel.style.right = 'auto';
+      panel.style.bottom = 'auto';
+    };
+    const up = () => {
+      drag = null;
+      globalThis.removeEventListener('pointermove', move);
+      globalThis.removeEventListener('pointerup', up);
+    };
+    const down = (event) => {
+      if (event.target.closest('button,input,select,a')) return;
+      const rect = panel.getBoundingClientRect();
+      drag = { x: event.clientX, y: event.clientY, left: rect.left, top: rect.top };
+      globalThis.addEventListener('pointermove', move);
+      globalThis.addEventListener('pointerup', up, { once: true });
+    };
+    handle.addEventListener('pointerdown', down);
+    return () => {
+      handle.removeEventListener('pointerdown', down);
+      up();
+    };
+  }
+  const stopCctvViewportDrag = makeFloatingPanel(cctvViewport);
   document.addEventListener('leeway:right-panel-close', closeRightPanel);
   let cctvRecoveryTimer = null;
   let cctvRecoveryCount = 0;
@@ -1463,8 +1502,11 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       weatherObserver = null;
       removeWorldCentering?.();
       removeLocationBadgeListener?.();
+      stopCctvViewportDrag?.();
       globalThis.removeEventListener?.('resize', onViewportResize);
       if (cctvPanel && cctvOriginalParent) {
+        const frameWrap = cctvFrameSlot?.querySelector?.('#cctv-frame-wrap');
+        if (frameWrap) cctvPanel.querySelector('.cyber-panel-body')?.prepend(frameWrap);
         if (
           cctvOriginalNextSibling &&
           cctvOriginalNextSibling.parentNode === cctvOriginalParent
@@ -1472,6 +1514,16 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
           cctvOriginalParent.insertBefore(cctvPanel, cctvOriginalNextSibling);
         } else {
           cctvOriginalParent.appendChild(cctvPanel);
+        }
+      }
+      if (weatherPanel && weatherOriginalParent) {
+        if (
+          weatherOriginalNextSibling &&
+          weatherOriginalNextSibling.parentNode === weatherOriginalParent
+        ) {
+          weatherOriginalParent.insertBefore(weatherPanel, weatherOriginalNextSibling);
+        } else {
+          weatherOriginalParent.appendChild(weatherPanel);
         }
       }
       document.body.classList.remove(
