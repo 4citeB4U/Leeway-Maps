@@ -1,4 +1,5 @@
 import { nationalTrafficCameraJurisdictions } from './nationalRegistry.js';
+import { globalCctvExpansionTargets } from './coverageTargets.js';
 
 // Implemented adapters, not a promise of continuous feed availability or
 // worldwide coverage. Every region below has a loader in catalog.js.
@@ -275,6 +276,7 @@ export function globalTrafficCameraCoverage(packHealth = []) {
       'Implemented networks only; catalogs and inventories do not prove live camera media or universal coverage.',
     networks,
     usJurisdictions: nationalTrafficCameraJurisdictions(),
+    expansionTargets: globalCctvExpansionTargets(),
     countryCount: new Set(networks.map((network) => network.countryIso)).size,
   };
 }
