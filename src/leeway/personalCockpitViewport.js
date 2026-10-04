@@ -42,6 +42,8 @@ export function mountPersonalCockpitViewport({
   shell,
   styleManager,
   catalog,
+  dataManager = null,
+  sourceViewer = null,
   documentRef = document,
   notify = () => {},
 } = {}) {
@@ -72,9 +74,23 @@ export function mountPersonalCockpitViewport({
   const channel = root.querySelector('[data-cockpit-channel]');
 
   function trackedInfo() {
+    const trackedId = String(sourceViewer?.trackedEntity?.gevTrackedId || '');
+    const [layerId] = trackedId.split(':');
+    if (layerId === 'flights' || layerId === 'military') {
+      return dataManager?.layers?.get(layerId)?.module?.getTrackedInfo?.() || null;
+    }
     const target = styleManager?.getAircraftTrackingTarget?.();
-    if (!target?.id) return null;
-    return catalog?.get?.(target.layerId)?.getTrackedInfo?.() || null;
+    if (target?.id)
+      return (
+        dataManager?.layers?.get(target.layerId)?.module?.getTrackedInfo?.() ||
+        catalog?.get?.(target.layerId)?.getTrackedInfo?.() ||
+        null
+      );
+    return (
+      dataManager?.layers?.get('flights')?.module?.getTrackedInfo?.() ||
+      dataManager?.layers?.get('military')?.module?.getTrackedInfo?.() ||
+      null
+    );
   }
 
   function ensureViewer() {

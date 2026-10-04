@@ -19,6 +19,7 @@ import { weatherEffectsProxy } from '../providers/regional/weather-effects.js';
 import { radioBrowserProxy } from '../providers/radio.js';
 import { gbfsProxy } from '../providers/gbfs.js';
 import { googlePlacesContextProxy } from '../providers/places.js';
+import { streetViewProxy } from '../providers/streetview.js';
 import { windProxy } from '../providers/wind.js';
 import { cycloneProxy } from '../providers/cyclones.js';
 import { firePerimetersProxy } from '../providers/firePerimeters.js';
@@ -181,6 +182,7 @@ export function createWorldPlugins({ sourceRoot = defaultSourceRoot } = {}) {
             : AbortSignal.timeout(12_000),
         }),
     }),
+    streetViewProxy(),
     windProxy({ timeoutMs: 40_000 }),
     cycloneProxy(),
     firePerimetersProxy(),
