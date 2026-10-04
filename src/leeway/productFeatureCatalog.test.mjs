@@ -128,3 +128,24 @@ test('Personal cockpit reads the tracked flights layer directly so rotorcraft us
  assert.match(cockpit, /sourceViewer\?\.trackedEntity\?\.gevTrackedId/);
  assert.doesNotMatch(cockpit, /helicopter.*unavailable/i);
 });
+
+
+test('Personal Places uses zoom tiers and never materializes all-world business data', async () => {
+ const shell = await readFile(new URL('./mapsShell.js', import.meta.url), 'utf8');
+ const places = await readFile(new URL('./personalPlacesOverlay.js', import.meta.url), 'utf8');
+ assert.match(shell, /data-action="places"/);
+ assert.match(shell, /mountPersonalPlacesOverlay/);
+ assert.match(places, /nearby-places/);
+ assert.match(places, /maxHeightM: 18000/);
+ assert.match(places, /limit: 20/);
+ assert.match(places, /cache\.size > 24/);
+});
+
+test('direct transit animation can follow exact matching route geometry without mutating raw GPS', async () => {
+ const network = await readFile(new URL('../layers/transit/network.js', import.meta.url), 'utf8');
+ const rendering = await readFile(new URL('../layers/transit/rendering.js', import.meta.url), 'utf8');
+ assert.match(network, /routePathBetween/);
+ assert.match(network, /normalizeRouteRef/);
+ assert.match(rendering, /mapped-route-geometry/);
+ assert.match(rendering, /sampleRouteTraversal/);
+});
