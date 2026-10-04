@@ -156,3 +156,13 @@ test('transit route geometry index is initialized before direct buses consult it
  assert.match(network, /routeGeometryIndex = new Map\(\)/);
  assert.match(network, /routePathBetween/);
 });
+
+
+test('Personal Transit button is a reversible control rather than a one-way opener', async () => {
+ const shell = await readFile(new URL('./mapsShell.js', import.meta.url), 'utf8');
+ const controls = await readFile(new URL('./personalTransitControls.js', import.meta.url), 'utf8');
+ assert.match(shell, /transitControls\.toggle\(\)/);
+ assert.match(controls, /async function toggle\(\)/);
+ assert.match(controls, /isOpen: \(\) => !root\.hidden/);
+ assert.match(controls, /clearInterval\(timer\)/);
+});
