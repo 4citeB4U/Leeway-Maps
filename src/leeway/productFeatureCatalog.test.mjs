@@ -106,7 +106,7 @@ test('Personal Transit exposes explicit layer and mode control instead of one op
  for (const id of ['transit','transit-routes','transit-stops','transit-vehicles'])
    assert.match(controls, new RegExp('data-layer="' + id + '"'));
  for (const mode of ['bus','tram','subway','rail','ferry'])
-   assert.match(controls, new RegExp("data-mode=\\\"" + mode + "\\\""));
+   assert.match(controls, new RegExp("\\['" + mode + "',"));
  assert.match(network, /visibleModes/);
  assert.match(network, /PolylineGlowMaterialProperty/);
 });
