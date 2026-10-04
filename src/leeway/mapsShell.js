@@ -25,6 +25,8 @@ import { mountJourneyContinuityMonitor } from './journeyContinuityMonitor.js';
 import { applyMobileRenderPolicy, deviceCapabilityProfile } from './devicePerformanceProfile.js';
 import { buildWorkloadPlan, discoverRuntimeCapabilities } from './runtimeWorkloadBroker.js';
 import { mountPersonalCockpitViewport } from './personalCockpitViewport.js';
+import { mountPersonalTransitControls } from './personalTransitControls.js';
+import { mountPersonalStreetView } from './personalStreetView.js';
 
 const PERSONAL_HIDDEN_LAYER_IDS = new Set([
   'military',
@@ -765,7 +767,8 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
         return true;
       }
       if (actionName === 'transit') {
-        return enableTransitSuite();
+        await transitControls.open();
+        return true;
       }
       if (actionName === 'cctv') {
         const opened = await openPersonalCctvControls();
@@ -1168,7 +1171,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
         return;
       }
       if (id === 'transit') {
-        await enableTransitSuite();
+        await transitControls.open();
         return;
       }
       if (id === 'features') {
@@ -1382,7 +1385,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       return;
     }
     if (dock === 'transit') {
-      await enableTransitSuite();
+      await transitControls.open();
       return;
     }
     if (dock === 'three') {
@@ -1511,6 +1514,17 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     catalog,
     notify: say,
   });
+  const transitControls = mountPersonalTransitControls({
+    shell,
+    dataManager,
+    enableTransitSuite,
+    notify: say,
+  });
+  const streetView = mountPersonalStreetView({
+    shell,
+    viewer,
+    notify: say,
+  });
   const journeyContinuity = mountJourneyContinuityMonitor({
     viewer,
     dataManager,
@@ -1551,6 +1565,8 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     destroy() {
       journeyContinuity.destroy();
       mapToolsPanel?.destroy();
+      streetView.destroy();
+      transitControls.destroy();
       personalCockpit.destroy();
       mapViewControls.destroy();
       cctvObserver?.disconnect();
