@@ -24,6 +24,7 @@ import { featureCatalogForEdition } from './productFeatureCatalog.js';
 import { mountJourneyContinuityMonitor } from './journeyContinuityMonitor.js';
 import { applyMobileRenderPolicy, deviceCapabilityProfile } from './devicePerformanceProfile.js';
 import { buildWorkloadPlan, discoverRuntimeCapabilities } from './runtimeWorkloadBroker.js';
+import { mountPersonalCockpitViewport } from './personalCockpitViewport.js';
 
 const PERSONAL_HIDDEN_LAYER_IDS = new Set([
   'military',
@@ -184,6 +185,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   const styleManager = components.controls?.styleManager;
   const viewer = components.scene?.viewer;
   const dataManager = components.data?.dataManager;
+  const catalog = components.data?.catalog;
   const mapStackController = components.scene?.mapStackController;
   const operations = components.scene?.operations;
   let labeledWorldStackRequested = false;
@@ -1144,7 +1146,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       return;
     }
     if (action === 'cockpit') {
-      const result = await mapViewControls.actions.cockpit();
+      const result = personalCockpit.open();
       if (!result?.ok) say(result?.error || 'Cockpit unavailable');
       return;
     }
@@ -1459,6 +1461,12 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   const devicePolicyState = applyMobileRenderPolicy({ viewer, dataManager, profile: deviceProfile });
   document.body.dataset.leewayDevicePolicy = devicePolicyState.policy.id;
   const mapViewControls = mountMapViewControls({ application, shell, addLauncher: false });
+  const personalCockpit = mountPersonalCockpitViewport({
+    shell,
+    styleManager,
+    catalog,
+    notify: say,
+  });
   const journeyContinuity = mountJourneyContinuityMonitor({
     viewer,
     dataManager,
@@ -1505,6 +1513,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     destroy() {
       journeyContinuity.destroy();
       mapToolsPanel?.destroy();
+      personalCockpit.destroy();
       mapViewControls.destroy();
       cctvObserver?.disconnect();
       weatherObserver?.disconnect();
