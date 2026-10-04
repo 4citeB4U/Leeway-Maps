@@ -20,6 +20,7 @@ import { mountExperiencePreferences } from './experiencePreferences.js';
 import { openNearestCctv } from './cctvExperience.js';
 import { mountFeatureCenter } from './featureCenter.js';
 import { featureCatalogForEdition } from './productFeatureCatalog.js';
+import { mountJourneyContinuityMonitor } from './journeyContinuityMonitor.js';
 
 function ensureStyles(documentRef) {
   if (documentRef.getElementById('leeway-enterprise-shell-styles')) return;
@@ -1367,6 +1368,14 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   }
 
   const mapViewControls = mountMapViewControls({ application, shell });
+  const journeyContinuity = mountJourneyContinuityMonitor({
+    viewer,
+    dataManager,
+    shell,
+    mapViewControls,
+    openNearestCctv,
+    notify: say,
+  });
   const mapToolsPanel = mountMapToolsPanel({ application, shell });
 
   return {
@@ -1389,6 +1398,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     closeAgent: () => toggleAgent(false),
     notify: say,
     destroy() {
+      journeyContinuity.destroy();
       mapToolsPanel.destroy();
       mapViewControls.destroy();
       cctvObserver?.disconnect();
