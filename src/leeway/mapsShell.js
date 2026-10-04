@@ -25,6 +25,14 @@ import { mountJourneyContinuityMonitor } from './journeyContinuityMonitor.js';
 import { applyMobileRenderPolicy, deviceCapabilityProfile } from './devicePerformanceProfile.js';
 import { buildWorkloadPlan, discoverRuntimeCapabilities } from './runtimeWorkloadBroker.js';
 
+const PERSONAL_HIDDEN_LAYER_IDS = new Set([
+  'military',
+  'local-adsb',
+  'military-awareness',
+  'military-installations',
+  'alpr-cameras',
+]);
+
 function ensureStyles(documentRef) {
   if (documentRef.getElementById('leeway-enterprise-shell-styles')) return;
   const style = documentRef.createElement('style');
@@ -181,49 +189,49 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   let labeledWorldStackRequested = false;
   const agentPanel = () => document.getElementById('leeway-agent-lee');
   const layerCategoryOrder = [
-    'Transportation',
-    'World Awareness',
-    'Infrastructure',
+    'Getting around',
+    'Nearby & live',
+    'Places & infrastructure',
     'Weather',
-    'Media / Context',
-    'Special',
+    'Media & context',
+    'Other',
   ];
   const layerCategories = {
-    traffic: 'Transportation',
-    'traffic-incidents': 'Transportation',
+    traffic: 'Getting around',
+    'traffic-incidents': 'Getting around',
     'weather-alerts': 'Weather',
-    transit: 'Transportation',
-    'transit-routes': 'Transportation',
-    'transit-stops': 'Transportation',
-    'transit-vehicles': 'Transportation',
-    bikeshare: 'Transportation',
-    directions: 'Transportation',
-    flights: 'Transportation',
-    military: 'Transportation',
-    'local-adsb': 'Transportation',
-    'ais-live-vessels': 'Transportation',
-    cctv: 'World Awareness',
-    earthquakes: 'World Awareness',
-    'fire-perimeters': 'World Awareness',
-    'local-firms': 'World Awareness',
-    satellites: 'World Awareness',
-    'rocket-launches': 'World Awareness',
-    'military-awareness': 'World Awareness',
-    'local-datacenters': 'Infrastructure',
-    'local-dams': 'Infrastructure',
-    'military-installations': 'Infrastructure',
-    'osm-pipelines': 'Infrastructure',
-    'telegeography-submarine-cables': 'Infrastructure',
-    'alpr-cameras': 'Infrastructure',
+    transit: 'Getting around',
+    'transit-routes': 'Getting around',
+    'transit-stops': 'Getting around',
+    'transit-vehicles': 'Getting around',
+    bikeshare: 'Getting around',
+    directions: 'Getting around',
+    flights: 'Getting around',
+    military: 'Getting around',
+    'local-adsb': 'Getting around',
+    'ais-live-vessels': 'Getting around',
+    cctv: 'Nearby & live',
+    earthquakes: 'Nearby & live',
+    'fire-perimeters': 'Nearby & live',
+    'local-firms': 'Nearby & live',
+    satellites: 'Nearby & live',
+    'rocket-launches': 'Nearby & live',
+    'military-awareness': 'Nearby & live',
+    'local-datacenters': 'Places & infrastructure',
+    'local-dams': 'Places & infrastructure',
+    'military-installations': 'Places & infrastructure',
+    'osm-pipelines': 'Places & infrastructure',
+    'telegeography-submarine-cables': 'Places & infrastructure',
+    'alpr-cameras': 'Places & infrastructure',
     wind: 'Weather',
     'weather-radar': 'Weather',
     'weather-satellite': 'Weather',
     'weather-lightning': 'Weather',
     'weather-cyclones': 'Weather',
-    radio: 'Media / Context',
-    'recent-imagery': 'Media / Context',
-    'bhote-koshi-2026': 'Special',
-    'bhote-koshi-locator': 'Special',
+    radio: 'Media & context',
+    'recent-imagery': 'Media & context',
+    'bhote-koshi-2026': 'Other',
+    'bhote-koshi-locator': 'Other',
   };
 
   const shell = document.createElement('div');
@@ -454,10 +462,12 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   cctvPanel?.addEventListener('leeway:cctv-frame-ready', confirmWorkingCctv);
 
   function renderLayerMenu() {
-    const rows = (dataManager?.getAll?.() || []).map((row) => ({
-      ...row,
-      category: layerCategories[row.id] || 'Special',
-    }));
+    const rows = (dataManager?.getAll?.() || [])
+      .filter((row) => !PERSONAL_HIDDEN_LAYER_IDS.has(row.id))
+      .map((row) => ({
+        ...row,
+        category: layerCategories[row.id] || 'Other',
+      }));
 
     const groups = new Map(layerCategoryOrder.map((name) => [name, []]));
     for (const row of rows) {
@@ -1294,7 +1304,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       !dataManager.isEnabled?.('flights')
     ) {
       void dataManager
-        .setEnabled('flights', true, { origin: 'business-default' })
+        .setEnabled('flights', true, { origin: 'personal-default' })
         .catch((error) => {
           console.warn('Live aircraft awareness unavailable', error);
         });
