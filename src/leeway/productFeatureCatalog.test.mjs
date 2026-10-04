@@ -96,3 +96,35 @@ test('Personal cockpit opens as a viewport before aircraft selection and release
  assert.match(cockpit, /viewer\?\.destroy\?\.\(\)/);
  assert.match(cockpit, /setInterval\(update, 500\)/);
 });
+
+
+test('Personal Transit exposes explicit layer and mode control instead of one opaque toggle', async () => {
+ const shell = await readFile(new URL('./mapsShell.js', import.meta.url), 'utf8');
+ const controls = await readFile(new URL('./personalTransitControls.js', import.meta.url), 'utf8');
+ const network = await readFile(new URL('../layers/transit/network.js', import.meta.url), 'utf8');
+ assert.match(shell, /mountPersonalTransitControls/);
+ for (const id of ['transit','transit-routes','transit-stops','transit-vehicles'])
+   assert.match(controls, new RegExp('data-layer="' + id + '"'));
+ for (const mode of ['bus','tram','subway','rail','ferry'])
+   assert.match(controls, new RegExp("data-mode=\\\"" + mode + "\\\""));
+ assert.match(network, /visibleModes/);
+ assert.match(network, /PolylineGlowMaterialProperty/);
+});
+
+test('Personal Street View restores a drag-and-drop map target using the server proxy', async () => {
+ const shell = await readFile(new URL('./mapsShell.js', import.meta.url), 'utf8');
+ const street = await readFile(new URL('./personalStreetView.js', import.meta.url), 'utf8');
+ const world = await readFile(new URL('../../server/deployment/vercelWorld.js', import.meta.url), 'utf8');
+ assert.match(shell, /mountPersonalStreetView/);
+ assert.match(street, /screenPointToLonLat/);
+ assert.match(street, /pointerdown/);
+ assert.match(street, /\/api\/streetview\/image/);
+ assert.match(world, /streetViewProxy/);
+});
+
+test('Personal cockpit reads the tracked flights layer directly so rotorcraft use the same cockpit path', async () => {
+ const cockpit = await readFile(new URL('./personalCockpitViewport.js', import.meta.url), 'utf8');
+ assert.match(cockpit, /dataManager\?\.layers\?\.get\('flights'\)/);
+ assert.match(cockpit, /sourceViewer\?\.trackedEntity\?\.gevTrackedId/);
+ assert.doesNotMatch(cockpit, /helicopter.*unavailable/i);
+});
