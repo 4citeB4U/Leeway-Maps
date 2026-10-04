@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = path.dirname(fileURLToPath(new URL('../../', import.meta.url)));
+const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const shell = fs.readFileSync(path.join(ROOT, 'src/leeway/mapsShell.js'), 'utf8');
 const theme = fs.readFileSync(path.join(ROOT, 'src/leeway/personalTheme.css'), 'utf8');
 
