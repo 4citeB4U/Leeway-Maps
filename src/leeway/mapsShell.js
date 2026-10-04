@@ -1373,6 +1373,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     dataManager,
     shell,
     mapViewControls,
+    routePlanner: routing,
     openNearestCctv,
     notify: say,
   });
