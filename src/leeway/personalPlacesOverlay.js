@@ -81,7 +81,7 @@ export function mountPersonalPlacesOverlay({
       if (!Number.isFinite(place.latitude) || !Number.isFinite(place.longitude))
         continue;
       source.entities.add({
-        id: 'place:' + (place.id || \`\${place.latitude}:\${place.longitude}:\${place.name}\`),
+        id: 'place:' + (place.id || `${place.latitude}:${place.longitude}:${place.name}`),
         name: place.name,
         position: Cesium.Cartesian3.fromDegrees(
           place.longitude,
@@ -97,7 +97,7 @@ export function mountPersonalPlacesOverlay({
           disableDepthTestDistance: 50000,
         },
         label: {
-          text: \`\${categoryGlyph(place)} \${place.name}\`,
+          text: `${categoryGlyph(place)} ${place.name}`,
           font: '600 12px system-ui',
           fillColor: Cesium.Color.WHITE,
           outlineColor: Cesium.Color.fromCssColorString('#061622'),
