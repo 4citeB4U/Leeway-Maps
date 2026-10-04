@@ -83,3 +83,40 @@ export function connectionChange(previous, current) {
     return { meaningful: true, reason: 'margin-change', state: current.state };
   return { meaningful: false, reason: null, state: current.state };
 }
+
+export function normalizeJourneyReference(value) {
+  return String(value || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+}
+
+export function bindLiveEvidenceToPlannedLeg(legs, liveLeg) {
+  if (!liveLeg) return Array.isArray(legs) ? [...legs] : [];
+  const aliases = new Set(
+    [liveLeg.reference, liveLeg.label, ...(liveLeg.aliases || [])]
+      .map(normalizeJourneyReference)
+      .filter(Boolean),
+  );
+  if (!aliases.size) return upsertJourneyLeg(legs, liveLeg);
+  const next = Array.isArray(legs) ? legs.map((leg) => ({ ...leg })) : [];
+  const plannedIndex = next.findIndex((leg) => {
+    if (leg.kind !== liveLeg.kind && !(leg.kind === 'transit' && ['vehicles','stops','routes'].includes(liveLeg.kind)))
+      return false;
+    const ref = normalizeJourneyReference(leg.reference || leg.label);
+    return ref && aliases.has(ref);
+  });
+  if (plannedIndex < 0) return upsertJourneyLeg(next, liveLeg);
+  const planned = next[plannedIndex];
+  next[plannedIndex] = {
+    ...planned,
+    ...liveLeg,
+    key: planned.key,
+    plannedDepartureMs: planned.plannedDepartureMs ?? planned.departureMs ?? null,
+    plannedArrivalMs: planned.plannedArrivalMs ?? planned.arrivalMs ?? null,
+    scheduledDepartureMs: planned.scheduledDepartureMs ?? planned.departureMs ?? null,
+    scheduledArrivalMs: planned.scheduledArrivalMs ?? planned.arrivalMs ?? null,
+    reference: planned.reference || liveLeg.reference || null,
+  };
+  return next;
+}
