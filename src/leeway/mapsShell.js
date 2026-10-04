@@ -23,6 +23,7 @@ import { mountFeatureCenter } from './featureCenter.js';
 import { featureCatalogForEdition } from './productFeatureCatalog.js';
 import { mountJourneyContinuityMonitor } from './journeyContinuityMonitor.js';
 import { applyMobileRenderPolicy, deviceCapabilityProfile } from './devicePerformanceProfile.js';
+import { buildWorkloadPlan, discoverRuntimeCapabilities } from './runtimeWorkloadBroker.js';
 
 function ensureStyles(documentRef) {
   if (documentRef.getElementById('leeway-enterprise-shell-styles')) return;
@@ -1370,6 +1371,13 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   }
 
   const deviceProfile = deviceCapabilityProfile();
+  const runtimeCapabilities = discoverRuntimeCapabilities();
+  const workloadPlan = buildWorkloadPlan(runtimeCapabilities, [
+    { id: 'map-render', kind: 'map-render', latencyCritical: true },
+    { id: 'visual-inference', kind: 'visual-inference', latencyCritical: true },
+    { id: 'journey-geospatial', kind: 'geospatial-compute', latencyCritical: true },
+    { id: 'background-index', kind: 'background-index', latencyCritical: false },
+  ]);
   const devicePolicyState = applyMobileRenderPolicy({ viewer, dataManager, profile: deviceProfile });
   document.body.dataset.leewayDevicePolicy = devicePolicyState.policy.id;
   const mapViewControls = mountMapViewControls({ application, shell });
@@ -1401,6 +1409,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     },
     selectCctv,
     getDeviceProfile: () => devicePolicyState,
+    getRuntimeCapabilities: () => ({ runtimeCapabilities, workloadPlan }),
     openAgent: () => toggleAgent(true),
     closeAgent: () => toggleAgent(false),
     notify: say,
