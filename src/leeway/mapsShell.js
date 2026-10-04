@@ -7,6 +7,8 @@ import * as Cesium from 'cesium';
 import { mountRoutePlanner } from './routePlanner.js';
 import { createRouteClient } from './routePlannerCore.js';
 import './mapFirst.css';
+import './personalTheme.css';
+import './mobileReadability.css';
 import { mountRoadsidePlaces } from './roadsidePlaces.js';
 import { mountDriveMode } from './driveMode.js';
 import { mountFuelAdvisor } from './fuelAdvisor.js';
@@ -19,6 +21,8 @@ import { mountExperiencePreferences } from './experiencePreferences.js';
 import { openNearestCctv } from './cctvExperience.js';
 import { mountFeatureCenter } from './featureCenter.js';
 import { featureCatalogForEdition } from './productFeatureCatalog.js';
+import { mountJourneyContinuityMonitor } from './journeyContinuityMonitor.js';
+import { applyMobileRenderPolicy, deviceCapabilityProfile } from './devicePerformanceProfile.js';
 
 function ensureStyles(documentRef) {
   if (documentRef.getElementById('leeway-enterprise-shell-styles')) return;
@@ -276,7 +280,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       <button class="lws-dock-btn" data-action="view-satellite">${mapIcon('satellite')}<span>Satellite</span></button>
       <button class="lws-dock-btn" data-action="report-hazard">${mapIcon('report')}<span>Report</span></button>
       <button class="lws-ai" data-action="ai" aria-label="Talk to Agent Lee">${mapIcon('mic')}<strong>Agent Lee</strong></button>
-      <button class="lws-dock-btn" data-action="preferences">${mapIcon('settings')}<span>Language and music</span></button>
+      <button class="lws-dock-btn" data-action="help">${mapIcon('info')}<span>Help / Atlas</span></button><button class="lws-dock-btn" data-action="preferences">${mapIcon('settings')}<span>Settings</span></button>
       ${[
             ['travel', 'Travel'],
             ['transit', 'Transit'],
@@ -1105,6 +1109,10 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       toggleAgent();
       return;
     }
+    if (action === 'help') {
+      preferences.openAtlas?.();
+      return;
+    }
     if (action === 'preferences') {
       preferences.open();
       return;
@@ -1361,7 +1369,19 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     };
   }
 
+  const deviceProfile = deviceCapabilityProfile();
+  const devicePolicyState = applyMobileRenderPolicy({ viewer, dataManager, profile: deviceProfile });
+  document.body.dataset.leewayDevicePolicy = devicePolicyState.policy.id;
   const mapViewControls = mountMapViewControls({ application, shell });
+  const journeyContinuity = mountJourneyContinuityMonitor({
+    viewer,
+    dataManager,
+    shell,
+    mapViewControls,
+    routePlanner: routing,
+    openNearestCctv,
+    notify: say,
+  });
   const mapToolsPanel = mountMapToolsPanel({ application, shell });
 
   return {
@@ -1380,10 +1400,12 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       setRightPanel('cctv', { toggle: false });
     },
     selectCctv,
+    getDeviceProfile: () => devicePolicyState,
     openAgent: () => toggleAgent(true),
     closeAgent: () => toggleAgent(false),
     notify: say,
     destroy() {
+      journeyContinuity.destroy();
       mapToolsPanel.destroy();
       mapViewControls.destroy();
       cctvObserver?.disconnect();

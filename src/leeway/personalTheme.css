@@ -1,0 +1,65 @@
+/* Personal-only LeeWay Maps visual identity. Business Logistics remains unchanged. */
+body[data-leeway-edition="personal"] #leeway-world-shell{
+  --lw-personal-gold:#ffd54a;
+  --lw-personal-green:#65e572;
+  --lw-personal-red:#ff626d;
+  --lw-personal-amber:#ff9f2f;
+  font-size:14px;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-top{
+  border-bottom-color:rgba(255,213,74,.42);
+  background:linear-gradient(90deg,rgba(19,24,10,.96),rgba(8,22,15,.96),rgba(29,12,14,.94));
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-brand strong{font-size:19px;letter-spacing:.18em}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-brand span{font-size:10px;opacity:.72;color:#e8f6ca}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-search input{
+  font-size:14px;border-color:rgba(255,213,74,.35);background:rgba(20,29,13,.9)
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-search input:focus{
+  border-color:var(--lw-personal-gold);box-shadow:0 0 0 2px rgba(255,213,74,.15)
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-rail{
+  border-color:rgba(101,229,114,.38);background:rgba(8,24,15,.94)
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-nav{font-size:12px;border-color:rgba(255,213,74,.18)}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-nav .i{font-size:22px;color:var(--lw-personal-gold)}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-nav:hover,
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-nav.active{
+  color:#fff7cf;background:rgba(101,229,114,.13);box-shadow:inset 4px 0 0 var(--lw-personal-green)
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-dock{
+  border-color:rgba(255,213,74,.32);background:rgba(14,23,13,.95)
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-dock-btn{
+  font-size:12px;border-color:rgba(255,213,74,.24);background:rgba(31,34,13,.78)
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-dock-btn .i{color:var(--lw-personal-gold)}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-dock-btn:hover{background:rgba(255,159,47,.15)}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-ai{
+  border-color:var(--lw-personal-red);box-shadow:0 0 28px rgba(255,98,109,.28);
+  background:radial-gradient(circle at 50% 35%,rgba(255,213,74,.20),rgba(44,18,18,.96) 65%)
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-ai span{color:var(--lw-personal-gold)}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-live b{color:var(--lw-personal-green)}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-layer-menu{
+  border-color:rgba(255,213,74,.32);background:rgba(12,24,14,.97)
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-layer-group{color:var(--lw-personal-gold)}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-layer-row.on .lws-layer-state{color:var(--lw-personal-green)}
+body[data-leeway-edition="personal"] .lw-preferences{
+  width:min(620px,calc(100vw - 32px));font-size:17px;
+  border-color:#c89d24;background:linear-gradient(145deg,#2a2b10,#0b2416 58%,#2b1014)
+}
+body[data-leeway-edition="personal"] .lw-preferences h2{font-size:28px}
+body[data-leeway-edition="personal"] .lw-preferences h3{font-size:22px;color:#ffe36f}
+body[data-leeway-edition="personal"] .lw-preferences summary{font-size:16px;color:#ffe36f}
+body[data-leeway-edition="personal"] .lw-preferences select,
+body[data-leeway-edition="personal"] .lw-preferences button{
+  font-size:16px;border-color:#8bbd4f;background:#183521
+}
+body[data-leeway-edition="personal"] .lw-atlas-grid details{border-color:#7b8f36;background:#111f13}
+body[data-leeway-edition="personal"] .lw-atlas-grid summary{color:#ffe36f}
+body[data-leeway-edition="personal"] .lw-truth.live{color:#65e572}
+body[data-leeway-edition="personal"] .lw-truth.scheduled{color:#ffd54a}
+body[data-leeway-edition="personal"] .lw-truth.stale,
+body[data-leeway-edition="personal"] .lw-truth.unavailable{color:#ff626d}

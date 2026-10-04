@@ -86,3 +86,12 @@
     max-height: calc(100dvh - 245px);
   }
 }
+
+.lw-atlas-intro{padding:10px 12px;border:1px solid #2a6275;border-radius:12px;background:#0a2634}
+.lw-atlas-grid{display:grid;gap:9px;margin-top:10px}
+.lw-atlas-grid details{border:1px solid #345f70;border-radius:12px;background:#071a25;overflow:hidden}
+.lw-atlas-grid summary{cursor:pointer;padding:12px 14px;font-weight:800;color:#83efff}
+.lw-atlas-grid summary:hover{background:#0d2a39}
+.lw-atlas-body{padding:0 14px 14px;color:#d7eaf0;font-size:13px;line-height:1.55}
+.lw-truth{display:inline-block;padding:2px 6px;margin:1px 2px;border-radius:99px;border:1px solid currentColor;font-size:10px;font-weight:800;letter-spacing:.06em}
+.lw-truth.live{color:#5ff0a9}.lw-truth.scheduled{color:#8de8ff}.lw-truth.mapped{color:#a9b9c8}.lw-truth.simulated{color:#d6a2ff}.lw-truth.stale{color:#ffd36b}.lw-truth.unavailable{color:#ff8585}
