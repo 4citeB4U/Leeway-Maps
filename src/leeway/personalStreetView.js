@@ -35,7 +35,8 @@ export function mountPersonalStreetView({
   documentRef = document,
 } = {}) {
   const rail = shell?.querySelector?.('.lm-rail');
-  if (!rail || !viewer) return { destroy() {}, openAt() {} };
+  if (!rail || !viewer)
+    return { destroy() {}, openAt() {}, open() {}, close() {}, isOpen: () => false };
 
   const button = documentRef.createElement('button');
   button.type = 'button';
@@ -88,6 +89,7 @@ export function mountPersonalStreetView({
     if (!next) return false;
     point = next;
     panel.hidden = false;
+    panel.setAttribute('aria-hidden', 'false');
     refresh();
     return true;
   }
@@ -102,10 +104,23 @@ export function mountPersonalStreetView({
     );
   }
 
-  button.addEventListener('click', () => {
-    const center = centerPoint();
-    if (!openAt(center)) notify('Street View is unavailable at the current map center.');
-  });
+  function open() {
+    const center = point || centerPoint();
+    if (!openAt(center)) {
+      notify('Street View is unavailable at the current map center.');
+      return { ok: false };
+    }
+    return { ok: true };
+  }
+
+  function close() {
+    panel.hidden = true;
+    panel.setAttribute('aria-hidden', 'true');
+    image.removeAttribute('src');
+    return { ok: true };
+  }
+
+  button.addEventListener('click', open);
 
   const move = (event) => {
     if (!drag || !ghost) return;
@@ -134,10 +149,7 @@ export function mountPersonalStreetView({
     documentRef.addEventListener('pointerup', up, { once: true });
   });
 
-  panel.querySelector('[data-street-close]').onclick = () => {
-    panel.hidden = true;
-    image.removeAttribute('src');
-  };
+  panel.querySelector('[data-street-close]').onclick = close;
   panel.querySelector('[data-street-refresh]').onclick = refresh;
   for (const control of panel.querySelectorAll('[data-turn]')) {
     control.onclick = () => {
@@ -148,7 +160,10 @@ export function mountPersonalStreetView({
 
   return {
     root: panel,
+    open,
     openAt,
+    close,
+    isOpen: () => !panel.hidden,
     destroy() {
       documentRef.removeEventListener('pointermove', move);
       ghost?.remove();
