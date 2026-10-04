@@ -975,6 +975,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     if (!panel) return;
     const next = open == null ? !panel.classList.contains('leeway-open') : open;
     panel.classList.toggle('leeway-open', next);
+    shell.querySelector('[data-agent-flip]')?.classList.toggle('open', next);
     panel.dispatchEvent(
       new CustomEvent(next ? 'leeway:agent-open' : 'leeway:agent-close'),
     );
