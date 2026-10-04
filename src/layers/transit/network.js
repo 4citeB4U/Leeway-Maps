@@ -52,6 +52,30 @@ export function createTransitNetworkLayer({
   };
   const description = (text) =>
     `<pre style="white-space:pre-wrap">${escapeTransitText(text)}</pre>`;
+  const routeMode = (item) => {
+    const mode = String(item?.route_mode || '').toLowerCase();
+    if (['train', 'rail'].includes(mode)) return 'rail';
+    if (['subway', 'metro'].includes(mode)) return 'subway';
+    if (['light_rail', 'tram', 'streetcar'].includes(mode)) return 'tram';
+    if (mode === 'ferry') return 'ferry';
+    if (mode === 'bus' || mode === 'trolleybus') return 'bus';
+    const type = Number(item?.route_type);
+    if (type === 0) return 'tram';
+    if (type === 1) return 'subway';
+    if (type === 2) return 'rail';
+    if (type === 3 || type === 11) return 'bus';
+    if (type === 4) return 'ferry';
+    return 'unknown';
+  };
+  const routeFallbackColor = (mode) =>
+    ({
+      bus: '#35f28b',
+      tram: '#ff9f43',
+      subway: '#55e7ff',
+      rail: '#ffd64a',
+      ferry: '#5ea7ff',
+      unknown: '#a9f6ff',
+    })[mode] || '#a9f6ff';
   function showCard(text) {
     if (typeof document === 'undefined') return;
     if (!card) {
@@ -230,9 +254,10 @@ export function createTransitNetworkLayer({
             : item.stop_name;
         const copy = `${name || key}\n${item.agency?.agency_name || ''}\n${data.source}\n${data.mappedOnly ? 'Community-mapped network. Timetables, arrivals, alerts, and live vehicles unavailable from this source.' : kind === 'routes' ? 'Published representative route; not live vehicle position.' : 'Select this stop to view the next hour of departures.'}\n${transitAlertText(item.alerts)}\nRetrieved ${data.retrievedAt}`;
         if (kind === 'routes') {
+          const mode = routeMode(item);
           const color = /^[0-9a-f]{6}$/i.test(item.route_color || '')
             ? `#${item.route_color}`
-            : '#40c9ff';
+            : routeFallbackColor(mode);
           const lines = transitGeometryLines(item.geometry);
           for (const [index, line] of lines.entries()) {
             const entity = dataSource.entities.add({
@@ -243,12 +268,20 @@ export function createTransitNetworkLayer({
                 positions: Cesium.Cartesian3.fromDegreesArray(
                   line.flatMap((p) => [p[0], p[1]]),
                 ),
-                width: 3,
-                material: Cesium.Color.fromCssColorString(color),
+                width: mode === 'rail' || mode === 'subway' ? 6 : 4,
+                material: new Cesium.PolylineGlowMaterialProperty({
+                  color: Cesium.Color.fromCssColorString(color).withAlpha(0.96),
+                  glowPower:
+                    mode === 'rail' || mode === 'subway' ? 0.34 : 0.2,
+                  taperPower: 0.7,
+                }),
                 clampToGround: true,
               },
             });
-            entity._leewayTransitRecord = Object.freeze({ ...item });
+            entity._leewayTransitRecord = Object.freeze({
+              ...item,
+              route_mode: mode,
+            });
             entity._leewayTransitDescription = copy;
           }
           if (lines.length) count++;
