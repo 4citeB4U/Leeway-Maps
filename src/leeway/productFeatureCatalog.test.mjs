@@ -166,3 +166,16 @@ test('Personal Transit button is a reversible control rather than a one-way open
  assert.match(controls, /isOpen: \(\) => !root\.hidden/);
  assert.match(controls, /clearInterval\(timer\)/);
 });
+
+
+test('CCTV cockpit and Street View are three independent Personal viewports', async () => {
+ const street = await readFile(new URL('./personalStreetView.js', import.meta.url), 'utf8');
+ const cockpit = await readFile(new URL('./personalCockpitViewport.js', import.meta.url), 'utf8');
+ const shell = await readFile(new URL('./mapsShell.js', import.meta.url), 'utf8');
+ assert.match(street, /isOpen: \(\) => !panel\.hidden/);
+ assert.match(street, /function close\(\)/);
+ assert.match(cockpit, /root\.hidden = false/);
+ assert.match(shell, /data-cctv-viewport/);
+ assert.doesNotMatch(street, /cctv.*hidden|cockpit.*hidden/i);
+ assert.doesNotMatch(cockpit, /streetview.*hidden|cctv.*hidden/i);
+});
