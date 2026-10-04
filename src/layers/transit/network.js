@@ -50,6 +50,69 @@ export function createTransitNetworkLayer({
     viewer?.scene?.requestRender?.();
     manager?.refreshLayerStats?.();
   };
+
+  function normalizeRouteRef(value) {
+    return String(value || '')
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '');
+  }
+  function projectPointToSegment(lat, lon, a, b) {
+    const lat0 = (lat * Math.PI) / 180;
+    const scaleX = 111320 * Math.cos(lat0);
+    const scaleY = 111320;
+    const px = lon * scaleX, py = lat * scaleY;
+    const ax = a[0] * scaleX, ay = a[1] * scaleY;
+    const bx = b[0] * scaleX, by = b[1] * scaleY;
+    const dx = bx - ax, dy = by - ay;
+    const denom = dx * dx + dy * dy || 1;
+    const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / denom));
+    const x = ax + t * dx, y = ay + t * dy;
+    return {
+      lon: x / scaleX,
+      lat: y / scaleY,
+      t,
+      distanceM: Math.hypot(px - x, py - y),
+    };
+  }
+  function bestSnapOnLine(line, point) {
+    let best = null;
+    for (let i = 0; i < line.length - 1; i++) {
+      const snap = projectPointToSegment(point.lat, point.lon, line[i], line[i + 1]);
+      if (!best || snap.distanceM < best.distanceM)
+        best = { ...snap, segmentIndex: i };
+    }
+    return best;
+  }
+  function routePathBetween(routeRef, from, to, maxDistanceM = 100) {
+    const key = normalizeRouteRef(routeRef);
+    if (!key || !from || !to) return null;
+    const lines = routeGeometryIndex.get(key) || [];
+    let winner = null;
+    for (const line of lines) {
+      if (!Array.isArray(line) || line.length < 2) continue;
+      const a = bestSnapOnLine(line, from);
+      const b = bestSnapOnLine(line, to);
+      if (!a || !b || a.distanceM > maxDistanceM || b.distanceM > maxDistanceM)
+        continue;
+      const score = a.distanceM + b.distanceM;
+      if (!winner || score < winner.score)
+        winner = { line, a, b, score };
+    }
+    if (!winner) return null;
+    const { line, a, b } = winner;
+    const path = [[a.lon, a.lat]];
+    if (a.segmentIndex <= b.segmentIndex) {
+      for (let i = a.segmentIndex + 1; i <= b.segmentIndex; i++)
+        path.push(line[i]);
+    } else {
+      for (let i = a.segmentIndex; i > b.segmentIndex; i--)
+        path.push(line[i]);
+    }
+    path.push([b.lon, b.lat]);
+    return path;
+  }
+
   const description = (text) =>
     `<pre style="white-space:pre-wrap">${escapeTransitText(text)}</pre>`;
   const routeMode = (item) => {
@@ -212,6 +275,7 @@ export function createTransitNetworkLayer({
       credentialsRequired = false;
       retryAt = 0;
       dataSource.entities.removeAll();
+      if (kind === 'routes') routeGeometryIndex.clear();
       count = 0;
       activeSource = data.mappedOnly
         ? 'OpenStreetMap · mapped network'
@@ -259,6 +323,19 @@ export function createTransitNetworkLayer({
             ? `#${item.route_color}`
             : routeFallbackColor(mode);
           const lines = transitGeometryLines(item.geometry);
+          const routeKeys = [
+            item.route_short_name,
+            item.route_long_name,
+            item.onestop_id,
+            item.id,
+          ]
+            .map(normalizeRouteRef)
+            .filter(Boolean);
+          for (const routeKey of routeKeys) {
+            const bucket = routeGeometryIndex.get(routeKey) || [];
+            bucket.push(...lines);
+            routeGeometryIndex.set(routeKey, bucket);
+          }
           for (const [index, line] of lines.entries()) {
             const entity = dataSource.entities.add({
               id: `${id}:${key}:${index}`,
@@ -427,6 +504,11 @@ export function createTransitNetworkLayer({
       return kind === 'routes'
         ? { visibleModes: [...visibleModes] }
         : {};
+    },
+    routePathBetween(routeRef, from, to, maxDistanceM = 100) {
+      return kind === 'routes'
+        ? routePathBetween(routeRef, from, to, maxDistanceM)
+        : null;
     },
     getStats() {
       return {

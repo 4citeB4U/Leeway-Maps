@@ -20,6 +20,10 @@ import {
   transitStyleProfile,
 } from '../../data/transitPresetStyle.js';
 import {
+  buildRouteTraversal,
+  sampleRouteTraversal,
+} from './routeConstraint.js';
+import {
   MARKER_PIXEL_SIZE,
   ROTATION_REFRESH_MS,
   SELECTED_CARD_REFRESH_MS,
@@ -70,6 +74,23 @@ export function createRendering({ state, services, parts }) {
     if (!entry.sample || entry.sample.fromSeq < 0) return;
     entry.from = entry.segment.from;
     entry.to = entry.segment.to;
+    const routeRef =
+      entry.track?.epochs?.get?.(entry.from?.epoch)?.route ||
+      entry.record?.routeId ||
+      '';
+    const routeLayer =
+      state._dataManager?.layers?.get?.('transit-routes')?.module;
+    const routePath = routeLayer?.routePathBetween?.(
+      routeRef,
+      { lat: entry.from.lat, lon: entry.from.lon },
+      { lat: entry.to.lat, lon: entry.to.lon },
+      90,
+    );
+    entry.routeTraversal = buildRouteTraversal(routePath);
+    entry.routeConstraint =
+      entry.routeTraversal
+        ? { routeRef, source: 'mapped-route-geometry' }
+        : null;
     entry.fromCart = cartesianFor(
       entry.from.lat,
       entry.from.lon,
@@ -93,12 +114,30 @@ export function createRendering({ state, services, parts }) {
       entry.endpointToSeq !== entry.sample.toSeq
     )
       refreshEndpoints(entry);
-    const known = parts.trails.samplePosition(
-      entry,
-      entry.sample,
-      state._scratchCartesian,
-      nearGround,
-    );
+    let known = false;
+    const constrained =
+      entry.routeTraversal && Number.isFinite(entry.sample.fraction)
+        ? sampleRouteTraversal(entry.routeTraversal, entry.sample.fraction)
+        : null;
+    if (constrained) {
+      const fraction = Math.max(0, Math.min(1, entry.sample.fraction));
+      const fromH = Number(entry.from?.h || 0);
+      const toH = Number(entry.to?.h || fromH);
+      cartesianFor(
+        constrained.lat,
+        constrained.lon,
+        fromH + (toH - fromH) * fraction,
+        state._scratchCartesian,
+      );
+      known = true;
+    } else {
+      known = parts.trails.samplePosition(
+        entry,
+        entry.sample,
+        state._scratchCartesian,
+        nearGround,
+      );
+    }
     entry.surfaceReady = !!known;
     entry.heightPending = !known;
     entry.marker.show = !!known && vehicleInView(entry);
