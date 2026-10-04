@@ -212,8 +212,18 @@ export function createQueries({ state, parts }) {
           return `${feed.name} ${status.count}${aged}`;
         })
         .join(' · ');
+      const matched = [...state._vehicles.values()]
+        .map((entry) => entry.mapMatchMeanDeviationM)
+        .filter(Number.isFinite);
       return {
         count,
+        visibleCount: state._visible.size,
+        movingCount: state._moving.size,
+        mapMatchCompleted: state._mapMatchCompleted,
+        mapMatchRejected: state._mapMatchRejected,
+        mapMatchMeanDeviationM: matched.length
+          ? matched.reduce((sum, value) => sum + value, 0) / matched.length
+          : null,
         lastUpdate: state._lastUpdate,
         error: count === 0 ? health.error : null,
         ...(count === 0 && Number.isFinite(health.retryInSec)
