@@ -21,6 +21,7 @@ import { openNearestCctv } from './cctvExperience.js';
 import { mountFeatureCenter } from './featureCenter.js';
 import { featureCatalogForEdition } from './productFeatureCatalog.js';
 import { mountJourneyContinuityMonitor } from './journeyContinuityMonitor.js';
+import { applyMobileRenderPolicy, deviceCapabilityProfile } from './devicePerformanceProfile.js';
 
 function ensureStyles(documentRef) {
   if (documentRef.getElementById('leeway-enterprise-shell-styles')) return;
@@ -1367,6 +1368,9 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     };
   }
 
+  const deviceProfile = deviceCapabilityProfile();
+  const devicePolicyState = applyMobileRenderPolicy({ viewer, dataManager, profile: deviceProfile });
+  document.body.dataset.leewayDevicePolicy = devicePolicyState.policy.id;
   const mapViewControls = mountMapViewControls({ application, shell });
   const journeyContinuity = mountJourneyContinuityMonitor({
     viewer,
@@ -1395,6 +1399,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       setRightPanel('cctv', { toggle: false });
     },
     selectCctv,
+    getDeviceProfile: () => devicePolicyState,
     openAgent: () => toggleAgent(true),
     closeAgent: () => toggleAgent(false),
     notify: say,
