@@ -7,6 +7,7 @@ import * as Cesium from 'cesium';
 import { mountRoutePlanner } from './routePlanner.js';
 import { createRouteClient } from './routePlannerCore.js';
 import './mapFirst.css';
+import './personalTheme.css';
 import { mountRoadsidePlaces } from './roadsidePlaces.js';
 import { mountDriveMode } from './driveMode.js';
 import { mountFuelAdvisor } from './fuelAdvisor.js';
@@ -276,7 +277,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       <button class="lws-dock-btn" data-action="view-satellite">${mapIcon('satellite')}<span>Satellite</span></button>
       <button class="lws-dock-btn" data-action="report-hazard">${mapIcon('report')}<span>Report</span></button>
       <button class="lws-ai" data-action="ai" aria-label="Talk to Agent Lee">${mapIcon('mic')}<strong>Agent Lee</strong></button>
-      <button class="lws-dock-btn" data-action="preferences">${mapIcon('settings')}<span>Settings</span></button>
+      <button class="lws-dock-btn" data-action="help">${mapIcon('info')}<span>Help / Atlas</span></button><button class="lws-dock-btn" data-action="preferences">${mapIcon('settings')}<span>Settings</span></button>
       ${[
             ['travel', 'Travel'],
             ['transit', 'Transit'],
@@ -1103,6 +1104,10 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
 
     if (action === 'ai') {
       toggleAgent();
+      return;
+    }
+    if (action === 'help') {
+      preferences.openAtlas?.();
       return;
     }
     if (action === 'preferences') {
