@@ -1,65 +1,613 @@
-/* Personal-only LeeWay Maps visual identity. Business Logistics remains unchanged. */
-body[data-leeway-edition="personal"] #leeway-world-shell{
-  --lw-personal-gold:#ffd54a;
-  --lw-personal-green:#65e572;
-  --lw-personal-red:#ff626d;
-  --lw-personal-amber:#ff9f2f;
-  font-size:14px;
+/* Personal LeeWay Maps — consumer navigation identity.
+   This file intentionally uses !important on shell presentation because the
+   legacy shared shell injects business-oriented runtime styles after CSS loads. */
+
+body[data-leeway-edition="personal"] #leeway-world-shell {
+  --lm-green:#18b866;
+  --lm-green-deep:#087a43;
+  --lm-yellow:#ffd64a;
+  --lm-red:#e84b55;
+  --lm-white:#ffffff;
+  --lm-ink:#17231c;
+  --lm-soft:#f5f7f3;
+  --lm-line:#d8e2d8;
+  --lm-shadow:0 10px 30px rgba(18,42,27,.18);
+  color:var(--lm-ink)!important;
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+  font-size:15px!important;
 }
-body[data-leeway-edition="personal"] #leeway-world-shell .lws-top{
-  border-bottom-color:rgba(255,213,74,.42);
-  background:linear-gradient(90deg,rgba(19,24,10,.96),rgba(8,22,15,.96),rgba(29,12,14,.94));
+
+/* Header */
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-top {
+  height:78px!important;
+  display:grid!important;
+  grid-template-columns:minmax(220px,330px) minmax(260px,1fr) auto!important;
+  align-items:center!important;
+  gap:16px!important;
+  padding:10px 18px!important;
+  background:rgba(255,255,255,.96)!important;
+  border-bottom:1px solid var(--lm-line)!important;
+  box-shadow:0 3px 18px rgba(20,48,30,.10)!important;
+  backdrop-filter:blur(18px)!important;
 }
-body[data-leeway-edition="personal"] #leeway-world-shell .lws-brand strong{font-size:19px;letter-spacing:.18em}
-body[data-leeway-edition="personal"] #leeway-world-shell .lws-brand span{font-size:10px;opacity:.72;color:#e8f6ca}
-body[data-leeway-edition="personal"] #leeway-world-shell .lws-search input{
-  font-size:14px;border-color:rgba(255,213,74,.35);background:rgba(20,29,13,.9)
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-brand {
+  min-width:0!important;
 }
-body[data-leeway-edition="personal"] #leeway-world-shell .lws-search input:focus{
-  border-color:var(--lw-personal-gold);box-shadow:0 0 0 2px rgba(255,213,74,.15)
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-brand-button {
+  display:flex!important;
+  align-items:center!important;
+  gap:10px!important;
+  width:100%!important;
+  min-height:56px!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  color:var(--lm-ink)!important;
+  box-shadow:none!important;
+  cursor:pointer!important;
+  text-align:left!important;
 }
-body[data-leeway-edition="personal"] #leeway-world-shell .lws-rail{
-  border-color:rgba(101,229,114,.38);background:rgba(8,24,15,.94)
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-brand-mark {
+  position:relative!important;
+  display:block!important;
+  width:50px!important;
+  height:50px!important;
+  flex:0 0 50px!important;
+  border-radius:16px!important;
+  background:var(--lm-white)!important;
+  border:2px solid #dce5dc!important;
+  box-shadow:0 5px 14px rgba(21,58,34,.14)!important;
+  overflow:hidden!important;
 }
-body[data-leeway-edition="personal"] #leeway-world-shell .lws-nav{font-size:12px;border-color:rgba(255,213,74,.18)}
-body[data-leeway-edition="personal"] #leeway-world-shell .lws-nav .i{font-size:22px;color:var(--lw-personal-gold)}
-body[data-leeway-edition="personal"] #leeway-world-shell .lws-nav:hover,
-body[data-leeway-edition="personal"] #leeway-world-shell .lws-nav.active{
-  color:#fff7cf;background:rgba(101,229,114,.13);box-shadow:inset 4px 0 0 var(--lw-personal-green)
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-mark-road {
+  position:absolute!important;
+  left:20px!important;
+  top:-6px!important;
+  width:10px!important;
+  height:62px!important;
+  border-radius:8px!important;
+  background:var(--lm-green)!important;
+  transform:rotate(28deg)!important;
 }
-body[data-leeway-edition="personal"] #leeway-world-shell .lws-dock{
-  border-color:rgba(255,213,74,.32);background:rgba(14,23,13,.95)
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-mark-road::after {
+  content:""!important;
+  position:absolute!important;
+  left:4px!important;
+  top:8px!important;
+  width:2px!important;
+  height:45px!important;
+  border-left:2px dashed rgba(255,255,255,.95)!important;
 }
-body[data-leeway-edition="personal"] #leeway-world-shell .lws-dock-btn{
-  font-size:12px;border-color:rgba(255,213,74,.24);background:rgba(31,34,13,.78)
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-mark-dot {
+  position:absolute!important;
+  width:11px!important;
+  height:11px!important;
+  border-radius:50%!important;
+  border:2px solid var(--lm-white)!important;
+  box-shadow:0 1px 4px #0003!important;
 }
-body[data-leeway-edition="personal"] #leeway-world-shell .lws-dock-btn .i{color:var(--lw-personal-gold)}
-body[data-leeway-edition="personal"] #leeway-world-shell .lws-dock-btn:hover{background:rgba(255,159,47,.15)}
-body[data-leeway-edition="personal"] #leeway-world-shell .lws-ai{
-  border-color:var(--lw-personal-red);box-shadow:0 0 28px rgba(255,98,109,.28);
-  background:radial-gradient(circle at 50% 35%,rgba(255,213,74,.20),rgba(44,18,18,.96) 65%)
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-mark-dot-green {left:8px!important;top:10px!important;background:var(--lm-green)!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-mark-dot-yellow {right:7px!important;top:9px!important;background:var(--lm-yellow)!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-mark-dot-red {right:8px!important;bottom:8px!important;background:var(--lm-red)!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-brand-copy {
+  display:grid!important;
+  gap:2px!important;
+  min-width:0!important;
 }
-body[data-leeway-edition="personal"] #leeway-world-shell .lws-ai span{color:var(--lw-personal-gold)}
-body[data-leeway-edition="personal"] #leeway-world-shell .lws-live b{color:var(--lw-personal-green)}
-body[data-leeway-edition="personal"] #leeway-world-shell .lws-layer-menu{
-  border-color:rgba(255,213,74,.32);background:rgba(12,24,14,.97)
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-brand-copy strong {
+  color:#0b6f3c!important;
+  font-size:22px!important;
+  line-height:1.05!important;
+  letter-spacing:-.02em!important;
+  font-weight:850!important;
+  text-transform:none!important;
 }
-body[data-leeway-edition="personal"] #leeway-world-shell .lws-layer-group{color:var(--lw-personal-gold)}
-body[data-leeway-edition="personal"] #leeway-world-shell .lws-layer-row.on .lws-layer-state{color:var(--lw-personal-green)}
-body[data-leeway-edition="personal"] .lw-preferences{
-  width:min(620px,calc(100vw - 32px));font-size:17px;
-  border-color:#c89d24;background:linear-gradient(145deg,#2a2b10,#0b2416 58%,#2b1014)
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-brand-copy span {
+  color:#657268!important;
+  font-size:11px!important;
+  line-height:1.25!important;
+  letter-spacing:0!important;
+  opacity:1!important;
+  white-space:normal!important;
 }
-body[data-leeway-edition="personal"] .lw-preferences h2{font-size:28px}
-body[data-leeway-edition="personal"] .lw-preferences h3{font-size:22px;color:#ffe36f}
-body[data-leeway-edition="personal"] .lw-preferences summary{font-size:16px;color:#ffe36f}
+
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-search {
+  position:relative!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-search::before {content:none!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-search-icon {
+  position:absolute!important;
+  z-index:2!important;
+  left:16px!important;
+  top:50%!important;
+  transform:translateY(-50%)!important;
+  color:#5c6d61!important;
+  font-size:24px!important;
+  pointer-events:none!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-search input {
+  width:100%!important;
+  height:52px!important;
+  padding:0 54px 0 47px!important;
+  border-radius:18px!important;
+  border:1.5px solid #cbd8ce!important;
+  background:#f8faf7!important;
+  color:#1c2b21!important;
+  font-size:16px!important;
+  box-shadow:inset 0 1px 2px rgba(18,42,27,.04)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-search input::placeholder {color:#758179!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-search input:focus {
+  border-color:var(--lm-green)!important;
+  box-shadow:0 0 0 4px rgba(24,184,102,.14)!important;
+  outline:none!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-search-locate {
+  position:absolute!important;
+  right:8px!important;
+  top:8px!important;
+  width:36px!important;
+  height:36px!important;
+  min-height:36px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:12px!important;
+  border:0!important;
+  background:#e9f7ee!important;
+  color:var(--lm-green-deep)!important;
+  box-shadow:none!important;
+  padding:0!important;
+}
+
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-top-actions {
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  overflow:visible!important;
+  flex-wrap:nowrap!important;
+  justify-content:flex-end!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-pill {
+  min-height:44px!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:7px!important;
+  padding:8px 12px!important;
+  border-radius:14px!important;
+  border:1px solid #d5ded6!important;
+  background:var(--lm-white)!important;
+  color:#26372c!important;
+  font-size:13px!important;
+  font-weight:750!important;
+  box-shadow:0 3px 10px rgba(17,48,29,.08)!important;
+  white-space:nowrap!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-pill .lw-icon {width:20px!important;height:20px!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-pill-green {background:#e9f8ef!important;border-color:#b8e4c7!important;color:#087a43!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-pill-yellow {background:#fff7d2!important;border-color:#f3da69!important;color:#6d5700!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-pill-white {background:#fff!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-profile {
+  min-height:46px!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  padding:5px 10px 5px 6px!important;
+  border-radius:16px!important;
+  border:1px solid #ead1d3!important;
+  background:#fff!important;
+  color:#552429!important;
+  box-shadow:0 3px 10px rgba(17,48,29,.08)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-profile span {
+  width:34px!important;
+  height:34px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:12px!important;
+  background:var(--lm-red)!important;
+  color:#fff!important;
+  font-weight:850!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-profile b {font-size:12px!important}
+
+/* Friendly left rail */
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail {
+  top:94px!important;
+  bottom:104px!important;
+  left:14px!important;
+  width:92px!important;
+  padding:8px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:7px!important;
+  border-radius:22px!important;
+  border:1px solid #d8e2d8!important;
+  background:rgba(255,255,255,.96)!important;
+  box-shadow:var(--lm-shadow)!important;
+  backdrop-filter:blur(16px)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail .lws-nav {
+  min-height:64px!important;
+  padding:8px 5px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:5px!important;
+  border-radius:16px!important;
+  border:1px solid transparent!important;
+  background:transparent!important;
+  color:#56645a!important;
+  font-size:12px!important;
+  font-weight:760!important;
+  box-shadow:none!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail .lws-nav .lw-icon {
+  display:block!important;
+  width:25px!important;
+  height:25px!important;
+  color:#6e7a70!important;
+  filter:none!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail .lws-nav:hover {
+  background:#f4f8f4!important;
+  border-color:#dde6dd!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail .lws-nav.active {
+  background:#e6f8ed!important;
+  border-color:#b7e7c8!important;
+  color:#087a43!important;
+  box-shadow:none!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail .lws-nav.active .lw-icon {color:var(--lm-green)!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail-more .lw-icon {color:var(--lm-red)!important}
+
+/* Main quick tools — consumer-first, white cards with signal colors */
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-dock {
+  left:50%!important;
+  bottom:14px!important;
+  transform:translateX(-50%)!important;
+  width:min(900px,calc(100vw - 130px))!important;
+  max-width:900px!important;
+  min-height:76px!important;
+  display:grid!important;
+  grid-template-columns:repeat(8,minmax(78px,1fr))!important;
+  gap:7px!important;
+  padding:8px!important;
+  border-radius:24px!important;
+  border:1px solid #d8e2d8!important;
+  background:rgba(255,255,255,.97)!important;
+  box-shadow:0 10px 35px rgba(13,47,26,.18)!important;
+  overflow:visible!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-dock .lws-dock-btn {
+  min-width:0!important;
+  width:100%!important;
+  min-height:58px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:4px!important;
+  padding:6px 4px!important;
+  border-radius:16px!important;
+  border:1px solid #e0e7e1!important;
+  background:#fff!important;
+  color:#435147!important;
+  box-shadow:0 2px 8px rgba(14,43,24,.07)!important;
+  font-size:11px!important;
+  font-weight:760!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-dock .lws-dock-btn:hover {
+  transform:translateY(-1px)!important;
+  border-color:#b7d7bf!important;
+  background:#fbfdfb!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-dock .lws-dock-btn .lw-icon {
+  width:23px!important;
+  height:23px!important;
+  color:#526158!important;
+  filter:none!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-dock .lm-home-action {
+  background:#e9f8ef!important;
+  border-color:#b9e6c9!important;
+  color:#087a43!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-dock .lm-home-action .lw-icon {color:var(--lm-green)!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-dock [data-dock="traffic"] .lw-icon {color:var(--lm-red)!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-dock [data-dock="weather"] .lw-icon {color:#d6a600!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-dock [data-dock="cctv"] .lw-icon {color:#8a4d52!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-dock [data-action="help"] {background:#fff9dd!important;border-color:#f1dc7a!important}
+
+/* Location card */
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-location-card {
+  top:94px!important;
+  left:122px!important;
+  max-width:min(520px,calc(100vw - 650px))!important;
+  padding:10px 14px!important;
+  border-radius:16px!important;
+  border:1px solid #dce5dc!important;
+  background:rgba(255,255,255,.95)!important;
+  color:#26362b!important;
+  box-shadow:0 4px 16px rgba(15,43,25,.11)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-location-card strong {
+  font-size:14px!important;
+  color:#0c6e3e!important;
+  letter-spacing:0!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-location-card span {
+  font-size:12px!important;
+  color:#647168!important;
+  opacity:1!important;
+}
+
+/* Nearby actions */
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-context-actions {
+  top:94px!important;
+  right:14px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:8px!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-context-actions .lws-right-tab {
+  width:88px!important;
+  min-height:58px!important;
+  padding:7px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:4px!important;
+  writing-mode:horizontal-tb!important;
+  transform:none!important;
+  border-radius:16px!important;
+  border:1px solid #d8e2d8!important;
+  background:rgba(255,255,255,.96)!important;
+  color:#4e5d52!important;
+  box-shadow:0 4px 16px rgba(13,47,26,.10)!important;
+  font-size:11px!important;
+  letter-spacing:0!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-context-actions .lws-right-tab .lw-icon {
+  width:22px!important;
+  height:22px!important;
+  color:#526158!important;
+  filter:none!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-context-actions .lws-right-tab.active {
+  background:#e8f8ee!important;
+  border-color:#a9ddb9!important;
+  color:#087a43!important;
+  box-shadow:0 5px 18px rgba(12,110,62,.16)!important;
+}
+
+/* Sheets/panels */
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-sheet,
+body[data-leeway-edition="personal"] .lw-preferences,
+body[data-leeway-edition="personal"] .lw-journey-watch {
+  color:#26362b!important;
+  border:1px solid #d8e2d8!important;
+  background:rgba(255,255,255,.98)!important;
+  box-shadow:0 18px 50px rgba(14,43,24,.22)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-sheet {
+  top:94px!important;
+  left:122px!important;
+  width:320px!important;
+  max-height:calc(100dvh - 190px)!important;
+  overflow:auto!important;
+  border-radius:20px!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-sheet .lws-layer-head strong {
+  color:#0b6f3c!important;
+  font-size:18px!important;
+  letter-spacing:0!important;
+  text-transform:none!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lm-sheet-help {
+  margin:4px 6px 12px!important;
+  color:#69766c!important;
+  font-size:12px!important;
+  line-height:1.4!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-layer-group {
+  margin:13px 7px 5px!important;
+  color:#816900!important;
+  font-size:11px!important;
+  font-weight:850!important;
+  letter-spacing:.05em!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-layer-row {
+  min-height:48px!important;
+  color:#334338!important;
+  background:#fff!important;
+  border-bottom:1px solid #edf1ed!important;
+  border-radius:10px!important;
+  font-size:14px!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-layer-row:hover {background:#f5f9f5!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-layer-row.on {background:#eaf8ef!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-layer-row.on .lws-layer-state {color:var(--lm-green-deep)!important}
+body[data-leeway-edition="personal"] #leeway-world-shell .lws-layer-id {font-size:10px!important;color:#849087!important;opacity:1!important}
+
+body[data-leeway-edition="personal"] .lw-preferences {
+  width:min(680px,calc(100vw - 24px))!important;
+  border-radius:24px!important;
+  font-size:16px!important;
+}
+body[data-leeway-edition="personal"] .lw-preferences h2 {color:#087a43!important;font-size:28px!important}
+body[data-leeway-edition="personal"] .lw-preferences h3,
+body[data-leeway-edition="personal"] .lw-preferences summary {color:#705a00!important}
 body[data-leeway-edition="personal"] .lw-preferences select,
-body[data-leeway-edition="personal"] .lw-preferences button{
-  font-size:16px;border-color:#8bbd4f;background:#183521
+body[data-leeway-edition="personal"] .lw-preferences button {
+  color:#23332a!important;
+  border-color:#cfdacf!important;
+  background:#fff!important;
+  box-shadow:none!important;
 }
-body[data-leeway-edition="personal"] .lw-atlas-grid details{border-color:#7b8f36;background:#111f13}
-body[data-leeway-edition="personal"] .lw-atlas-grid summary{color:#ffe36f}
-body[data-leeway-edition="personal"] .lw-truth.live{color:#65e572}
-body[data-leeway-edition="personal"] .lw-truth.scheduled{color:#ffd54a}
+body[data-leeway-edition="personal"] .lw-atlas-grid details {border-color:#dbe4dc!important;background:#f8faf7!important}
+body[data-leeway-edition="personal"] .lw-atlas-grid summary {color:#087a43!important}
+
+/* Right-side application panels: make them feel personal rather than tactical. */
+body[data-leeway-edition="personal"].leeway-enterprise-shell
+:is(#leeway-transit-world,#right-context-rail,.lws-context-inspector .cctv-panel-inner,#weather-panel,.lnc-root) {
+  border-color:#d4dfd5!important;
+  border-radius:22px!important;
+  background:rgba(255,255,255,.98)!important;
+  color:#24342a!important;
+  box-shadow:0 16px 44px rgba(13,47,26,.20)!important;
+}
+body[data-leeway-edition="personal"].leeway-enterprise-shell
+:is(#leeway-transit-world,#right-context-rail,#weather-panel,.lnc-root)
+:is(h1,h2,h3,strong,.panel-title,.rail-card-title,.lnc-name) {color:#0b6f3c!important}
+body[data-leeway-edition="personal"].leeway-enterprise-shell
+:is(#leeway-transit-world,#right-context-rail,#weather-panel,.lnc-root)
+:is(p,span,label,.rail-card-line,.rail-card-compact,.lnc-source) {color:#55645a!important}
+body[data-leeway-edition="personal"].leeway-enterprise-shell #cctv-panel .cctv-panel-inner {background:#fff!important}
+body[data-leeway-edition="personal"].leeway-enterprise-shell #cctv-panel .cctv-summary-label {color:#806800!important}
+body[data-leeway-edition="personal"].leeway-enterprise-shell #cctv-panel #cctv-summary {color:#24342a!important}
+
+/* Personal route planner */
+body[data-leeway-edition="personal"] #leeway-world-shell .lw-route-planner {
+  top:94px!important;
+  left:122px!important;
+  border-radius:22px!important;
+  border:1px solid #d7e1d8!important;
+  background:rgba(255,255,255,.99)!important;
+  color:#25352b!important;
+  box-shadow:0 18px 50px rgba(14,43,24,.20)!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lw-route-planner :is(input,select) {
+  color:#24342a!important;
+  background:#f8faf7!important;
+  border-color:#cfdacf!important;
+  font-size:15px!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lw-route-planner button {
+  color:#24342a!important;
+  background:#fff!important;
+  border-color:#cfdacf!important;
+}
+body[data-leeway-edition="personal"] #leeway-world-shell .lw-route-planner .lrp-primary {
+  background:var(--lm-green)!important;
+  border-color:var(--lm-green)!important;
+  color:#fff!important;
+}
+
+/* Truth colors */
+body[data-leeway-edition="personal"] .lw-truth.live {color:var(--lm-green)!important}
+body[data-leeway-edition="personal"] .lw-truth.scheduled {color:#9b7900!important}
 body[data-leeway-edition="personal"] .lw-truth.stale,
-body[data-leeway-edition="personal"] .lw-truth.unavailable{color:#ff626d}
+body[data-leeway-edition="personal"] .lw-truth.unavailable {color:var(--lm-red)!important}
+
+/* Mobile: app-like search + five-column primary tool strip, no tactical rail. */
+@media (max-width:820px) {
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-top {
+    height:126px!important;
+    grid-template-columns:1fr auto!important;
+    grid-template-rows:54px 56px!important;
+    gap:6px 8px!important;
+    padding:7px 10px!important;
+    padding-top:max(7px,env(safe-area-inset-top))!important;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-brand-mark {
+    width:42px!important;height:42px!important;flex-basis:42px!important;border-radius:13px!important;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-brand-copy strong {font-size:19px!important}
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-brand-copy span {display:none!important}
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-search {
+    grid-column:1/-1!important;
+    grid-row:2!important;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-search input {height:50px!important}
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-top-actions {
+    grid-column:2!important;
+    grid-row:1!important;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-top-actions .lm-pill {display:none!important}
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-profile {
+    min-height:42px!important;padding:4px!important;border-radius:14px!important;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-profile span {width:34px!important;height:34px!important}
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-profile b {display:none!important}
+
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-rail {display:none!important}
+
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-dock {
+    bottom:max(8px,env(safe-area-inset-bottom))!important;
+    width:calc(100vw - 12px)!important;
+    max-width:none!important;
+    min-height:70px!important;
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    gap:4px!important;
+    padding:5px!important;
+    border-radius:20px!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    scroll-snap-type:x mandatory!important;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-dock .lws-dock-btn {
+    min-width:68px!important;
+    min-height:58px!important;
+    scroll-snap-align:start!important;
+    font-size:11px!important;
+  }
+
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-location-card {
+    top:136px!important;
+    left:10px!important;
+    max-width:calc(100vw - 112px)!important;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-location-card span {display:none!important}
+
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-context-actions {
+    top:136px!important;
+    right:8px!important;
+    gap:5px!important;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-context-actions .lws-right-tab {
+    width:86px!important;
+    min-height:48px!important;
+    flex-direction:row!important;
+    gap:5px!important;
+    font-size:10px!important;
+  }
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-context-actions .lws-right-tab .lw-icon {
+    width:18px!important;height:18px!important;
+  }
+
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-sheet,
+  body[data-leeway-edition="personal"] #leeway-world-shell .lw-route-planner {
+    top:196px!important;
+    left:8px!important;
+    width:calc(100vw - 16px)!important;
+    max-height:calc(100dvh - 285px)!important;
+  }
+
+  body[data-leeway-edition="personal"].leeway-enterprise-shell
+  :is(#leeway-transit-world,#right-context-rail,#weather-panel,.lnc-root),
+  body[data-leeway-edition="personal"] #leeway-world-shell .lws-context-inspector {
+    top:196px!important;
+    right:8px!important;
+    bottom:90px!important;
+    width:calc(100vw - 16px)!important;
+    max-height:calc(100dvh - 290px)!important;
+  }
+
+  body[data-leeway-edition="personal"] #leeway-world-shell .lws-toast {
+    top:136px!important;
+    max-width:calc(100vw - 20px)!important;
+    color:#24342a!important;
+    background:#fff!important;
+    border-color:#d6e0d7!important;
+    box-shadow:0 5px 16px #0002!important;
+  }
+}
+
+@media (max-width:430px) {
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-brand-copy strong {font-size:18px!important}
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-location-card {max-width:calc(100vw - 100px)!important}
+  body[data-leeway-edition="personal"] #leeway-world-shell .lm-context-actions .lws-right-tab {width:78px!important}
+}
