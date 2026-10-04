@@ -41,7 +41,7 @@ test('personal shell has no dormant commercial controls and travel contacts are 
  assert.doesNotMatch(shell, /isBusiness|loadComparison|Driver radio|data-nav="(?:loads|fleet|drivers|crm)"|workspace\.(?:open|close)/);
  assert.match(shell, /Where do you want to go\?/);
  assert.match(shell, /Go anywhere\. Know what's around you\./);
- assert.match(shell, /Use my location/);
+ assert.match(shell, /My location/);
  assert.match(shell, /Cameras/);
  assert.match(shell, /icon-192\.png/);
  assert.match(shell, /lm-agent-mic/);
