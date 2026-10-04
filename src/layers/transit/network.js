@@ -40,7 +40,9 @@ export function createTransitNetworkLayer({
     displayedKey = null,
     pendingUpdate = null,
     retryAt = 0,
-    credentialsRequired = false;
+    credentialsRequired = false,
+    visibleModes = new Set(['bus', 'tram', 'subway', 'rail', 'ferry', 'unknown']),
+    routeGeometryIndex = new Map();
   const credit = new Cesium.Credit(
     '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a> · <a href="https://www.transit.land/terms">Transitland / transit agencies</a>',
     true,
