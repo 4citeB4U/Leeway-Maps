@@ -7,6 +7,8 @@ import * as Cesium from 'cesium';
 import { mountRoutePlanner } from './routePlanner.js';
 import { createRouteClient } from './routePlannerCore.js';
 import './mapFirst.css';
+import './personalTheme.css';
+import './mobileReadability.css';
 import { mountRoadsidePlaces } from './roadsidePlaces.js';
 import { mountDriveMode } from './driveMode.js';
 import { mountFuelAdvisor } from './fuelAdvisor.js';
@@ -19,6 +21,17 @@ import { mountExperiencePreferences } from './experiencePreferences.js';
 import { openNearestCctv } from './cctvExperience.js';
 import { mountFeatureCenter } from './featureCenter.js';
 import { featureCatalogForEdition } from './productFeatureCatalog.js';
+import { mountJourneyContinuityMonitor } from './journeyContinuityMonitor.js';
+import { applyMobileRenderPolicy, deviceCapabilityProfile } from './devicePerformanceProfile.js';
+import { buildWorkloadPlan, discoverRuntimeCapabilities } from './runtimeWorkloadBroker.js';
+
+const PERSONAL_HIDDEN_LAYER_IDS = new Set([
+  'military',
+  'local-adsb',
+  'military-awareness',
+  'military-installations',
+  'alpr-cameras',
+]);
 
 function ensureStyles(documentRef) {
   if (documentRef.getElementById('leeway-enterprise-shell-styles')) return;
@@ -176,130 +189,124 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   let labeledWorldStackRequested = false;
   const agentPanel = () => document.getElementById('leeway-agent-lee');
   const layerCategoryOrder = [
-    'Transportation',
-    'World Awareness',
-    'Infrastructure',
+    'Getting around',
+    'Nearby & live',
+    'Places & infrastructure',
     'Weather',
-    'Media / Context',
-    'Special',
+    'Media & context',
+    'Other',
   ];
   const layerCategories = {
-    traffic: 'Transportation',
-    'traffic-incidents': 'Transportation',
+    traffic: 'Getting around',
+    'traffic-incidents': 'Getting around',
     'weather-alerts': 'Weather',
-    transit: 'Transportation',
-    'transit-routes': 'Transportation',
-    'transit-stops': 'Transportation',
-    'transit-vehicles': 'Transportation',
-    bikeshare: 'Transportation',
-    directions: 'Transportation',
-    flights: 'Transportation',
-    military: 'Transportation',
-    'local-adsb': 'Transportation',
-    'ais-live-vessels': 'Transportation',
-    cctv: 'World Awareness',
-    earthquakes: 'World Awareness',
-    'fire-perimeters': 'World Awareness',
-    'local-firms': 'World Awareness',
-    satellites: 'World Awareness',
-    'rocket-launches': 'World Awareness',
-    'military-awareness': 'World Awareness',
-    'local-datacenters': 'Infrastructure',
-    'local-dams': 'Infrastructure',
-    'military-installations': 'Infrastructure',
-    'osm-pipelines': 'Infrastructure',
-    'telegeography-submarine-cables': 'Infrastructure',
-    'alpr-cameras': 'Infrastructure',
+    transit: 'Getting around',
+    'transit-routes': 'Getting around',
+    'transit-stops': 'Getting around',
+    'transit-vehicles': 'Getting around',
+    bikeshare: 'Getting around',
+    directions: 'Getting around',
+    flights: 'Getting around',
+    military: 'Getting around',
+    'local-adsb': 'Getting around',
+    'ais-live-vessels': 'Getting around',
+    cctv: 'Nearby & live',
+    earthquakes: 'Nearby & live',
+    'fire-perimeters': 'Nearby & live',
+    'local-firms': 'Nearby & live',
+    satellites: 'Nearby & live',
+    'rocket-launches': 'Nearby & live',
+    'military-awareness': 'Nearby & live',
+    'local-datacenters': 'Places & infrastructure',
+    'local-dams': 'Places & infrastructure',
+    'military-installations': 'Places & infrastructure',
+    'osm-pipelines': 'Places & infrastructure',
+    'telegeography-submarine-cables': 'Places & infrastructure',
+    'alpr-cameras': 'Places & infrastructure',
     wind: 'Weather',
     'weather-radar': 'Weather',
     'weather-satellite': 'Weather',
     'weather-lightning': 'Weather',
     'weather-cyclones': 'Weather',
-    radio: 'Media / Context',
-    'recent-imagery': 'Media / Context',
-    'bhote-koshi-2026': 'Special',
-    'bhote-koshi-locator': 'Special',
+    radio: 'Media & context',
+    'recent-imagery': 'Media & context',
+    'bhote-koshi-2026': 'Other',
+    'bhote-koshi-locator': 'Other',
   };
 
   const shell = document.createElement('div');
   shell.id = 'leeway-world-shell';
   shell.innerHTML = `
-    <header class="lws-top">
-      <div class="lws-brand"><img class="lws-logo" src="${import.meta.env.BASE_URL}leeway-approved-logo.jpg" alt="LeeWay — approved blue circular logo" /><div><strong data-brand-name>LEEWAY MAPS</strong><span data-brand-tagline>YOUR ROAD. YOUR ROUTE.</span></div></div>
-      <div class="lws-search"><input aria-label="Global search" placeholder="Search addresses, places, trips, and roadside stops..." /><kbd>⌘ K</kbd></div>
-      <div class="lws-top-actions">
-        <button class="lws-chip" data-action="map">Map</button>
-        <button class="lws-chip" data-action="world">◉ World</button>
-        <button class="lws-chip" data-action="route">Directions</button>
-        <button class="lws-chip hide-sm" data-action="layers">▱ Layers⌄</button>
-
-        <button class="lws-chip" data-action="roadside">Road stops</button><button class="lws-chip" data-action="capabilities">Capabilities</button><button class="lws-chip hide-sm" data-action="map-only">Hide controls</button>
-        <div class="lws-avatar">AL</div><div class="lws-agent-status">Agent Lee · Copilot<br>Open to connect</div>
+    <header class="lws-top lm-top">
+      <div class="lws-brand lm-brand">
+        <button class="lm-brand-button" data-action="map" type="button" aria-label="LeeWay Maps home">
+          <span class="lm-brand-mark" aria-hidden="true">
+            <svg class="lm-brand-svg" viewBox="0 0 64 64" role="img">
+              <path class="lm-brand-pin" d="M32 5c-13 0-23 10.1-23 22.5C9 44.2 32 60 32 60s23-15.8 23-32.5C55 15.1 45 5 32 5Z"/>
+              <path class="lm-brand-road" d="M24 47c1-7 5-11 10-15 4-3 6-7 6-13"/>
+              <circle class="lm-brand-green" cx="24" cy="47" r="4"/>
+              <circle class="lm-brand-yellow" cx="34" cy="32" r="4"/>
+              <circle class="lm-brand-red" cx="40" cy="19" r="4"/>
+            </svg>
+          </span>
+          <span class="lm-brand-copy"><strong data-brand-name>LeeWay Maps</strong><span data-brand-tagline>Go anywhere. Know what's around you.</span></span>
+        </button>
+      </div>
+      <div class="lws-search lm-search">
+        <span class="lm-search-icon" aria-hidden="true">⌕</span>
+        <input aria-label="Search LeeWay Maps" placeholder="Where do you want to go?" />
+        <button type="button" data-dock="locate" class="lm-search-locate" aria-label="Use my location">${mapIcon('locate')}</button>
+      </div>
+      <div class="lws-top-actions lm-top-actions">
+        <button class="lm-pill lm-pill-green" data-action="route" type="button">${mapIcon('directions')}<span>Directions</span></button>
+        <button class="lm-pill lm-pill-yellow" data-nav="features" type="button">${mapIcon('explore')}<span>Explore</span></button>
+        <button class="lm-pill lm-pill-white" data-action="help" type="button">${mapIcon('info')}<span>Help</span></button>
+        <button class="lm-profile" data-action="ai" type="button" aria-label="Open Agent Lee"><span>AL</span><b>Agent Lee</b></button>
       </div>
     </header>
-    <nav class="lws-rail" aria-label="Personal map navigation">
-      ${[
-            ['map', 'Map'],
-            ['transit', 'Transit'],
-            ['features', 'Features'],
-            ['intel', 'Intelligence'],
-            ['ai', 'AI'],
-          ]
-        .map(
-          ([id, label], i) =>
-            `<button class="lws-nav ${i === 0 ? 'active' : ''}" data-nav="${id}"><span class="i">${icon(id)}</span><span>${label}</span></button>`,
-        )
-        .join('')}
+
+    <nav class="lws-rail lm-rail" aria-label="LeeWay Maps navigation">
+      <button class="lws-nav active" data-nav="map" type="button">${mapIcon('home')}<span>Home</span></button>
+      <button class="lws-nav" data-action="route" type="button">${mapIcon('directions')}<span>Directions</span></button>
+      <button class="lws-nav" data-nav="transit" type="button">${mapIcon('transit')}<span>Transit</span></button>
+      <button class="lws-nav" data-nav="features" type="button">${mapIcon('explore')}<span>Explore</span></button>
+      <button class="lws-nav" data-action="ai" type="button">${mapIcon('talk')}<span>Agent Lee</span></button>
       <div class="lws-spacer"></div>
-      <button class="lws-nav" data-action="collapse"><span class="i">«</span><span>Collapse</span></button>
+      <button class="lws-nav lm-rail-more" data-dock="layers" type="button">${mapIcon('more')}<span>More</span></button>
     </nav>
-    <aside class="lws-layer-menu" data-layer-menu>
-      <div class="lws-layer-head"><strong>WORLD LAYERS</strong><button class="lws-chip" data-action="close-layers">×</button></div>
+
+    <aside class="lws-layer-menu lm-sheet" data-layer-menu>
+      <div class="lws-layer-head"><strong>Map options</strong><button class="lws-chip" data-action="close-layers" aria-label="Close map options">×</button></div>
+      <p class="lm-sheet-help">Turn on only what you want to see. LeeWay keeps live, scheduled and mapped information separate.</p>
       <div data-layer-list></div>
     </aside>
+
     <div data-route-planner></div>
     <button class="lws-live" data-action="connect-world" type="button"><b data-world-led>● CHECK</b><span data-world-status>Connect live world data</span></button>
-    <nav class="lws-dock">
-      <button class="lws-dock-btn" data-action="peer-comms">${mapIcon('mic')}<span>Travel radio</span></button>
-      ${[
-        ['layers', 'Layers'],
-        ['traffic', 'Traffic'],
-        ['cctv', 'CCTV'],
-        ['weather', 'Weather'],
-      ]
-        .map(
-          ([id, label]) =>
-            `<button class="lws-dock-btn" data-dock="${id}">${mapIcon(id)}<span>${label}</span></button>`,
-        )
-        .join('')}
-      <button class="lws-dock-btn" data-action="view-map">${mapIcon('map')}<span>Map</span></button>
-      <button class="lws-dock-btn" data-action="view-satellite">${mapIcon('satellite')}<span>Satellite</span></button>
-      <button class="lws-dock-btn" data-action="report-hazard">${mapIcon('report')}<span>Report</span></button>
-      <button class="lws-ai" data-action="ai" aria-label="Talk to Agent Lee">${mapIcon('mic')}<strong>Agent Lee</strong></button>
-      <button class="lws-dock-btn" data-action="preferences">${mapIcon('settings')}<span>Language and music</span></button>
-      ${[
-            ['travel', 'Travel'],
-            ['transit', 'Transit'],
-            ['flights', 'Flights'],
-            ['three', '3D'],
-          ]
-        .map(
-          ([id, label]) =>
-            `<button class="lws-dock-btn " data-dock="${id}"><span class="i">${icon(id)}</span>${label}</button>`,
-        )
-        .join('')}
+
+    <nav class="lws-dock lm-dock" aria-label="Quick map tools">
+      <button class="lws-dock-btn lm-home-action" data-dock="locate" type="button">${mapIcon('locate')}<span>My location</span></button>
+      <button class="lws-dock-btn" data-action="route" type="button">${mapIcon('directions')}<span>Directions</span></button>
+      <button class="lws-dock-btn" data-dock="transit" type="button">${mapIcon('transit')}<span>Transit</span></button>
+      <button class="lws-dock-btn" data-dock="traffic" type="button">${mapIcon('traffic')}<span>Traffic</span></button>
+      <button class="lws-dock-btn" data-dock="weather" type="button">${mapIcon('weather')}<span>Weather</span></button>
+      <button class="lws-dock-btn" data-dock="cctv" type="button">${mapIcon('cctv')}<span>Cameras</span></button>
+      <button class="lws-dock-btn" data-action="help" type="button">${mapIcon('info')}<span>Help</span></button>
+      <button class="lws-dock-btn" data-dock="layers" type="button">${mapIcon('more')}<span>More</span></button>
     </nav>
-    <button class="lws-my-location" data-dock="locate" aria-label="My Location">⌾ My Location</button>
-    <div class="lws-location-badge" data-location-badge><strong>WORLD</strong><span>Geographic identification loading…</span></div>
+
+    <div class="lws-location-badge lm-location-card" data-location-badge><strong>Finding your area…</strong><span>Geographic context loading</span></div>
     <aside class="lws-context-inspector" data-context-inspector></aside>
-    <div class="lws-right-tabs" aria-label="Right-side information panels">
-      <button class="lws-right-tab" data-action="right-ops" type="button">TRAVEL</button>
-      <button class="lws-right-tab" data-action="right-cctv" type="button">CCTV</button>
-      <button class="lws-right-tab" data-action="right-weather" type="button">WEATHER</button>
-      <button class="lws-right-tab" data-action="right-national" type="button">NATION</button>
+
+    <div class="lws-right-tabs lm-context-actions" aria-label="Nearby information">
+      <button class="lws-right-tab" data-action="right-ops" type="button">${mapIcon('journey')}<span>Trip</span></button>
+      <button class="lws-right-tab" data-action="right-cctv" type="button">${mapIcon('cctv')}<span>Cameras</span></button>
+      <button class="lws-right-tab" data-action="right-weather" type="button">${mapIcon('weather')}<span>Weather</span></button>
+      <button class="lws-right-tab" data-action="right-national" type="button">${mapIcon('map')}<span>Coverage</span></button>
     </div>
-    <button class="lws-ui-restore" data-action="restore-ui" type="button">SHOW CONTROLS</button>
-    <button class="lws-inspector-toggle" data-action="collapse-inspector" type="button" aria-label="Collapse inspector">‹</button>
+
+    <button class="lws-ui-restore" data-action="restore-ui" type="button">Show controls</button>
+    <button class="lws-inspector-toggle" data-action="collapse-inspector" type="button" aria-label="Collapse panel">‹</button>
     <div class="lws-toast" role="status" aria-live="polite"></div>
   `;
   document.body.appendChild(shell);
@@ -458,10 +465,12 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   cctvPanel?.addEventListener('leeway:cctv-frame-ready', confirmWorkingCctv);
 
   function renderLayerMenu() {
-    const rows = (dataManager?.getAll?.() || []).map((row) => ({
-      ...row,
-      category: layerCategories[row.id] || 'Special',
-    }));
+    const rows = (dataManager?.getAll?.() || [])
+      .filter((row) => !PERSONAL_HIDDEN_LAYER_IDS.has(row.id))
+      .map((row) => ({
+        ...row,
+        category: layerCategories[row.id] || 'Other',
+      }));
 
     const groups = new Map(layerCategoryOrder.map((name) => [name, []]));
     for (const row of rows) {
@@ -1105,6 +1114,10 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       toggleAgent();
       return;
     }
+    if (action === 'help') {
+      preferences.openAtlas?.();
+      return;
+    }
     if (action === 'preferences') {
       preferences.open();
       return;
@@ -1294,7 +1307,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       !dataManager.isEnabled?.('flights')
     ) {
       void dataManager
-        .setEnabled('flights', true, { origin: 'business-default' })
+        .setEnabled('flights', true, { origin: 'personal-default' })
         .catch((error) => {
           console.warn('Live aircraft awareness unavailable', error);
         });
@@ -1361,7 +1374,26 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     };
   }
 
+  const deviceProfile = deviceCapabilityProfile();
+  const runtimeCapabilities = discoverRuntimeCapabilities();
+  const workloadPlan = buildWorkloadPlan(runtimeCapabilities, [
+    { id: 'map-render', kind: 'map-render', latencyCritical: true },
+    { id: 'visual-inference', kind: 'visual-inference', latencyCritical: true },
+    { id: 'journey-geospatial', kind: 'geospatial-compute', latencyCritical: true },
+    { id: 'background-index', kind: 'background-index', latencyCritical: false },
+  ]);
+  const devicePolicyState = applyMobileRenderPolicy({ viewer, dataManager, profile: deviceProfile });
+  document.body.dataset.leewayDevicePolicy = devicePolicyState.policy.id;
   const mapViewControls = mountMapViewControls({ application, shell });
+  const journeyContinuity = mountJourneyContinuityMonitor({
+    viewer,
+    dataManager,
+    shell,
+    mapViewControls,
+    routePlanner: routing,
+    openNearestCctv,
+    notify: say,
+  });
   const mapToolsPanel = mountMapToolsPanel({ application, shell });
 
   return {
@@ -1380,10 +1412,13 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       setRightPanel('cctv', { toggle: false });
     },
     selectCctv,
+    getDeviceProfile: () => devicePolicyState,
+    getRuntimeCapabilities: () => ({ runtimeCapabilities, workloadPlan }),
     openAgent: () => toggleAgent(true),
     closeAgent: () => toggleAgent(false),
     notify: say,
     destroy() {
+      journeyContinuity.destroy();
       mapToolsPanel.destroy();
       mapViewControls.destroy();
       cctvObserver?.disconnect();

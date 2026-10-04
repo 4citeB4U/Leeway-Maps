@@ -35,7 +35,10 @@ test('personal directions do not offer commercial vehicle controls', async () =>
 test('personal shell has no dormant commercial controls and travel contacts are opt-in', async () => {
  const shell = await readFile(new URL('./mapsShell.js', import.meta.url), 'utf8');
  assert.doesNotMatch(shell, /isBusiness|loadComparison|Driver radio|data-nav="(?:loads|fleet|drivers|crm)"|workspace\.(?:open|close)/);
- assert.match(shell, /Travel radio/);
+ assert.match(shell, /Where do you want to go\?/);
+ assert.match(shell, /Go anywhere\. Know what's around you\./);
+ assert.match(shell, /My location/);
+ assert.match(shell, /Cameras/);
  const peers = await readFile(new URL('./peerComms.js', import.meta.url), 'utf8');
  assert.doesNotMatch(peers, /Fleet coworkers|available driver or dispatcher|companyDirectory/);
  assert.match(peers, /identity\?\.directoryPolicy !== 'opt-in'/);

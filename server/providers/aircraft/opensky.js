@@ -317,6 +317,35 @@ async function serveAdsbLolPointFallback(req, res, requestedMode, reason) {
   return true;
 }
 
+
+export function openSkyLocalStateCount(body, anchor, radiusNm = ADSBLOL_POINT_RADIUS_NM) {
+  if (!anchor || !Number.isFinite(radiusNm) || radiusNm <= 0) return null;
+  let states;
+  try {
+    states = JSON.parse(body)?.states;
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(states)) return null;
+  const radiusKm = radiusNm * 1.852;
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const lat1 = toRad(anchor.latitude);
+  let count = 0;
+  for (const row of states) {
+    const lon = Number(row?.[5]);
+    const lat = Number(row?.[6]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+    const dLat = toRad(lat - anchor.latitude);
+    const dLon = toRad(lon - anchor.longitude);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(lat1) * Math.cos(toRad(lat)) * Math.sin(dLon / 2) ** 2;
+    const km = 6371.0088 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    if (km <= radiusKm) count += 1;
+  }
+  return count;
+}
+
 function openSkySourceEpochMs(body) {
   try {
     const seconds = Number(JSON.parse(body)?.time);
@@ -364,6 +393,22 @@ export function openSkyProxy() {
           _openskyCacheBody &&
           (now - _openskyCacheTime < _openskyTtlMs || inCooldown)
         ) {
+          const cacheAnchor = adsbLolFallbackAnchor(req);
+          const cachedLocalCount = openSkyLocalStateCount(
+            _openskyCacheBody,
+            cacheAnchor,
+          );
+          if (
+            cachedLocalCount === 0 &&
+            (await serveAdsbLolPointFallback(
+              req,
+              res,
+              requestedMode,
+              'opensky_no_local_aircraft_regional_fallback',
+            ))
+          ) {
+            return;
+          }
           if (
             openSkySourceIsStale(_openskyCacheSourceEpochMs, now) &&
             (await serveAdsbLolPointFallback(
@@ -496,6 +541,27 @@ export function openSkyProxy() {
 
         let body = await upstream.text();
         const sourceEpochMs = upstream.ok ? openSkySourceEpochMs(body) : null;
+        const anchor = adsbLolFallbackAnchor(req);
+        const localStateCount = upstream.ok
+          ? openSkyLocalStateCount(body, anchor)
+          : null;
+        if (
+          upstream.ok &&
+          localStateCount === 0 &&
+          (await serveAdsbLolPointFallback(
+            req,
+            res,
+            requestedMode,
+            'opensky_no_local_aircraft_regional_fallback',
+          ))
+        ) {
+          _openskyCacheBody = body;
+          _openskyCacheStatus = upstream.status;
+          _openskyCacheTime = now;
+          _openskyCacheSourceEpochMs = sourceEpochMs;
+          _openskyCacheMeta = { requestedMode, usedMode, reason };
+          return;
+        }
         if (
           upstream.ok &&
           openSkySourceIsStale(sourceEpochMs, now) &&

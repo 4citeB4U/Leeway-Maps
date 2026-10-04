@@ -176,6 +176,27 @@ export const TRANSIT_FEED_REGISTRY = Object.freeze([
     routeMode: mbtaRouteMode,
   }),
   Object.freeze({
+    id: 'mcts-milwaukee',
+    name: 'Milwaukee County Transit System',
+    operator: 'Milwaukee County Transit System (MCTS)',
+    region: 'Milwaukee County, WI',
+    center: Object.freeze({ lat: 43.0389, lon: -87.9065 }),
+    loadRadiusKm: 55,
+    url: 'https://realtime.ridemcts.com/gtfsrt/vehicles',
+    license: 'MCTS Developer Terms & GTFS Feed',
+    licenseUrl: 'https://www.ridemcts.com/policies/developer-terms',
+    attribution:
+      'Milwaukee County Transit System (MCTS) data — LeeWay is not sponsored or operated by MTS/MCTS',
+    defaultEnabled: true,
+    terms: Object.freeze({
+      quote:
+        'MCTS grants a non-exclusive, limited and revocable license to reproduce, display, perform, redistribute and otherwise use transit route schedules, pricing and associated data subject to its developer terms.',
+      note:
+        'Do not use MCTS trademarks or logos without permission. LeeWay must disclose that it is not sponsored or operated by MTS/MCTS and show when displayed data was last updated.',
+    }),
+    defaultMode: 'bus',
+  }),
+  Object.freeze({
     id: 'capmetro-austin',
     name: 'CapMetro',
     operator: 'Capital Metropolitan Transportation Authority',

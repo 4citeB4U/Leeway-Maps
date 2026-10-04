@@ -97,6 +97,7 @@ export function createTransitNetworkLayer({
       );
       const data = await response.json();
       if (current.signal.aborted) return;
+      entity._leewayTransitDepartures = response.ok && Array.isArray(data.stops) ? data.stops : [];
       const text = `${base}\n\n${response.ok ? transitDepartureText(data.stops) : data.error || 'Departures unavailable'}\nTimes are local to the transit stop. Estimates can change.`;
       entity.description = description(text);
       showCard(text);
@@ -215,6 +216,7 @@ export function createTransitNetworkLayer({
               disableDepthTestDistance: 100000,
             },
           });
+          entity._leewayTransitRecord = Object.freeze({ ...item });
           entity._leewayTransitDescription = `${item.operator}\nVehicle ${item.label} · Route ${item.route}\nTrip ${item.trip}\nGPS observed ${item.observedAt}\n${item.attribution}\nGPS position is not an arrival prediction.`;
           count++;
           continue;
@@ -246,6 +248,7 @@ export function createTransitNetworkLayer({
                 clampToGround: true,
               },
             });
+            entity._leewayTransitRecord = Object.freeze({ ...item });
             entity._leewayTransitDescription = copy;
           }
           if (lines.length) count++;
@@ -274,6 +277,7 @@ export function createTransitNetworkLayer({
               disableDepthTestDistance: 100000,
             },
           });
+          entity._leewayTransitRecord = Object.freeze({ ...item });
           entity._leewayTransitStop = data.mappedOnly ? null : key;
           entity._leewayTransitDescription = copy;
           count++;
