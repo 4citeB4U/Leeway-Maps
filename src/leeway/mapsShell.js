@@ -249,15 +249,13 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       <div class="lws-search lm-search">
         <span class="lm-search-icon" aria-hidden="true">⌕</span>
         <input aria-label="Search LeeWay Maps" placeholder="Where do you want to go?" />
-        <button type="button" data-dock="locate" class="lm-search-locate" aria-label="Use my location">${mapIcon('locate')}</button>
       </div>
-      <div class="lws-top-actions lm-top-actions">
-        <button class="lm-pill lm-pill-white" data-action="help" type="button">${mapIcon('info')}<span>Help</span></button>
-      </div>
+      <div class="lws-top-actions lm-top-actions" aria-hidden="true"></div>
     </header>
 
     <nav class="lws-rail lm-rail" aria-label="LeeWay Maps navigation">
       <button class="lws-nav active" data-nav="map" type="button">${mapIcon('home')}<span>Home</span></button>
+      <button class="lws-nav" data-dock="locate" type="button">${mapIcon('locate')}<span>My location</span></button>
       <button class="lws-nav" data-nav="transit" type="button">${mapIcon('transit')}<span>Transit</span></button>
       <button class="lws-nav" data-nav="features" type="button">${mapIcon('explore')}<span>Explore</span></button>
       <button class="lws-nav" data-dock="traffic" type="button">${mapIcon('traffic')}<span>Traffic</span></button>
@@ -270,7 +268,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     <button class="lm-rail-toggle" data-action="toggle-personal-rail" type="button" aria-label="Collapse map controls" aria-expanded="true">‹</button>
 
     <aside class="lws-layer-menu lm-sheet" data-layer-menu>
-      <div class="lws-layer-head"><strong>More</strong><div class="lm-sheet-actions"><button class="lws-chip" data-action="preferences" type="button">Settings</button><button class="lws-chip" data-action="map-tools" type="button">Map display</button><button class="lws-chip" data-action="close-layers" aria-label="Close more menu">×</button></div></div>
+      <div class="lws-layer-head"><strong>More</strong><div class="lm-sheet-actions"><button class="lws-chip" data-action="help" type="button">Help / Atlas</button><button class="lws-chip" data-action="preferences" type="button">Settings</button><button class="lws-chip" data-action="map-tools" type="button">Map display</button><button class="lws-chip" data-action="close-layers" aria-label="Close more menu">×</button></div></div>
       <p class="lm-sheet-help">Turn on only what you want to see. LeeWay keeps live, scheduled and mapped information separate.</p>
       <div data-layer-list></div>
     </aside>
