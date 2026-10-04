@@ -241,10 +241,13 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       <div class="lws-brand lm-brand">
         <button class="lm-brand-button" data-action="map" type="button" aria-label="LeeWay Maps home">
           <span class="lm-brand-mark" aria-hidden="true">
-            <span class="lm-mark-road"></span>
-            <span class="lm-mark-dot lm-mark-dot-green"></span>
-            <span class="lm-mark-dot lm-mark-dot-yellow"></span>
-            <span class="lm-mark-dot lm-mark-dot-red"></span>
+            <svg class="lm-brand-svg" viewBox="0 0 64 64" role="img">
+              <path class="lm-brand-pin" d="M32 5c-13 0-23 10.1-23 22.5C9 44.2 32 60 32 60s23-15.8 23-32.5C55 15.1 45 5 32 5Z"/>
+              <path class="lm-brand-road" d="M24 47c1-7 5-11 10-15 4-3 6-7 6-13"/>
+              <circle class="lm-brand-green" cx="24" cy="47" r="4"/>
+              <circle class="lm-brand-yellow" cx="34" cy="32" r="4"/>
+              <circle class="lm-brand-red" cx="40" cy="19" r="4"/>
+            </svg>
           </span>
           <span class="lm-brand-copy"><strong data-brand-name>LeeWay Maps</strong><span data-brand-tagline>Go anywhere. Know what's around you.</span></span>
         </button>
