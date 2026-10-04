@@ -33,7 +33,7 @@ test('settings reuses actual controls and their listeners without changing the w
  const h=setup();let clicks=0;const originalButton=new Node('button');originalButton.onclick=()=>clicks++;
  h.panels['control-panel'].appendChild(originalButton);
  const settings=mountMapToolsPanel({shell:h.shell,documentRef:h.doc});
- assert.equal(h.dock.children[0].textContent,'Map settings');settings.open('views');originalButton.click();assert.equal(clicks,1);
+ assert.equal(h.dock.children[0].textContent,'Map display');settings.open('views');originalButton.click();assert.equal(clicks,1);
  assert.equal(h.panels['pp-toggles'].parentNode.id,'map-tools-views');assert.equal(h.panels['pp-toggles'].classList.contains('collapsed'),false);
  assert.equal(h.panels['control-panel'].parentNode.id,'map-tools-views');assert.equal(h.panels['control-panel'].classList.contains('collapsed'),false);
  settings.open('layers');assert.equal(h.panels['data-panel'].parentNode.hidden,false);assert.equal(h.panels['control-panel'].parentNode.hidden,true);
@@ -58,4 +58,15 @@ test('rendering quality provides an explicit full-resolution opt out',()=>{
  assert.equal(select.getAttribute('aria-label'),'Rendering quality');
  assert.deepEqual(select.children.map(option=>option.value),['auto','full']);
  select.value='full';select.onchange();assert.equal(events[0].type,'leeway:render-quality');assert.deepEqual(events[0].detail,{mode:'full'});settings.destroy();
+});
+
+test('optional launcher keeps the personal dock clean',()=>{
+ const h=setup();
+ const settings=mountMapToolsPanel({shell:h.shell,documentRef:h.doc,addLauncher:false});
+ assert.equal(h.dock.children.length,0);
+ settings.open('views');
+ assert.equal(settings.root.hidden,false);
+ settings.close();
+ settings.destroy();
+ assert.equal(h.dock.children.length,0);
 });

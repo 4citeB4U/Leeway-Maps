@@ -75,10 +75,8 @@ export function mountExperiencePreferences() {
     audio.hidden = false;
     root.querySelector('[data-track]').textContent = file.name;
   });
-  // First-use language onboarding does not block the map or request location.
-  try {
-    if (!localStorage.getItem('leeway.maps.language')) root.hidden = false;
-  } catch {}
+  // Settings never open on startup. First-use setup remains user-invoked so
+  // the map canvas is always the primary surface.
   return {
     open() {
       root.hidden = false;

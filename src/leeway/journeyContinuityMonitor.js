@@ -90,15 +90,18 @@ export function mountJourneyContinuityMonitor({
   notify = () => {},
   eventTarget = globalThis.window,
   documentRef = globalThis.document,
+  addLauncher = true,
 } = {}) {
   const dock = shell?.querySelector?.('.lws-dock');
   if (!dock || !documentRef) return { destroy() {}, open() {} };
 
-  const launcher = documentRef.createElement('button');
-  launcher.type = 'button';
-  launcher.className = 'lws-dock-btn';
-  launcher.innerHTML = '<span class="i">⇄</span><span>Journey</span>';
-  dock.insertBefore(launcher, dock.firstChild);
+  const launcher = addLauncher ? documentRef.createElement('button') : null;
+  if (launcher) {
+    launcher.type = 'button';
+    launcher.className = 'lws-dock-btn';
+    launcher.innerHTML = '<span class="i">⇄</span><span>Journey</span>';
+    dock.insertBefore(launcher, dock.firstChild);
+  }
 
   const root = documentRef.createElement('section');
   root.className = 'lw-journey-watch';
@@ -335,10 +338,12 @@ export function mountJourneyContinuityMonitor({
   const onFlight = () => captureFlight();
   eventTarget?.addEventListener?.('gev:awareness-subject-selected', onFlight);
 
-  launcher.onclick = () => {
-    root.hidden = !root.hidden;
-    if (!root.hidden) render();
-  };
+  if (launcher) {
+    launcher.onclick = () => {
+      root.hidden = !root.hidden;
+      if (!root.hidden) render();
+    };
+  }
   root.querySelector('[data-close]').onclick = () => { root.hidden = true; };
   root.querySelector('[data-add]').onclick = addCurrent;
   root.querySelector('[data-frame]').onclick = frameTogether;
@@ -397,7 +402,7 @@ export function mountJourneyContinuityMonitor({
       removeTransit?.();
       removeRoute?.();
       eventTarget?.removeEventListener?.('gev:awareness-subject-selected', onFlight);
-      launcher.remove();
+      launcher?.remove();
       root.remove();
       style.remove();
     },

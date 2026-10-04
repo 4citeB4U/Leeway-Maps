@@ -39,6 +39,9 @@ test('personal shell has no dormant commercial controls and travel contacts are 
  assert.match(shell, /Go anywhere\. Know what's around you\./);
  assert.match(shell, /My location/);
  assert.match(shell, /Cameras/);
+ assert.match(shell, /icon-192\.png/);
+ assert.match(shell, /lm-agent-mic/);
+ assert.doesNotMatch(shell, /lm-profile/);
  const peers = await readFile(new URL('./peerComms.js', import.meta.url), 'utf8');
  assert.doesNotMatch(peers, /Fleet coworkers|available driver or dispatcher|companyDirectory/);
  assert.match(peers, /identity\?\.directoryPolicy !== 'opt-in'/);

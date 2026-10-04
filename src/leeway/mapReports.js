@@ -8,25 +8,55 @@ export function weatherReport(payload, now = Date.now()) {
 }
 
 export function trafficReport(rows, point) {
-  const incident = rows.find(r => r.id === 'traffic-incidents');
-  if (point?.lon < -91.6 || point?.lon > -87.4 || point?.lat < 36.9 || point?.lat > 42.6) return 'Traffic · Local incident coverage unavailable';
-  if (!incident?.enabled) return 'Traffic · Open reports';
-  if (incident.stats?.loading) return 'Traffic · Loading reports';
-  if (incident.stats?.stale || incident.stats?.error) return 'Traffic · Source unavailable or outdated';
-  return 'Traffic · Read Illinois reports';
+  if (!point) return 'Traffic · Waiting for your location';
+  const traffic = rows.find((row) => row.id === 'traffic');
+  const incident = rows.find((row) => row.id === 'traffic-incidents');
+  if (traffic?.enabled) {
+    if (traffic.stats?.loading) return 'Traffic · Loading local roads';
+    if (traffic.stats?.error) return 'Traffic · Local flow unavailable';
+    if (traffic.stats?.mode === 'live') {
+      const coverage = Number(traffic.stats?.flowCoveragePct);
+      return Number.isFinite(coverage)
+        ? `Traffic · Live flow · ${coverage}% matched`
+        : 'Traffic · Live local flow';
+    }
+    if (traffic.stats?.mode === 'sim')
+      return 'Traffic · Simulated flow · live source unavailable';
+  }
+  const inIllinois =
+    point.lon >= -91.6 &&
+    point.lon <= -87.4 &&
+    point.lat >= 36.9 &&
+    point.lat <= 42.6;
+  if (inIllinois && incident?.enabled) {
+    if (incident.stats?.loading) return 'Traffic · Loading local incidents';
+    if (incident.stats?.stale || incident.stats?.error)
+      return 'Traffic · Incident source unavailable or outdated';
+    return 'Traffic · Illinois incident reports';
+  }
+  return 'Traffic · Tap for local flow';
 }
 
 /** Viewport reports never claim that the viewport is the user's GPS position. */
-export function mountMapReports({ shell, viewer, dataManager, getPoint, onWeather, onTraffic, fetchImpl = globalThis.fetch }) {
+export function mountMapReports({
+  shell,
+  viewer,
+  dataManager,
+  getPoint,
+  getLocationLabel = () => 'Your location',
+  onWeather,
+  onTraffic,
+  fetchImpl = globalThis.fetch,
+}) {
   const doc = shell.ownerDocument;
   const bar = doc.createElement('section');
   bar.className = 'lws-report-banner';
-  bar.setAttribute('aria-label', 'Traffic and weather for the map area');
+  bar.setAttribute('aria-label', 'Traffic and weather near your current location');
   const track = doc.createElement('div');track.className='lws-report-track';
   const weather = doc.createElement('button');
   const traffic = doc.createElement('button');
   weather.type = traffic.type = 'button';
-  weather.textContent = 'Weather · Loading map area…';
+  weather.textContent = 'Your location · Weather loading…';
   traffic.textContent = 'Traffic · Open reports';
   weather.addEventListener('click', onWeather);
   traffic.addEventListener('click', onTraffic);
@@ -41,24 +71,32 @@ export function mountMapReports({ shell, viewer, dataManager, getPoint, onWeathe
     if (key === cell && Date.now() - updated < 300000) return;
     request?.abort();
     const controller = new AbortController();request = controller;cell = key;updated = Date.now();
-    weather.textContent = 'Weather · Loading map area…';
+    weather.textContent = `${getLocationLabel()} · Weather loading…`;
     try {
       const res = await fetchImpl(`/api/weather-effects?latitude=${point.lat.toFixed(5)}&longitude=${point.lon.toFixed(5)}`, {signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)])});
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const payload = await res.json();
       if (destroyed || request !== controller) return;
-      weather.textContent = `${point.accuracy != null ? (point.accuracy > 10000 ? 'APPROXIMATE DEVICE AREA' : 'YOUR LOCATION') : 'MAP AREA'} · ${weatherReport(payload)}`;
-      weather.title = `Map area ${key}. Open-Meteo · observation ${payload.weather?.observedAt || 'unknown'}. Click for weather details.`;
+      const place = getLocationLabel();
+      const scope =
+        point.accuracy > 10000 ? `${place} area` : place;
+      weather.textContent = `${scope} · ${weatherReport(payload)}`;
+      weather.title = `Your current location ${key}. Open-Meteo · observation ${payload.weather?.observedAt || 'unknown'}. Click for weather details.`;
     } catch {
       if (!destroyed && request === controller) weather.textContent = 'Weather unavailable · Open details';
     }
   }
-  const remove = viewer?.camera?.moveEnd?.addEventListener?.(refresh);
-  // The report runner subscribes without a model or an extra layer-menu click.
-  if (dataManager?.layers?.has('traffic-incidents')) {
-    Promise.resolve(dataManager.setEnabled('traffic-incidents', true, {origin:'automatic-local-reports'})).then(renderTraffic).catch(renderTraffic);
-  }
+  // Reports follow the device location, not wherever the user pans the map.
+  // Traffic stays lazy so initial map startup is not blocked by a road query.
   const timer = setInterval(refresh, 30000);
   void refresh();
-  return {refresh,destroy(){destroyed=true;request?.abort();remove?.();clearInterval(timer);bar.remove();}};
+  return {
+    refresh,
+    destroy() {
+      destroyed = true;
+      request?.abort();
+      clearInterval(timer);
+      bar.remove();
+    },
+  };
 }
