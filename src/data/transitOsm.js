@@ -8,7 +8,7 @@ export function transitOsmQuery(kind, lat, lon) {
     Math.abs(lon) > 180
   )
     throw new TypeError('Invalid transit area');
-  const radius = kind === 'routes' ? 10000 : 3000;
+  const radius = kind === 'routes' ? 25000 : 6000;
   const around = `(around:${radius},${lat.toFixed(3)},${lon.toFixed(3)})`;
   const dy = radius / 110000,
     dx = Math.min(180, dy / Math.max(0.01, Math.cos((lat * Math.PI) / 180)));
@@ -21,13 +21,14 @@ export function transitOsmQuery(kind, lat, lon) {
     .map((v) => v.toFixed(4))
     .join(',');
   return kind === 'routes'
-    ? `[out:json][timeout:18][maxsize:33554432];relation["type"="route"]["route"~"^(bus|trolleybus|tram|subway|light_rail|train|ferry)$"]${around};out geom(${bounds}) 100;`
-    : `[out:json][timeout:18][maxsize:33554432];(node["highway"="bus_stop"]${around};node["railway"~"^(station|halt|tram_stop)$"]${around};node["public_transport"="platform"]${around};);out body 100;`;
+    ? `[out:json][timeout:18][maxsize:33554432];relation["type"="route"]["route"~"^(bus|trolleybus|tram|subway|light_rail|train|ferry)$"]${around};out geom(${bounds}) 200;`
+    : `[out:json][timeout:18][maxsize:33554432];(node["highway"="bus_stop"]${around};node["railway"~"^(station|halt|tram_stop)$"]${around};node["public_transport"="platform"]${around};);out body 250;`;
 }
 export function normalizeTransitOsm(kind, payload) {
   if (!Array.isArray(payload?.elements) || payload.remark)
     throw new Error('Incomplete mapped network response');
-  const rows = payload.elements.slice(0, 100).map((element) => {
+  const maxRows = kind === 'routes' ? 200 : 250;
+  const rows = payload.elements.slice(0, maxRows).map((element) => {
     const tags = element.tags || {};
     const common = {
       id: `osm-${element.type}-${element.id}`,
@@ -97,7 +98,7 @@ export function normalizeTransitOsm(kind, payload) {
     [kind]: rows,
     retrievedAt: new Date().toISOString(),
     mappedOnly: true,
-    partial: rows.length >= 100,
+    partial: rows.length >= maxRows,
     notice:
       'Community-mapped network; routes can be incomplete or outdated. No timetable, arrival prediction, service alert, or live vehicle is implied.',
   };

@@ -218,7 +218,7 @@ export function createTransitNetworkLayer({
         : data.source || 'Transitland';
       for (const item of (data[kind] || []).slice(
         0,
-        kind === 'vehicles' ? 3000 : 100,
+        kind === 'vehicles' ? 3000 : kind === 'stops' ? 250 : 200,
       )) {
         if (kind === 'vehicles') {
           const entity = dataSource.entities.add({
@@ -255,6 +255,7 @@ export function createTransitNetworkLayer({
         const copy = `${name || key}\n${item.agency?.agency_name || ''}\n${data.source}\n${data.mappedOnly ? 'Community-mapped network. Timetables, arrivals, alerts, and live vehicles unavailable from this source.' : kind === 'routes' ? 'Published representative route; not live vehicle position.' : 'Select this stop to view the next hour of departures.'}\n${transitAlertText(item.alerts)}\nRetrieved ${data.retrievedAt}`;
         if (kind === 'routes') {
           const mode = routeMode(item);
+          if (allowedModes && !allowedModes.has(mode)) continue;
           const color = /^[0-9a-f]{6}$/i.test(item.route_color || '')
             ? `#${item.route_color}`
             : routeFallbackColor(mode);
@@ -322,7 +323,7 @@ export function createTransitNetworkLayer({
       coverage =
         kind === 'vehicles'
           ? `${count} reported GPS fixes · ${data.coverage?.length || 0} feeds checked${data.source?.startsWith('MTA') ? ' · LIRR / Metro-North only; see report timestamps' : ''}${count ? '' : '; no accessible current GPS from this source'}`
-          : `${count} ${kind} within ${kind === 'stops' ? '3' : '10'} km${data.partial ? ' · partial results; pan for more' : ''} · ${data.mappedOnly ? 'mapped network; live times unavailable' : 'published routes; no GPS implied'}`;
+          : `${count} ${kind} within ${kind === 'stops' ? '6' : '25'} km${data.partial ? ' · partial results; pan for more' : ''} · ${data.mappedOnly ? 'mapped network; live times unavailable' : 'published routes; no GPS implied'}`;
     } catch (failure) {
       if (revision === generation && !signal.aborted) {
         // Keep an explicitly degraded static network after a temporary outage in
@@ -394,6 +395,24 @@ export function createTransitNetworkLayer({
       refresh();
     },
     update,
+    setParams(params = {}) {
+      if (kind !== 'routes' || !Object.hasOwn(params, 'allowedModes')) return false;
+      const next = Array.isArray(params.allowedModes)
+        ? new Set(
+            params.allowedModes.filter((mode) =>
+              ['bus','rail','subway','tram','ferry','unknown'].includes(mode),
+            ),
+          )
+        : null;
+      allowedModes = next?.size ? next : null;
+      if (enabled) queueMicrotask(() => update(undefined, { force: true }));
+      return true;
+    },
+    getParams() {
+      return kind === 'routes'
+        ? { allowedModes: allowedModes ? [...allowedModes] : null }
+        : {};
+    },
     destroy() {
       layer.disable();
       viewer?.dataSources.remove(dataSource, true);
