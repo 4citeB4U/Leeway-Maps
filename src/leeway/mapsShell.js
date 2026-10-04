@@ -312,6 +312,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   const cctvOriginalNextSibling = cctvPanel?.nextSibling || null;
   let cctvObserver = null;
   let weatherObserver = null;
+  let transitFallbackTimer = null;
   let cctvViewportArmed = false;
   let personalCctvPerfInitialized = false;
   let toastTimer;
@@ -684,12 +685,10 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   }
 
   async function enableTransitSuite() {
-    const requested = [
-      'transit',
-      'transit-routes',
-      'transit-stops',
-      'transit-vehicles',
-    ];
+    // Start with the direct operator feed plus mapped/published routes and stops.
+    // The generic regional-vehicle discovery layer is only a fallback; enabling
+    // both at once duplicates vehicles and burns network/render budget.
+    const requested = ['transit', 'transit-routes', 'transit-stops'];
     const results = [];
     for (const id of requested) {
       if (!dataManager?.layers?.has(id)) continue;
@@ -699,9 +698,21 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
         results.push(id);
       } catch {}
     }
+    clearTimeout(transitFallbackTimer);
+    transitFallbackTimer = setTimeout(async () => {
+      const direct = dataManager?.layers?.get('transit')?.module?.getStats?.();
+      if (Number(direct?.count || 0) > 0) return;
+      if (!dataManager?.layers?.has('transit-vehicles')) return;
+      try {
+        if (!dataManager.isEnabled?.('transit-vehicles'))
+          await dataManager.setEnabled('transit-vehicles', true, {
+            origin: 'transit-fallback',
+          });
+      } catch {}
+    }, 4500);
     say(
       results.length
-        ? `Public transit layers enabled · ${results.join(', ')}`
+        ? 'Transit map on · routes, stops and available live vehicles'
         : 'Transit layers are unavailable in this build',
     );
     return results.length > 0;
@@ -1546,6 +1557,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       weatherObserver?.disconnect();
       document.removeEventListener('leeway:right-panel-close', closeRightPanel);
       clearTimeout(cctvRecoveryTimer);
+      clearTimeout(transitFallbackTimer);
       cctvViewport?.removeEventListener(
         'leeway:cctv-frame-unavailable',
         recoverFailedCctv,
