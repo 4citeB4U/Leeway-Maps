@@ -383,7 +383,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       if (cctvChannel) cctvChannel.textContent = label;
     };
     document.getElementById('cctv-camera-select')?.addEventListener('change', updateCctvChannel);
-    cctvPanel.addEventListener('leeway:cctv-frame-ready', updateCctvChannel);
+    cctvViewport?.addEventListener('leeway:cctv-frame-ready', updateCctvChannel);
     cctvObserver = new MutationObserver(syncCctvInspector);
     cctvObserver.observe(cctvPanel, {
       attributes: true,
@@ -484,11 +484,14 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   const confirmWorkingCctv = () => {
     cctvRecoveryCount = 0;
   };
-  cctvPanel?.addEventListener(
+  cctvViewport?.addEventListener(
     'leeway:cctv-frame-unavailable',
     recoverFailedCctv,
   );
-  cctvPanel?.addEventListener('leeway:cctv-frame-ready', confirmWorkingCctv);
+  cctvViewport?.addEventListener(
+    'leeway:cctv-frame-ready',
+    confirmWorkingCctv,
+  );
 
   function renderLayerMenu() {
     const rows = (dataManager?.getAll?.() || [])
@@ -1498,11 +1501,11 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       weatherObserver?.disconnect();
       document.removeEventListener('leeway:right-panel-close', closeRightPanel);
       clearTimeout(cctvRecoveryTimer);
-      cctvPanel?.removeEventListener(
+      cctvViewport?.removeEventListener(
         'leeway:cctv-frame-unavailable',
         recoverFailedCctv,
       );
-      cctvPanel?.removeEventListener(
+      cctvViewport?.removeEventListener(
         'leeway:cctv-frame-ready',
         confirmWorkingCctv,
       );
