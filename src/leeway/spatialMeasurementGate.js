@@ -44,7 +44,9 @@ export function buildSpatialMeasurement({
     movingSubjectCount(rows),
     Number.isFinite(transit.mapMatchMeanDeviationM)
       ? transit.mapMatchMeanDeviationM
-      : null,
+      : Number.isFinite(transit.routeConstraintMeanDeviationM)
+        ? transit.routeConstraintMeanDeviationM
+        : null,
     Number(placeStats.renderedCount || 0),
     frameTimeMs,
     Number.isFinite(interactionLatencyMs) ? interactionLatencyMs : null,

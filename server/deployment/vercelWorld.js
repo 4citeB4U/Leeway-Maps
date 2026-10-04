@@ -307,7 +307,9 @@ export function createVercelWorldHandler({
     // Public providers expose reads, Overpass read queries, and HLS lease release.
     const publicMethod =
       req.method === 'GET' ||
-      (req.method === 'POST' && pathname === '/api/overpass') ||
+      (req.method === 'POST' &&
+        (pathname === '/api/overpass' ||
+          pathname === '/api/transit/map-match')) ||
       (req.method === 'DELETE' && /^\/api\/cctv\/media\/[^/]+$/.test(pathname));
     if (!publicMethod) return json(res, 405, { error: 'Method not allowed.' });
     if (pathname === '/api/ais-live' || pathname.startsWith('/api/ais-live/')) {

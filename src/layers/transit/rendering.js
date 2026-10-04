@@ -58,6 +58,28 @@ export function createRendering({ state, services, parts }) {
    * frame: `fromDegrees` runs trigonometry, and doing that for every vehicle on
    * every frame was most of what made this layer heavy.
    */
+  function distanceM(a, b) {
+    if (
+      !a ||
+      !b ||
+      !Number.isFinite(a.lat) ||
+      !Number.isFinite(a.lon) ||
+      !Number.isFinite(b.lat) ||
+      !Number.isFinite(b.lon)
+    )
+      return null;
+    const r = 6371008.8;
+    const toRad = (deg) => (deg * Math.PI) / 180;
+    const lat1 = toRad(a.lat);
+    const lat2 = toRad(b.lat);
+    const dLat = lat2 - lat1;
+    const dLon = toRad(b.lon - a.lon);
+    const h =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+    return 2 * r * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+  }
+
   function cartesianFor(lat, lon, heightM, out) {
     // `heightM` already carries the shared floor's own lift, so nothing is
     // added here: two lifts stacked is a vehicle hovering.
@@ -90,18 +112,38 @@ export function createRendering({ state, services, parts }) {
       ? null
       : routeLayer?.routePathBetween?.(routeRef, fromPoint, toPoint, 90);
     entry.routeTraversal = buildRouteTraversal(matchedPath || routePath);
+    let constraintMeanDeviationM = null;
+    let constraintMaxDeviationM = null;
+    if (routePath?.length >= 2) {
+      const startSnap = { lon: routePath[0][0], lat: routePath[0][1] };
+      const endSnap = {
+        lon: routePath[routePath.length - 1][0],
+        lat: routePath[routePath.length - 1][1],
+      };
+      const startDeviation = distanceM(fromPoint, startSnap);
+      const endDeviation = distanceM(toPoint, endSnap);
+      const deviations = [startDeviation, endDeviation].filter(Number.isFinite);
+      if (deviations.length) {
+        constraintMeanDeviationM =
+          deviations.reduce((sum, value) => sum + value, 0) /
+          deviations.length;
+        constraintMaxDeviationM = Math.max(...deviations);
+      }
+    }
+    entry.routeConstraintMeanDeviationM = matchedPath
+      ? entry.mapMatchMeanDeviationM ?? null
+      : constraintMeanDeviationM;
+    entry.routeConstraintMaxDeviationM = matchedPath
+      ? entry.mapMatchMaxDeviationM ?? null
+      : constraintMaxDeviationM;
     entry.routeConstraint = entry.routeTraversal
       ? {
           routeRef,
           source: matchedPath
             ? 'valhalla-meili-map-match'
             : 'mapped-route-geometry',
-          meanDeviationM: matchedPath
-            ? entry.mapMatchMeanDeviationM ?? null
-            : null,
-          maxDeviationM: matchedPath
-            ? entry.mapMatchMaxDeviationM ?? null
-            : null,
+          meanDeviationM: entry.routeConstraintMeanDeviationM,
+          maxDeviationM: entry.routeConstraintMaxDeviationM,
         }
       : null;
     entry.fromCart = cartesianFor(
