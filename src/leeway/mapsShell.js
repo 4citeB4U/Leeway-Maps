@@ -25,6 +25,7 @@ import { mountJourneyContinuityMonitor } from './journeyContinuityMonitor.js';
 import { applyMobileRenderPolicy, deviceCapabilityProfile } from './devicePerformanceProfile.js';
 import { buildWorkloadPlan, discoverRuntimeCapabilities } from './runtimeWorkloadBroker.js';
 import { mountPersonalCockpitViewport } from './personalCockpitViewport.js';
+import { mountPersonalTransitControls } from './personalTransitControls.js';
 
 const PERSONAL_HIDDEN_LAYER_IDS = new Set([
   'military',
@@ -765,7 +766,10 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
         return true;
       }
       if (actionName === 'transit') {
-        return enableTransitSuite();
+        transitControls.open();
+        const ok = await enableTransitSuite();
+        transitControls.refresh();
+        return ok;
       }
       if (actionName === 'cctv') {
         const opened = await openPersonalCctvControls();
@@ -1168,7 +1172,9 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
         return;
       }
       if (id === 'transit') {
+        transitControls.open();
         await enableTransitSuite();
+        transitControls.refresh();
         return;
       }
       if (id === 'features') {
@@ -1382,7 +1388,9 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       return;
     }
     if (dock === 'transit') {
+      transitControls.open();
       await enableTransitSuite();
+      transitControls.refresh();
       return;
     }
     if (dock === 'three') {
@@ -1505,10 +1513,16 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   const devicePolicyState = applyMobileRenderPolicy({ viewer, dataManager, profile: deviceProfile });
   document.body.dataset.leewayDevicePolicy = devicePolicyState.policy.id;
   const mapViewControls = mountMapViewControls({ application, shell, addLauncher: false });
+  const transitControls = mountPersonalTransitControls({
+    shell,
+    dataManager,
+    notify: say,
+  });
   const personalCockpit = mountPersonalCockpitViewport({
     shell,
     styleManager,
     catalog,
+    dataManager,
     notify: say,
   });
   const journeyContinuity = mountJourneyContinuityMonitor({
@@ -1551,6 +1565,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     destroy() {
       journeyContinuity.destroy();
       mapToolsPanel?.destroy();
+      transitControls.destroy();
       personalCockpit.destroy();
       mapViewControls.destroy();
       cctvObserver?.disconnect();
