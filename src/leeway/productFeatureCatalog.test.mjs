@@ -58,3 +58,14 @@ test('personal shell has no dormant commercial controls and travel contacts are 
  assert.doesNotMatch(peers, /Fleet coworkers|available driver or dispatcher|companyDirectory/);
  assert.match(peers, /identity\?\.directoryPolicy !== 'opt-in'/);
 });
+
+
+test('personal cockpit viewport is independent from the primary map camera', async () => {
+ const shell = await readFile(new URL('./mapsShell.js', import.meta.url), 'utf8');
+ const cockpit = await readFile(new URL('./personalCockpitViewport.js', import.meta.url), 'utf8');
+ assert.match(shell, /mountPersonalCockpitViewport/);
+ assert.doesNotMatch(shell, /mapViewControls\.actions\.cockpit\(\)/);
+ assert.match(cockpit, /new Cesium\.Viewer/);
+ assert.match(cockpit, /requestRenderMode: true/);
+ assert.match(cockpit, /getAircraftTrackingTarget/);
+});
