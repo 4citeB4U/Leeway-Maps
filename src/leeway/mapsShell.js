@@ -241,13 +241,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       <div class="lws-brand lm-brand">
         <button class="lm-brand-button" data-action="map" type="button" aria-label="LeeWay Maps home">
           <span class="lm-brand-mark" aria-hidden="true">
-            <svg class="lm-brand-svg" viewBox="0 0 64 64" role="img">
-              <path class="lm-brand-pin" d="M32 5c-13 0-23 10.1-23 22.5C9 44.2 32 60 32 60s23-15.8 23-32.5C55 15.1 45 5 32 5Z"/>
-              <path class="lm-brand-road" d="M24 47c1-7 5-11 10-15 4-3 6-7 6-13"/>
-              <circle class="lm-brand-green" cx="24" cy="47" r="4"/>
-              <circle class="lm-brand-yellow" cx="34" cy="32" r="4"/>
-              <circle class="lm-brand-red" cx="40" cy="19" r="4"/>
-            </svg>
+            <img class="lm-brand-logo" src="${import.meta.env.BASE_URL}icon-192.png" alt="" />
           </span>
           <span class="lm-brand-copy"><strong data-brand-name>LeeWay Maps</strong><span data-brand-tagline>Go anywhere. Know what's around you.</span></span>
         </button>
@@ -258,25 +252,20 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
         <button type="button" data-dock="locate" class="lm-search-locate" aria-label="Use my location">${mapIcon('locate')}</button>
       </div>
       <div class="lws-top-actions lm-top-actions">
-        <button class="lm-pill lm-pill-green" data-action="route" type="button">${mapIcon('directions')}<span>Directions</span></button>
-        <button class="lm-pill lm-pill-yellow" data-nav="features" type="button">${mapIcon('explore')}<span>Explore</span></button>
         <button class="lm-pill lm-pill-white" data-action="help" type="button">${mapIcon('info')}<span>Help</span></button>
-        <button class="lm-profile" data-action="ai" type="button" aria-label="Open Agent Lee"><span>AL</span><b>Agent Lee</b></button>
       </div>
     </header>
 
     <nav class="lws-rail lm-rail" aria-label="LeeWay Maps navigation">
       <button class="lws-nav active" data-nav="map" type="button">${mapIcon('home')}<span>Home</span></button>
-      <button class="lws-nav" data-action="route" type="button">${mapIcon('directions')}<span>Directions</span></button>
       <button class="lws-nav" data-nav="transit" type="button">${mapIcon('transit')}<span>Transit</span></button>
       <button class="lws-nav" data-nav="features" type="button">${mapIcon('explore')}<span>Explore</span></button>
-      <button class="lws-nav" data-action="ai" type="button">${mapIcon('talk')}<span>Agent Lee</span></button>
       <div class="lws-spacer"></div>
       <button class="lws-nav lm-rail-more" data-dock="layers" type="button">${mapIcon('more')}<span>More</span></button>
     </nav>
 
     <aside class="lws-layer-menu lm-sheet" data-layer-menu>
-      <div class="lws-layer-head"><strong>Map options</strong><button class="lws-chip" data-action="close-layers" aria-label="Close map options">×</button></div>
+      <div class="lws-layer-head"><strong>More</strong><div class="lm-sheet-actions"><button class="lws-chip" data-action="preferences" type="button">Settings</button><button class="lws-chip" data-action="map-tools" type="button">Map display</button><button class="lws-chip" data-action="close-layers" aria-label="Close more menu">×</button></div></div>
       <p class="lm-sheet-help">Turn on only what you want to see. LeeWay keeps live, scheduled and mapped information separate.</p>
       <div data-layer-list></div>
     </aside>
@@ -286,16 +275,15 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
 
     <nav class="lws-dock lm-dock" aria-label="Quick map tools">
       <button class="lws-dock-btn lm-home-action" data-dock="locate" type="button">${mapIcon('locate')}<span>My location</span></button>
-      <button class="lws-dock-btn" data-action="route" type="button">${mapIcon('directions')}<span>Directions</span></button>
       <button class="lws-dock-btn" data-dock="transit" type="button">${mapIcon('transit')}<span>Transit</span></button>
       <button class="lws-dock-btn" data-dock="traffic" type="button">${mapIcon('traffic')}<span>Traffic</span></button>
+      <button class="lws-ai lm-agent-mic" data-action="ai" type="button" aria-label="Talk to Agent Lee">${mapIcon('mic')}<strong>Agent Lee</strong></button>
       <button class="lws-dock-btn" data-dock="weather" type="button">${mapIcon('weather')}<span>Weather</span></button>
       <button class="lws-dock-btn" data-dock="cctv" type="button">${mapIcon('cctv')}<span>Cameras</span></button>
-      <button class="lws-dock-btn" data-action="help" type="button">${mapIcon('info')}<span>Help</span></button>
       <button class="lws-dock-btn" data-dock="layers" type="button">${mapIcon('more')}<span>More</span></button>
     </nav>
 
-    <div class="lws-location-badge lm-location-card" data-location-badge><strong>Finding your area…</strong><span>Geographic context loading</span></div>
+    <div class="lws-location-badge lm-location-card" data-location-badge hidden aria-hidden="true"><strong></strong><span></span></div>
     <aside class="lws-context-inspector" data-context-inspector></aside>
 
     <div class="lws-right-tabs lm-context-actions" aria-label="Nearby information">
@@ -750,40 +738,31 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
 
   async function updateLocationBadge() {
     const devicePoint = deviceLocation.getPoint();
-    const point = devicePoint || viewCenterPoint();
-    const sourceLabel = devicePoint ? (devicePoint.accuracy > 10000 ? 'APPROXIMATE DEVICE LOCATION' : 'DEVICE LOCATION') : 'MAP AREA';
-    if (!point || !locationBadge) return;
-    const cell = `${sourceLabel}:${point.lat.toFixed(3)},${point.lon.toFixed(3)}`;
+    if (!devicePoint) {
+      currentLocationLabel = 'Your location';
+      mapReports.refresh();
+      return;
+    }
+    const cell = `device:${devicePoint.lat.toFixed(3)},${devicePoint.lon.toFixed(3)}`;
     if (cell === locationCell) return;
     locationCell = cell;
     const generation = ++locationRequestGeneration;
-    locationBadge.querySelector('strong').textContent = sourceLabel;
-    locationBadge.querySelector('span').textContent = 'Identifying area…';
     try {
       const response = await fetch(
-        `/api/regional-brief?latitude=${encodeURIComponent(point.lat)}&longitude=${encodeURIComponent(point.lon)}`,
+        `/api/regional-brief?latitude=${encodeURIComponent(devicePoint.lat)}&longitude=${encodeURIComponent(devicePoint.lon)}`,
         { headers: { Accept: 'application/json' } },
       );
       if (!response.ok) throw new Error('Regional context unavailable');
       const payload = await response.json();
       if (generation !== locationRequestGeneration) return;
       const place = payload?.place;
-      const strong = locationBadge.querySelector('strong');
-      const detail = locationBadge.querySelector('span');
-      strong.textContent =
-        `${sourceLabel} · ${place?.locality || place?.region || place?.country || 'Unknown area'}`;
-      detail.textContent =
-        [place?.region, place?.country]
-          .filter(
-            (value, index, values) => value && values.indexOf(value) === index,
-          )
-          .join(' · ') + (devicePoint ? ` · accuracy about ${Math.round(devicePoint.accuracy)} m` : ' · not your device location');
+      currentLocationLabel =
+        place?.locality || place?.region || place?.country || 'Your location';
     } catch {
       if (generation !== locationRequestGeneration) return;
-      locationBadge.querySelector('strong').textContent = sourceLabel;
-      locationBadge.querySelector('span').textContent =
-        `${point.lat.toFixed(4)}, ${point.lon.toFixed(4)} · place name unavailable`; 
+      currentLocationLabel = 'Your location';
     }
+    mapReports.refresh();
   }
 
   async function switchMapMode(mode) {
@@ -880,10 +859,10 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     const activeStack = mapStackController?.getActiveId?.();
     if (activeStack === 'photoreal') return;
     const carto = viewer.camera.positionCartographic;
-    if (!carto || !Number.isFinite(carto.height) || carto.height < 9_000_000)
+    if (!carto || !Number.isFinite(carto.height) || carto.height < 5_500_000)
       return;
     const pitchError = Math.abs(viewer.camera.pitch + Cesium.Math.PI_OVER_TWO);
-    if (pitchError < Cesium.Math.toRadians(2)) return;
+    if (pitchError < Cesium.Math.toRadians(0.75)) return;
     recenteringDistantGlobe = true;
     try {
       viewer.camera.setView({
@@ -907,9 +886,9 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   const removeWorldCentering =
     viewer?.camera?.moveEnd?.addEventListener?.(recenterDistantGlobe) || null;
   const removeLocationBadgeListener =
-    viewer?.camera?.moveEnd?.addEventListener?.(
-      () => void updateLocationBadge(),
-    ) || null;
+    viewer?.camera?.moveEnd?.addEventListener?.(recenterDistantGlobe) || null;
+  const onViewportResize = () => recenterDistantGlobe();
+  globalThis.addEventListener?.('resize', onViewportResize);
 
   async function locate(query, { altitude = 6000 } = {}) {
     if (!query || !viewer) return false;
@@ -1045,8 +1024,17 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
   async function handleSearch(value) {
     const q = String(value || '').trim();
     if (!q) return;
-    toggleRoutePlanner(false);
-    await locate(q);
+    toggleLayerMenu(false);
+    const result = await routing.routeFromVoice({
+      origin: 'current',
+      destination: q,
+    });
+    if (!result?.ok) {
+      routing.open();
+      if (!result?.needsSelection) {
+        say('Trip search opened. Confirm the destination or choose a matching address.');
+      }
+    }
   }
 
   shell
@@ -1119,7 +1107,13 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       return;
     }
     if (action === 'preferences') {
+      toggleLayerMenu(false);
       preferences.open();
+      return;
+    }
+    if (action === 'map-tools') {
+      toggleLayerMenu(false);
+      getMapToolsPanel().open();
       return;
     }
     if (action === 'connect-world') {
@@ -1240,7 +1234,8 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       return;
     }
     if (dock === 'traffic') {
-      await toggleLayer('traffic-incidents');
+      await toggleLayer('traffic');
+      mapReports.refresh();
       return;
     }
     if (dock === 'cctv') {
@@ -1299,30 +1294,43 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
      Satellite are explicit operator-selectable labeled views. */
   queueMicrotask(() => {
     syncRightTabs();
-    void switchMapMode('map');
     recenterDistantGlobe();
     void updateLocationBadge();
-    if (
-      dataManager?.layers?.has('flights') &&
-      !dataManager.isEnabled?.('flights')
-    ) {
-      void dataManager
-        .setEnabled('flights', true, { origin: 'personal-default' })
-        .catch((error) => {
-          console.warn('Live aircraft awareness unavailable', error);
-        });
-    }
   });
 
-  const deviceLocation = mountDeviceLocation({viewer,button:shell.querySelector('[data-dock="locate"]'),notify:say,navigate:fly=>{styleManager.controlCockpit?.('exit');return styleManager.runImmediateLocationNavigation(fly);},onChange:()=>{queueMicrotask(()=>{mapReports.refresh();void updateLocationBadge();});}});
-  const mapReports = mountMapReports({
-    shell, viewer, dataManager, getPoint: () => deviceLocation.getPoint() || viewCenterPoint(),
+  let currentLocationLabel = 'Your location';
+  let mapReports = { refresh() {} };
+  const deviceLocation = mountDeviceLocation({
+    viewer,
+    button: shell.querySelector('[data-dock="locate"]'),
+    notify: say,
+    navigate: (fly) => {
+      styleManager.controlCockpit?.('exit');
+      return styleManager.runImmediateLocationNavigation(fly);
+    },
+    onChange: () => {
+      queueMicrotask(() => {
+        mapReports.refresh();
+        void updateLocationBadge();
+      });
+    },
+  });
+  mapReports = mountMapReports({
+    shell,
+    viewer,
+    dataManager,
+    getPoint: () => deviceLocation.getPoint(),
+    getLocationLabel: () => currentLocationLabel,
     onWeather: () => setRightPanel('weather', { toggle: false }),
     onTraffic: async () => {
       try {
-        await dataManager.setEnabled('traffic-incidents', true, { origin: 'reports' });
-        dataManager.layers.get('traffic-incidents')?.module?.setParams({ list: true });
-      } catch { say('Traffic reports unavailable for this area'); }
+        if (dataManager?.layers?.has('traffic') && !dataManager.isEnabled?.('traffic')) {
+          await dataManager.setEnabled('traffic', true, { origin: 'reports' });
+        }
+        mapReports.refresh();
+      } catch {
+        say('Local traffic flow is unavailable for this area');
+      }
     },
   });
 
@@ -1393,8 +1401,19 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     routePlanner: routing,
     openNearestCctv,
     notify: say,
+    addLauncher: false,
   });
-  const mapToolsPanel = mountMapToolsPanel({ application, shell });
+  let mapToolsPanel = null;
+  const getMapToolsPanel = () => {
+    if (!mapToolsPanel) {
+      mapToolsPanel = mountMapToolsPanel({
+        application,
+        shell,
+        addLauncher: false,
+      });
+    }
+    return mapToolsPanel;
+  };
 
   return {
     root: shell,
@@ -1419,7 +1438,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     notify: say,
     destroy() {
       journeyContinuity.destroy();
-      mapToolsPanel.destroy();
+      mapToolsPanel?.destroy();
       mapViewControls.destroy();
       cctvObserver?.disconnect();
       weatherObserver?.disconnect();
@@ -1437,6 +1456,7 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
       weatherObserver = null;
       removeWorldCentering?.();
       removeLocationBadgeListener?.();
+      globalThis.removeEventListener?.('resize', onViewportResize);
       if (cctvPanel && cctvOriginalParent) {
         if (
           cctvOriginalNextSibling &&
