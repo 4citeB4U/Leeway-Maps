@@ -1512,6 +1512,8 @@ export function mountMapsShell(application, { edition = 'personal' } = {}) {
     shell,
     styleManager,
     catalog,
+    dataManager,
+    sourceViewer: viewer,
     notify: say,
   });
   const transitControls = mountPersonalTransitControls({
