@@ -28,7 +28,7 @@ test('Personal Maps uses one left operations rail and one center Agent Lee contr
   assert.ok(rail > 0);
   assert.ok(dock > rail);
   const railSection = shell.slice(rail, dock);
-  for (const label of ['Home', 'Transit', 'Explore', 'Traffic', 'Cameras', 'Weather', 'Cockpit', 'More'])
+  for (const label of ['Home', 'My location', 'Transit', 'Explore', 'Traffic', 'Cameras', 'Weather', 'Cockpit', 'More'])
     assert.match(railSection, new RegExp('>' + label + '<'));
   const dockSection = shell.slice(dock, dock + 1000);
   assert.match(dockSection, /lm-agent-mic/);
