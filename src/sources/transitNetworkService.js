@@ -47,7 +47,7 @@ export function transitNetworkRequest(url) {
       throw new Error('Valid latitude and longitude are required');
     target.searchParams.set('lat', lat.toFixed(3));
     target.searchParams.set('lon', lon.toFixed(3));
-    target.searchParams.set('radius', kind === 'stops' ? '3000' : '10000');
+    target.searchParams.set('radius', kind === 'stops' ? '6000' : '25000');
     target.searchParams.set('include_geometry', 'true');
     if (kind === 'vehicles') {
       target.pathname = '/api/v2/rest/feeds';
@@ -55,7 +55,10 @@ export function transitNetworkRequest(url) {
       target.searchParams.delete('include_geometry');
     }
   }
-  target.searchParams.set('limit', kind === 'departures' ? '30' : '100');
+  target.searchParams.set(
+    'limit',
+    kind === 'departures' ? '30' : kind === 'stops' ? '250' : '200',
+  );
   if (!['feeds', 'vehicles'].includes(kind))
     target.searchParams.set('include_alerts', 'true');
   const after = url.searchParams.get('after');
@@ -278,7 +281,10 @@ export function createTransitNetworkService({
               source: 'Transitland / originating transit agencies',
               retrievedAt: new Date().toISOString(),
               kind: route.kind,
-              [field]: data[field].slice(0, 100),
+              [field]: data[field].slice(
+                0,
+                route.kind === 'stops' ? 250 : 200,
+              ),
               next: /^\d{1,20}$/.test(String(data.meta?.after || ''))
                 ? String(data.meta.after)
                 : null,
