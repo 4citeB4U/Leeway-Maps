@@ -42,6 +42,7 @@ export function mountMapViewControls({
   shell,
   documentRef = document,
   eventTarget = window,
+  addLauncher = true,
 }) {
   const components = application.getComponents(),
     styleManager = components.controls?.styleManager,
@@ -51,11 +52,13 @@ export function mountMapViewControls({
   body.classList.remove('leeway-gods-eye');
   body.classList.add('leeway-enterprise-shell');
   const dock = shell.querySelector('.lws-dock');
-  const cockpitLauncher = documentRef.createElement('button');
-  cockpitLauncher.type = 'button';
-  cockpitLauncher.className = 'lws-dock-btn';
-  cockpitLauncher.textContent = 'Cockpit';
-  dock?.appendChild(cockpitLauncher);
+  const cockpitLauncher = addLauncher ? documentRef.createElement('button') : null;
+  if (cockpitLauncher) {
+    cockpitLauncher.type = 'button';
+    cockpitLauncher.className = 'lws-dock-btn';
+    cockpitLauncher.textContent = 'Cockpit';
+    dock?.appendChild(cockpitLauncher);
+  }
   const host = documentRef.createElement('section');
   host.id = 'leeway-map-view-controls';
   host.setAttribute('aria-label', 'Aircraft view controls');
@@ -101,14 +104,16 @@ export function mountMapViewControls({
       status.textContent = error.message || 'View unavailable';
     }
   }
-  cockpitLauncher.onclick = () => run('cockpit');
+  if (cockpitLauncher) cockpitLauncher.onclick = () => run('cockpit');
   cockpit.onclick = () => run('cockpit');
   follow.onclick = () => run('follow');
   function refresh() {
     if (destroyed) return;
     const cockpitActive = Boolean(styleManager?.getCockpitState?.()?.active);
-    cockpitLauncher.textContent = cockpitActive ? 'Exit cockpit' : 'Cockpit';
-    cockpitLauncher.setAttribute('aria-pressed', String(cockpitActive));
+    if (cockpitLauncher) {
+      cockpitLauncher.textContent = cockpitActive ? 'Exit cockpit' : 'Cockpit';
+      cockpitLauncher.setAttribute('aria-pressed', String(cockpitActive));
+    }
     cockpit.textContent = cockpitActive ? 'Exit cockpit' : 'Cockpit - first person';
     const target = styleManager?.getAircraftTrackingTarget?.();
     const info = catalog?.get(target?.layerId)?.getTrackedInfo?.();
@@ -155,7 +160,7 @@ export function mountMapViewControls({
       eventTarget.removeEventListener('gev:awareness-subject-cleared', refresh);
       host.remove();
       style.remove();
-      cockpitLauncher.remove();
+      cockpitLauncher?.remove();
       body.classList.remove('leeway-gods-eye');
     },
   };
