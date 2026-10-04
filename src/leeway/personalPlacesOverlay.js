@@ -57,11 +57,14 @@ export function mountPersonalPlacesOverlay({
   let lastKey = '';
   let lastAt = 0;
   let timer = null;
+  let renderedCount = 0;
+  let lastTier = null;
   const cache = new Map();
 
   const button = shell.querySelector('[data-action="places"]');
 
   function clear() {
+    renderedCount = 0;
     source.entities.removeAll();
     viewer.scene.requestRender?.();
   }
@@ -77,6 +80,7 @@ export function mountPersonalPlacesOverlay({
 
   function render(rows, tier) {
     clear();
+    lastTier = tier;
     for (const place of rows.slice(0, tier.limit)) {
       if (!Number.isFinite(place.latitude) || !Number.isFinite(place.longitude))
         continue;
@@ -123,6 +127,7 @@ export function mountPersonalPlacesOverlay({
           distanceM: place.distanceM ?? null,
         },
       });
+      renderedCount += 1;
     }
     viewer.scene.requestRender?.();
   }
@@ -206,6 +211,15 @@ export function mountPersonalPlacesOverlay({
     },
     setEnabled,
     refresh,
+    getStats() {
+      return {
+        enabled,
+        renderedCount,
+        tierMaxHeightM: lastTier?.maxHeightM ?? null,
+        tierLimit: lastTier?.limit ?? 0,
+        cacheEntries: cache.size,
+      };
+    },
     destroy() {
       clearTimeout(timer);
       request?.abort();
