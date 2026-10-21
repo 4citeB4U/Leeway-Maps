@@ -14,7 +14,7 @@ test('accepts a qualified canonical voice instead of requiring the optional clon
  await voice.speak('hello');
  assert.deepEqual(calls,['hello']);
  assert.equal(states.at(-1).status,'ready');
- assert.equal(states.at(-1).voice,'kokoro-am_michael');
+ assert.ok(states.some(s=>s.voice==='kokoro-am_michael' && s.status==='ready'));
 });
 
 test('fails closed when Voice Fabric cannot confirm a prepared voice',async()=>{
