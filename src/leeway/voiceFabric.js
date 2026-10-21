@@ -53,7 +53,7 @@ export function createVoiceFabricAdapter({
         if (epoch !== lifecycle || client !== activeClient || muted) return;
         const percent = Number.isFinite(value.progress) ? Math.round(value.progress) : Number(value.total) > 0 && Number.isFinite(value.loaded) ? Math.round(100 * value.loaded / value.total) : null;
         const message = value.message || (stage === 'preparing'
-          ? `Preparing the active LeeWay voice${value.file ? ` · ${value.file}` : ''}${percent === null ? '' : ` · ${percent}%`}. First load is about 1.5 GB and may take several minutes; preparation stops after 15 minutes without progress. Map controls remain available.`
+          ? `Preparing the active LeeWay voice${value.file ? ` · ${value.file}` : ''}${percent === null ? '' : ` · ${percent}%`}. Initial preparation time and download size depend on the selected provider; preparation stops after 15 minutes without progress. Map controls remain available.`
           : `Voice Fabric: ${value.status || 'working'}`);
         state({ ...value, message, status: value.status === 'unavailable' ? 'unavailable' : stage === 'preparing' ? 'loading' : value.status || 'working' });
       };
