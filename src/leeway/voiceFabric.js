@@ -1,8 +1,20 @@
+/*
+LEEWAY HEADER — DO NOT REMOVE
+REGION: LeeWay Maps / Canonical Voice Fabric Adapter
+TAG: LEEWAY.MAPS.VOICE.FABRIC_ADAPTER
+WHAT: Bind Maps speech to the selected canonical Voice Fabric voice without owning synthesis.
+WHY: The shared Voice Fabric voice profile and labelled device fallbacks must work without requiring an optional clone.
+WHO: LeeWay Industries / Creator-directed integration; this change is not a production approval.
+WHERE: src/leeway/voiceFabric.js
+WHEN: Voice is prepared, spoken, interrupted, or released.
+HOW: Use Voice Fabric bridge contracts; require a confirmed prepared voice and report fallbacks transparently.
+AUTHORIZED ROLES: Creator-directed source integration; production admission remains with LeeWay governance.
+LICENSE: MIT (host repository).
+*/
 // Transport only: voice engine, reference and queue belong to Voice Fabric.
 export const VOICE_FABRIC_URL = 'https://4citeb4u.github.io/LeeWay-Voice-Fabric';
 export const VOICE_FABRIC_TIMEOUT_MS = 15 * 60_000;
 export const VOICE_FABRIC_HANDSHAKE_MS = 120_000;
-const SELECTED_VOICE = 'agent-lee-voice-one';
 export function awaitVoiceHandshake(request, stage, signal, timeoutMs = VOICE_FABRIC_HANDSHAKE_MS) {
   return new Promise((resolve, reject) => {
     const cleanup = () => { clearTimeout(timer); signal?.removeEventListener('abort', abort); };
@@ -41,29 +53,38 @@ export function createVoiceFabricAdapter({
         if (epoch !== lifecycle || client !== activeClient || muted) return;
         const percent = Number.isFinite(value.progress) ? Math.round(value.progress) : Number(value.total) > 0 && Number.isFinite(value.loaded) ? Math.round(100 * value.loaded / value.total) : null;
         const message = value.message || (stage === 'preparing'
-          ? `Preparing Agent Lee Voice One${value.file ? ` · ${value.file}` : ''}${percent === null ? '' : ` · ${percent}%`}. First load is about 1.5 GB and may take several minutes; preparation stops after 15 minutes without progress. Map controls remain available.`
+          ? `Preparing the active LeeWay voice${value.file ? ` · ${value.file}` : ''}${percent === null ? '' : ` · ${percent}%`}. Initial preparation time and download size depend on the selected provider; preparation stops after 15 minutes without progress. Map controls remain available.`
           : `Voice Fabric: ${value.status || 'working'}`);
         state({ ...value, message, status: value.status === 'unavailable' ? 'unavailable' : stage === 'preparing' ? 'loading' : value.status || 'working' });
       };
       unsubscribe = [
         activeClient.on?.('voice.state', report),
         activeClient.on?.('voice.error', value => report({ ...value, status: 'unavailable' })),
+        activeClient.on?.('voice.fallback', value => {
+          if (epoch !== lifecycle || client !== activeClient || muted) return;
+          state({ status: 'fallback', fallback: value,
+            message: `Voice Fabric fallback: ${value?.requested || 'requested voice'} → ${value?.actual || 'available provider'}.` });
+        }),
       ];
       const connection = activeClient.connect();
       activeClient.frame?.setAttribute('allow', 'autoplay');
       await awaitVoiceHandshake(connection, 'connection', abort.signal);
       ensureCurrent();
-      stage = 'selecting';
-      state({ status: 'loading', message: 'Selecting Agent Lee Voice One in Voice Fabric.' });
-      await awaitVoiceHandshake(activeClient.selectVoice(SELECTED_VOICE), 'voice selection', abort.signal);
-      ensureCurrent();
+      // Voice Fabric owns the active profile, provider choice and labelled fallback.
+      // Never force its optional clone or silently select an alternate package.
       stage = 'preparing';
-      state({ status: 'loading', message: 'Preparing Agent Lee Voice One. First model load is about 1.5 GB and may take several minutes; preparation stops after 15 minutes without progress. Text and map controls remain available.' });
+      state({ status: 'loading', message: 'Preparing the active LeeWay voice. Preparation stops after 15 minutes without progress. Text and map controls remain available.' });
       const result = await activeClient.prepare();
       ensureCurrent();
-      if (!result.ready || result.selectedVoiceId !== SELECTED_VOICE) throw new Error('Agent Lee Voice One is unavailable');
+      if (!result?.ready || typeof result.selectedVoiceId !== 'string' || !result.selectedVoiceId) {
+        throw new Error('Voice Fabric did not confirm a prepared voice');
+      }
       stage = 'ready';
-      state({ status: muted ? 'muted' : 'ready', voice: result.selectedVoiceId });
+      state({ status: muted ? 'muted' : 'ready', voice: result.selectedVoiceId,
+        fallback: result.fallback || null,
+        message: result.fallback
+          ? `Voice Fabric fallback active: ${result.fallback.requested || 'requested voice'} → ${result.selectedVoiceId}.`
+          : `Voice Fabric ready: ${result.selectedVoiceId}.` });
       return activeClient;
     })().catch(error => {
       // A cancelled older load must not destroy a newly connected client.

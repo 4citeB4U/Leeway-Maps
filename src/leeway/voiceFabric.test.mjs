@@ -1,16 +1,33 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createVoiceFabricAdapter, awaitVoiceHandshake, VOICE_FABRIC_HANDSHAKE_MS } from './voiceFabric.js';
-test('external clone is selected; mute prevents initialization and has no alternate voice', async () => {
+test('uses canonical Voice Fabric selection; mute prevents initialization', async () => {
   const calls = [];
   const client = { connect: async()=>{}, selectVoice: async id=>calls.push(id), prepare: async()=>({ready:true,selectedVoiceId:'agent-lee-voice-one'}), speak:async text=>calls.push(text), stop:async()=>{}, destroy(){} };
   const voice = createVoiceFabricAdapter({loadSdk:async()=>({createLeeWayVoice:()=>client})});
   await voice.stop({mute:true}); await voice.speak('muted'); assert.deepEqual(calls,[]);
-  voice.resume(); await voice.speak('route ready'); assert.deepEqual(calls,['agent-lee-voice-one','route ready']);
+  voice.resume(); await voice.speak('route ready'); assert.deepEqual(calls,['route ready']);
 });
-test('wrong voice rejects instead of substituting device speech',async()=>{
- const voice=createVoiceFabricAdapter({loadSdk:async()=>({createLeeWayVoice:()=>({connect:async()=>{},selectVoice:async()=>{},prepare:async()=>({ready:true,selectedVoiceId:'other'}),destroy(){}})})});
- await assert.rejects(voice.speak('hello'),/Voice One/);
+test('accepts a qualified canonical voice instead of requiring the optional clone',async()=>{
+ const calls=[]; const states=[];
+ const voice=createVoiceFabricAdapter({loadSdk:async()=>({createLeeWayVoice:()=>({connect:async()=>{},selectVoice:async()=>{throw Error('unexpected selection');},prepare:async()=>({ready:true,selectedVoiceId:'kokoro-am_michael'}),speak:async text=>calls.push(text),destroy(){}})}),onState:s=>states.push(s)});
+ await voice.speak('hello');
+ assert.deepEqual(calls,['hello']);
+ assert.equal(states.at(-1).status,'ready');
+ assert.ok(states.some(s=>s.voice==='kokoro-am_michael' && s.status==='ready'));
+});
+
+test('fails closed when Voice Fabric cannot confirm a prepared voice',async()=>{
+ const voice=createVoiceFabricAdapter({loadSdk:async()=>({createLeeWayVoice:()=>({connect:async()=>{},prepare:async()=>({ready:true}),destroy(){}})})});
+ await assert.rejects(voice.speak('hello'),/did not confirm a prepared voice/);
+});
+
+test('reports canonical device fallback explicitly',async()=>{
+ const states=[];
+ const client={connect:async()=>{},prepare:async()=>({ready:true,selectedVoiceId:'device-speech',fallback:{requested:'kokoro-am_michael',actual:'device-speech',provider:'device-speech'}}),speak:async()=>{},destroy(){}};
+ const voice=createVoiceFabricAdapter({loadSdk:async()=>({createLeeWayVoice:()=>client}),onState:s=>states.push(s)});
+ await voice.speak('hello');
+ assert.ok(states.some(s=>s.fallback?.actual==='device-speech' && /fallback/i.test(s.message)));
 });
 
 test('canonical preparation timeout and bridge progress/errors reach the UI and listeners detach', async () => {
@@ -26,8 +43,8 @@ test('canonical preparation timeout and bridge progress/errors reach the UI and 
  assert.equal(options.timeoutMs,120000);
  assert.equal(options.prepareInactivityMs,900000);
  assert.equal(VOICE_FABRIC_HANDSHAKE_MS,120000);
- assert.ok(states.some(s=>/1.5 GB/.test(s.message||'') && /15 minutes without progress/.test(s.message)));
- assert.ok(states.some(s=>/Selecting Agent Lee Voice One/.test(s.message||'')));
+ assert.ok(states.some(s=>/Preparing the active LeeWay voice/.test(s.message||'') && /15 minutes without progress/.test(s.message)));
+ assert.ok(states.some(s=>/Voice Fabric ready:/.test(s.message||'')));
  assert.ok(states.some(s=>s.message==='Loading voice model 42%'));
  events.get('voice.error')({message:'Engine unavailable'});
  assert.equal(states.at(-1).status,'unavailable');
