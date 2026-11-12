@@ -1,5 +1,6 @@
 <!--
 LEEWAY HEADER — DO NOT REMOVE
+DISCOVERY_PIPELINE: Voice → Intent → Location → Vertical → Ranking → Render
 REGION: LEEWAY.REPOSITORY.UNIVERSAL.ADMISSION
 TAG: LEEWAY.STANDARDS.FIRST.OPERATION.GATE.V1
 5WH:
@@ -9,7 +10,7 @@ WHO = Creator/Human Authority and the qualified existing repository owner.
 WHERE = AGENTS.md in 4citeB4U/Leeway-Maps.
 WHEN = 2026-11-12.
 HOW = Bootstrap original Standards/Skills/Engineering/Receipt contracts and owning mission, then independently check execution.
-LICENSE = Existing repository license; no new license asserted.
+LICENSE: Existing repository license; no new license asserted.
 -->
 # Mandatory LeeWay Standards and Operation Admission
 
@@ -20,3 +21,7 @@ Every operation needs defined controlling laws and verified applicable regulatio
 Follow original twelve-stage engineering cycle, Machine Consciousness policy binding, Skill Orchestrator multi-skill task weave and bounded tool execution. Concurrency is permission-safe and conflict-free. Outside assistants BUILD/TEACH/ASSESS, permanent registered agents independently reproduce qualified knowledge. Grade/merit requires authorized independent issuer and is not a security grant. Use Runtime workplane for true handoff, distinguish transport/assignment/review/checkpoint ACK. Device-owned Digital Brain and Diagnostics remain the sole property of their respective physical device.
 
 No independent Veritas result, production deployment or model-host compliance may be inferred from this file. Preserve separate SOURCE_IMPLEMENTED, TESTED, CI_PASS, DEPLOYED, LIVE_OBSERVED, VERITAS_VERIFIED and QUALIFIED states.
+
+## Final boundary — effective canonical law and work custody
+
+[Approved LeeWay Standards main](https://github.com/4citeB4U/LeeWay-Standards/commit/2e5e98bdc49cfe0bf180de394db054eaf2f8e3d3) supersedes historical pending PR #71 references. Final handoff requires mission/work/source, scope/grants, evidence FOR/AGAINST, measurements, decisions, corrections, learner practice and next owner/gate. No source or test result self-confers production authority.
